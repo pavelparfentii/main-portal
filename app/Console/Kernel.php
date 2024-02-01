@@ -12,7 +12,20 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Update accounts data
+         $schedule->command('app:update-user-data-command')->dailyAt('00:30');
+
+         //Safesoul activity
+        $schedule->command('app:safe-soul-activity-command')->weeklyOn('Monday')->at('01:00');
+
+        //Safesoul achieve
+        $schedule->command('app:safe-soul-achieve-command')->dailyAt('01:30');
+
+        //Safesoul invites
+        $schedule->command('app:safe-soul-invites-command')->dailyAt('02:00');
+
+        //Safesoul 100 reports
+        $schedule->command('app:safe-soul100-reports-command')->dailyAt('02:30');
     }
 
     /**
