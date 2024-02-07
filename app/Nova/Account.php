@@ -50,7 +50,9 @@ class Account extends Resource
             Text::make(__('Twitter_id'), 'twitter_id')->onlyOnDetail(),
             Number::make('total_points')->min(0.001)->step(0.001)->sortable(),
 
-            HasMany::make('SafeSoul', 'safeSouls')->hideFromIndex()
+            HasMany::make('SafeSoul', 'safeSouls')->hideFromIndex(),
+
+            HasMany::make('Twitter', 'twitters')->hideFromIndex()
 
         ];
     }
