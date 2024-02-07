@@ -31,7 +31,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:twitter-posts-s-s-mention-command')->weeklyOn(1, '03:00');
 
         //Igor twitter posts
-        $schedule->command('app:twitter-posts-igor-mention-command')->weeklyOn(1, '03:00');
+        $schedule->command('app:twitter-posts-igor-mention-command')->weeklyOn(1, '03:30');
     }
 
     /**
