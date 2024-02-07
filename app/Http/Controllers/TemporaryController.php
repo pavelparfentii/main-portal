@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\SafeSoul;
+use App\Traits\SafeSoulTrait;
+use App\Traits\TwitterTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -11,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class TemporaryController extends Controller
 {
+    use TwitterTrait;
     public function sample()
     {
         $response = Http::withHeaders([
@@ -79,6 +82,11 @@ class TemporaryController extends Controller
             return $response->json(['ok'=>'sdsfd'],200);
         }
 
+    }
+
+    public function getTwitter()
+    {
+       return $this->getProjectsPosts();
     }
 
 }

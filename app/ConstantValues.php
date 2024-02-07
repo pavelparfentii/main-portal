@@ -24,4 +24,20 @@ class ConstantValues
    const safesoul_og_patrol_role = 'og_patrol';
    const safesoul_patrol_role = 'patrol';
 
+    //Twitter
+
+    const twitter_project_tweet = 3.000;
+    const twitter_igor_tweet = 2.000;
+
+    const twitter_project_like_point = 0.010;
+    const twitter_project_max_likes_points = 6.040;
+
+    const twitter_project_impression_point = 0.010;
+    const twitter_project_max_impression_point = 15;
+
+    const twitter_project_retweet_point = 0.010;
+    const twitter_project_max_retweet_point = 2.100;
+
+    const twitter_active_week_points = 10.000;
+
 }

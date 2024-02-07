@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 trait SafeSoulTrait{
 
 
-    private string $safesoul = 'http://127.0.0.1:8000/';
+    private string $safesoul = 'https://safesoul.test-dev.site/';
 
     public function getAccountsUpdate()
     {

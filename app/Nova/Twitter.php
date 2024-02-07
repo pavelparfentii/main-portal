@@ -2,21 +2,20 @@
 
 namespace App\Nova;
 
-use Faker\Core\Number;
 use Illuminate\Http\Request;
 use Laravel\Nova\Fields\Date;
 use Laravel\Nova\Fields\ID;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Http\Requests\NovaRequest;
 
-class SafeSoul extends Resource
+class Twitter extends Resource
 {
     /**
      * The model the resource corresponds to.
      *
-     * @var class-string<\App\Models\SafeSoul>
+     * @var class-string<\App\Models\Twitter>
      */
-    public static $model = \App\Models\SafeSoul::class;
+    public static $model = \App\Models\Twitter::class;
 
     /**
      * The single value that should be used to represent the resource when being displayed.
@@ -35,7 +34,7 @@ class SafeSoul extends Resource
     ];
 
     public static function label() {
-        return 'SafeSoul';
+        return 'Twitter';
     }
 
     public static $perPageViaRelationship = 50;

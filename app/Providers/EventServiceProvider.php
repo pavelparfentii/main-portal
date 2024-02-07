@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Events\SafeSoulCreationEvent;
+use App\Events\TwitterCreationEvent;
 use App\Listeners\SafeSoulCreationListener;
+use App\Listeners\TwitterCreationListener;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -22,6 +24,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         SafeSoulCreationEvent::class =>[
             SafeSoulCreationListener::class
+        ],
+        TwitterCreationEvent::class =>[
+            TwitterCreationListener::class
         ]
     ];
 

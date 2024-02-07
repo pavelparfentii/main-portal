@@ -16,7 +16,7 @@ class Kernel extends ConsoleKernel
          $schedule->command('app:update-user-data-command')->dailyAt('00:30');
 
          //Safesoul activity
-        $schedule->command('app:safe-soul-activity-command')->weeklyOn('Monday')->at('01:00');
+        $schedule->command('app:safe-soul-activity-command')->weeklyOn(1, '01:00');
 
         //Safesoul achieve
         $schedule->command('app:safe-soul-achieve-command')->dailyAt('01:30');
@@ -26,6 +26,12 @@ class Kernel extends ConsoleKernel
 
         //Safesoul 100 reports
         $schedule->command('app:safe-soul100-reports-command')->dailyAt('02:30');
+
+        //Safesoulclub and SafesoulEth twitter posts
+        $schedule->command('app:twitter-posts-s-s-mention-command')->weeklyOn(1, '03:00');
+
+        //Igor twitter posts
+        $schedule->command('app:twitter-posts-igor-mention-command')->weeklyOn(1, '03:00');
     }
 
     /**
