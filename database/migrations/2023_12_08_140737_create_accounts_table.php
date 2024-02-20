@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('wallet')->nullable();
             $table->string('twitter_username')->nullable();
             $table->string('twitter_id')->nullable();
+            $table->string('discord_id')->nullable();
             $table->decimal('total_points', 10, 3)->default(0);
             $table->string('role')->nullable();
             $table->string('auth_id')->nullable();

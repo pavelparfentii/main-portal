@@ -3,20 +3,19 @@
 namespace App\Nova;
 
 use Illuminate\Http\Request;
-use Laravel\Nova\Fields\HasMany;
+use Laravel\Nova\Fields\Date;
 use Laravel\Nova\Fields\ID;
-use Laravel\Nova\Fields\Number;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Http\Requests\NovaRequest;
 
-class Account extends Resource
+class DigitalAnimal extends Resource
 {
     /**
      * The model the resource corresponds to.
      *
-     * @var class-string<\App\Models\Account>
+     * @var class-string<\App\Models\DigitalAnimal>
      */
-    public static $model = \App\Models\Account::class;
+    public static $model = \App\Models\DigitalAnimal::class;
 
     /**
      * The single value that should be used to represent the resource when being displayed.
@@ -31,7 +30,7 @@ class Account extends Resource
      * @var array
      */
     public static $search = [
-        'id', 'wallet', 'twitter_username'
+        'id',
     ];
 
     /**
@@ -44,17 +43,9 @@ class Account extends Resource
     {
         return [
             ID::make()->sortable(),
-            Text::make(__('Wallet'), 'wallet')->sortable(),
-            Text::make(__('Role'), 'role')->sortable(),
-            Text::make(__('Twitter_username'), 'twitter_username')->sortable(),
-            Text::make(__('Twitter_id'), 'twitter_id')->onlyOnDetail(),
-            Text::make(__('discord_id'), 'discord_id')->onlyOnDetail(),
-            Number::make('total_points')->min(0.001)->step(0.001)->sortable(),
-
-            HasMany::make('SafeSoul', 'safeSouls')->hideFromIndex(),
-
-            HasMany::make('Twitter', 'twitters')->hideFromIndex()
-
+            Text::make('comment'),
+            \Laravel\Nova\Fields\Number::make('points')->step(0.001),
+            Date::make('created_at')
         ];
     }
 

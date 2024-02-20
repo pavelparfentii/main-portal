@@ -40,4 +40,10 @@ class ConstantValues
 
     const twitter_active_week_points = 10.000;
 
+    //DA
+
+    const animal_owner = 400.000;
+    const lord_20 = 500.000;
+    const animal_discord_role_points = 10.000;
+
 }

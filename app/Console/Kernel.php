@@ -28,10 +28,16 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:safe-soul100-reports-command')->dailyAt('02:30');
 
         //Safesoulclub and SafesoulEth twitter posts
-        $schedule->command('app:twitter-posts-s-s-mention-command')->weeklyOn(1, '03:00');
+        //$schedule->command('app:twitter-posts-s-s-mention-command')->weeklyOn(1, '03:00');
 
         //Igor twitter posts
-        $schedule->command('app:twitter-posts-igor-mention-command')->weeklyOn(1, '03:30');
+        //$schedule->command('app:twitter-posts-igor-mention-command')->weeklyOn(1, '03:30');
+
+        //Digital Animal owners
+        $schedule->command('app:digital-animals-owners-points-command')->dailyAt('04:00');
+
+        //Digital Animals lords 20 token
+        $schedule->command('app:digital-animals-lord20-command')->dailyAt('04:30');
     }
 
     /**

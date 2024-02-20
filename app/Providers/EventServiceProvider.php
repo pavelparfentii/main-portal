@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Events\DigitalAnimalsCreationEvent;
 use App\Events\SafeSoulCreationEvent;
 use App\Events\TwitterCreationEvent;
+use App\Listeners\DigitalAnimalsListener;
 use App\Listeners\SafeSoulCreationListener;
 use App\Listeners\TwitterCreationListener;
 use Illuminate\Auth\Events\Registered;
@@ -27,6 +29,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         TwitterCreationEvent::class =>[
             TwitterCreationListener::class
+        ],
+        DigitalAnimalsCreationEvent::class =>[
+            DigitalAnimalsListener::class
         ]
     ];
 

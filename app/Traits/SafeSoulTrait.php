@@ -35,7 +35,8 @@ trait SafeSoulTrait{
                             $account->update([
                                 'twitter_username'=>$item['twitter_username'],
                                 'twitter_id'=>$item['twitter_id'],
-                                'role'=>$item['role']
+                                'role'=>$item['role'],
+                                'discord_id'=>$item['discord_id']
                             ]);
 
                         }else{
@@ -44,7 +45,8 @@ trait SafeSoulTrait{
                                 'twitter_username'=>$item['twitter_username'],
                                 'twitter_id'=>$item['twitter_id'],
                                 'role'=>$item['role'],
-                                'auth_id'=>$item['auth_id']
+                                'auth_id'=>$item['auth_id'],
+                                'discord_id'=>$item['discord_id']
                             ]);
                             $account->save();
 
