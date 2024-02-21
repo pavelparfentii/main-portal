@@ -220,11 +220,12 @@ trait TwitterTrait
         if ($paginationToken) {
             $url .= ('&pagination_token=' . $paginationToken);
         }
-
+        Log::info($url);
         try {
             $result = Http::withToken($apiKey)->get($url);
 
             if ($result->ok()) {
+                Log::info($result->json());
                 return $result->json();
             }
         } catch (\Exception $e) {

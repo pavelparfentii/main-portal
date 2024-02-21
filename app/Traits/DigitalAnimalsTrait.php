@@ -46,6 +46,7 @@ trait DigitalAnimalsTrait
                     }
 
                     foreach ($data as $token) {
+                        $this->info($token);
                         $queryParam = 'token_' . $token;
                         if (!in_array($queryParam, $existingQueryParams)) {
                             $newAnimal = new DigitalAnimal([

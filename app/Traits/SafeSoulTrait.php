@@ -146,6 +146,7 @@ trait SafeSoulTrait{
 
             if ($response->successful()) {
                 $invites = $response->json();
+                dd($invites);
                 if(isset($invites)){
                     foreach ($invites as $wallet=>$invite){
                         $account = Account::where('wallet', $wallet)->first();

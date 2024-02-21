@@ -1,8 +1,9 @@
 import web3 from "web3";
+import fetch from 'node-fetch';
 const user = process.argv[2];
 
 async function fetchApiKey() {
-    const response = await fetch('http://127.0.0.1:8000/api/airdrop/infuraKey');
+    const response = await fetch('https://safesoul.test-dev.site/api/airdrop/infuraKey');
     const data = await response.json(); // Assuming the key is returned in JSON format
     // console.log(data);
     return data.key; // Adjust according to your actual API response structure
