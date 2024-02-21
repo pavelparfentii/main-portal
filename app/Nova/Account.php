@@ -53,7 +53,9 @@ class Account extends Resource
 
             HasMany::make('SafeSoul', 'safeSouls')->hideFromIndex(),
 
-            HasMany::make('Twitter', 'twitters')->hideFromIndex()
+            HasMany::make('Twitter', 'twitters')->hideFromIndex(),
+
+            HasMany::make('DigitalAnimal', 'animals')->hideFromIndex()
 
         ];
     }
