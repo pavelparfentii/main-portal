@@ -151,9 +151,15 @@ trait DigitalAnimalsTrait
 
     public function getTokenOwnerAboutYear()
     {
-        $account_ids = DB::table('digital_animals')->where('query_param', 'like', 'token_%')->distinct()->pluck('account_id');
+        $account_ids = DB::table('digital_animals')
+            ->where('query_param', 'like', 'token_%')
+            ->distinct()
+            ->pluck('account_id');
 
-        $tokens = DB::table('digital_animals')->where('query_param', 'like', 'token_%')->distinct()->pluck('query_param');
+        $tokens = DB::table('digital_animals')
+            ->where('query_param', 'like', 'token_%')
+            ->distinct()
+            ->pluck('query_param');
         $tokenNumbers = $tokens->map(function ($token) {
             return substr($token, 6); // Remove the first 6 characters: "token_"
         })->toArray();
@@ -172,13 +178,30 @@ trait DigitalAnimalsTrait
 
                 $process->run();
                 if ($process->isSuccessful()) {
+
+                    $animals = $account->animals()->where('query_param', 'like', 'token_owner_year_%')->get();
+
+                    $existingQueryParams = $animals->pluck('query_param')->toArray();
+
                     $data = json_decode($process->getOutput());
                     if($data->state === 'success' && !is_null($data->data)){
+
+                        $queryParam = 'token_owner_year_' . $token;
                         $this->info($data->data);
+                        if (!in_array($queryParam, $existingQueryParams)) {
+                            $newAnimal = new DigitalAnimal([
+                                'points' => ConstantValues::animal_discord_role_points,
+                                'comment' => $data->data,
+                                'query_param' => $queryParam
+                            ]);
+                            $account->animals()->save($newAnimal);
+                        }
+
                     }elseif($data->state === 'error' && !is_null($data->data)){
-                        $this->info($token);
-                        $this->info($account->wallet);
-                        $this->info($data->data);
+                        continue;
+//                        $this->info($token);
+//                        $this->info($account->wallet);
+//                        $this->info($data->data);
                     }
                 }
             }

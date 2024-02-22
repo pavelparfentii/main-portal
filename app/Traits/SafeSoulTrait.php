@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 
 trait SafeSoulTrait{
 
-
+//    private string $safesoul = 'http://127.0.0.1:8000/';
     private string $safesoul = 'https://safesoul.test-dev.site/';
 
     public function getAccountsUpdate()
@@ -152,37 +152,38 @@ trait SafeSoulTrait{
                         $account = Account::where('wallet', $wallet)->first();
                         if ($account && isset($invite['invites'])) {
                             foreach ($invite['invites'] as $key => $value) {
-                                $safeSoul = $account->safeSouls()->where('query_param', $value)->first();
+//                                dd($invite['invites']);
+                                $safeSoul = $account->safeSouls()->where('query_param', $key)->first();
 
-                                $lux = Str::contains($value, ['_2k_', '_10k_', '_50k_']);
+                                $lux = Str::contains($key, ['_2k_', '_10k_', '_50k_']);
                                 if (!$safeSoul && !$lux) {
                                     $safeSoul = new SafeSoul([
                                         'points' => ConstantValues::safesoul_invited_person,
-                                        'comment' => 'Инвайт человека',
-                                        'query_param' => $value
+                                        'comment' => 'Инвайт человека, wallet = '. $value,
+                                        'query_param' => $key
                                     ]);
 
                                     $account->safeSouls()->save($safeSoul);
                                 }elseif (!$safeSoul && $lux){
-                                    if(Str::contains($value, '_2k_')){
+                                    if(Str::contains($key, '_2k_')){
                                         $safeSoul = new SafeSoul([
                                             'points' => ConstantValues::safesoul_invited_2k,
-                                            'comment' => 'Инвайт человека c 2k',
-                                            'query_param' => $value
+                                            'comment' => 'Инвайт человека c 2k ,wallet = '. $value,
+                                            'query_param' => $key
                                         ]);
                                         $account->safeSouls()->save($safeSoul);
                                     }elseif (Str::contains($value, '_10k_')){
                                         $safeSoul = new SafeSoul([
                                             'points' => ConstantValues::safesoul_invited_10k,
-                                            'comment' => 'Инвайт человека c 10k',
-                                            'query_param' => $value
+                                            'comment' => 'Инвайт человека c 10k, wallet' . $value,
+                                            'query_param' => $key
                                         ]);
                                         $account->safeSouls()->save($safeSoul);
                                     }else{
                                         $safeSoul = new SafeSoul([
                                             'points' => ConstantValues::safesoul_invited_50k,
-                                            'comment' => 'Инвайт человека c 50k',
-                                            'query_param' => $value
+                                            'comment' => 'Инвайт человека c 50k, wallet'. $value,
+                                            'query_param' => $key
                                         ]);
                                         $account->safeSouls()->save($safeSoul);
                                     }

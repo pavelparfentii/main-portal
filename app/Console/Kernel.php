@@ -41,6 +41,9 @@ class Kernel extends ConsoleKernel
 
         //Digital Animals roles
         $schedule->command('app:digital-animals-roles-command')->dailyAt('05:00');
+
+        //Digital Animals long owner
+        $schedule->command('app:digital-animals-long-range-owner-points-command')->dailyAt('05:30');
     }
 
     /**
