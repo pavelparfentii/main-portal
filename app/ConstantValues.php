@@ -45,5 +45,6 @@ class ConstantValues
     const animal_owner = 400.000;
     const lord_20 = 500.000;
     const animal_discord_role_points = 10.000;
+    const animal_long_range_owner_points = 100.00;
 
 }

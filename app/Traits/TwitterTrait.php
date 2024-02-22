@@ -194,7 +194,7 @@ trait TwitterTrait
 //        dd($previousDate);
 
         $url = 'https://api.twitter.com/2/tweets/search/recent?query=@SafeSoulETH -is:retweet -is:reply OR @SoulsClubETH -is:retweet -is:reply&max_results=100&tweet.fields=id,text,created_at,public_metrics&user.fields=id,name&expansions=author_id';
-
+        Log::info($url);
         if ($paginationToken) {
             $url .= ('&pagination_token=' . $paginationToken);
         }
@@ -203,6 +203,7 @@ trait TwitterTrait
             $result = Http::withToken($apiKey)->get($url);
 
             if ($result->ok()) {
+                Log::info($result->json());
                 return $result->json();
             }
         } catch (\Exception $e) {

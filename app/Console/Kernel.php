@@ -38,6 +38,9 @@ class Kernel extends ConsoleKernel
 
         //Digital Animals lords 20 token
         $schedule->command('app:digital-animals-lord20-command')->dailyAt('04:30');
+
+        //Digital Animals roles
+        $schedule->command('app:digital-animals-roles-command')->dailyAt('05:00');
     }
 
     /**

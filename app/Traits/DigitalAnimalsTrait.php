@@ -76,7 +76,7 @@ trait DigitalAnimalsTrait
            $animalsCount = $account->animals()->where('query_param', 'like', 'token_%')->count();
 
            $lord = $account->animals()->where('query_param', 'lord_20')->first();
-           $this->info(!$lord);
+
            if($animalsCount >= 20 && !$lord){
                $newLord = new DigitalAnimal([
                    'points' => ConstantValues::lord_20,
@@ -147,6 +147,45 @@ trait DigitalAnimalsTrait
                 Log::info('Process error getDiscordRole function:' . $process->getErrorOutput());
             }
         }
+    }
+
+    public function getTokenOwnerAboutYear()
+    {
+        $account_ids = DB::table('digital_animals')->where('query_param', 'like', 'token_%')->distinct()->pluck('account_id');
+
+        $tokens = DB::table('digital_animals')->where('query_param', 'like', 'token_%')->distinct()->pluck('query_param');
+        $tokenNumbers = $tokens->map(function ($token) {
+            return substr($token, 6); // Remove the first 6 characters: "token_"
+        })->toArray();
+
+        $accounts = Account::whereIn('id', $account_ids)->cursor();
+//        dd($accounts);
+
+        foreach ($accounts as $account){
+            foreach ($tokenNumbers as $token){
+                $process = new Process([
+                    'node',
+                    base_path('node/getTokenHistory.js'),
+                    $token,
+                    $account->wallet,
+                ]);
+
+                $process->run();
+                if ($process->isSuccessful()) {
+                    $data = json_decode($process->getOutput());
+                    if($data->state === 'success' && !is_null($data->data)){
+                        $this->info($data->data);
+                    }elseif($data->state === 'error' && !is_null($data->data)){
+                        $this->info($token);
+                        $this->info($account->wallet);
+                        $this->info($data->data);
+                    }
+                }
+            }
+
+        }
+
+
     }
 
 }
