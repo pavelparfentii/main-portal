@@ -31,13 +31,18 @@ trait SafeSoulTrait{
 
                         $account = Account::where('wallet', $item['wallet'])->first();
                         if($account){
-
+                            usleep(5000);
                             $account->update([
                                 'twitter_username'=>$item['twitter_username'],
                                 'twitter_id'=>$item['twitter_id'],
                                 'role'=>$item['role'],
                                 'discord_id'=>$item['discord_id']
                             ]);
+                            $account->save();
+                            if(!is_null($account->role) && $account->wallet == '0xf7bf7651733db500ff13321c2d39e4beaced70bd'){
+                                $this->info($item['role']);
+                                $this->info($account->wallet);
+                            }
 
                         }else{
                             $account = new Account([
