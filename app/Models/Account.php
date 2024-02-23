@@ -28,7 +28,7 @@ class Account extends Model
                 SafeSoul::create([
                     'account_id'=>$account->id,
                     'points'=>ConstantValues::safesoul_patrol_points,
-                    'comment'=> 'Ог патрульный',
+                    'comment'=> 'патрульный',
                     'query_param'=>ConstantValues::safesoul_patrol_role
                 ]);
             }
@@ -38,27 +38,81 @@ class Account extends Model
 
             $originalRole = $account->getOriginal('role');
             $currentRole = $account->role;
+            $id = $account->id;
 
-            if($originalRole === ConstantValues::safesoul_og_patrol_role && ($currentRole === 'patrol' || $currentRole ==='observer' || $currentRole ==='scout')) {
-                SafeSoul::create([
-                    'account_id' => $account->id,
-                    'points' => -ConstantValues::safesoul_OG_patrol_points,
-                    'comment' => 'понижена роль Ог патрульный',
-                    'query_param' => ConstantValues::safesoul_og_patrol_role
-                ]);
-            }elseif ($originalRole === ConstantValues::safesoul_patrol_role && $currentRole === ConstantValues::safesoul_og_patrol_role){
-                SafeSoul::create([
-                    'account_id' => $account->id,
-                    'points' => -ConstantValues::safesoul_patrol_points,
-                    'comment' => 'получил роль Ог патрульный, потерял очки за роль патруль',
-                    'query_param' => ConstantValues::safesoul_patrol_role
-                ]);
-                SafeSoul::create([
-                    'account_id' => $account->id,
-                    'points' => ConstantValues::safesoul_OG_patrol_points,
-                    'comment' => 'получил роль Ог патрульный',
-                    'query_param' => ConstantValues::safesoul_og_patrol_role
-                ]);
+           $patrol = DB::table('safe_souls')
+               ->where('account_id', $id)
+               ->where('query_param', 'patrol' )
+               ->first();
+           $og_patrol = DB::table('safe_souls')
+               ->where('account_id', $id)
+               ->where('query_param', 'og_patrol' )
+               ->first();
+
+           if(isset($patrol) && $currentRole === ConstantValues::safesoul_og_patrol_role){
+               SafeSoul::create([
+                   'account_id' => $id,
+                   'points' => -ConstantValues::safesoul_OG_patrol_points,
+                   'comment' => 'понижена роль Ог патрульный',
+                   'query_param' => ConstantValues::safesoul_og_patrol_role
+               ]);
+               SafeSoul::create([
+                   'account_id'=>$id,
+                   'points'=>ConstantValues::safesoul_patrol_points,
+                   'comment'=> 'патрульный',
+                   'query_param'=>ConstantValues::safesoul_patrol_role
+               ]);
+           }elseif (isset($og_patrol) && $currentRole === ConstantValues::safesoul_patrol_role){
+               SafeSoul::create([
+                   'account_id' => $id,
+                   'points' => -ConstantValues::safesoul_patrol_points,
+                   'comment' => 'получил роль Ог патрульный, потерял очки за роль патруль',
+                   'query_param' => ConstantValues::safesoul_patrol_role
+               ]);
+               SafeSoul::create([
+                   'account_id' => $id,
+                   'points' => ConstantValues::safesoul_OG_patrol_points,
+                   'comment' => 'получил роль Ог патрульный',
+                   'query_param' => ConstantValues::safesoul_og_patrol_role
+               ]);
+           }elseif (!isset($og_patrol) && !isset($patrol) && !is_null($currentRole)){
+               if($currentRole === ConstantValues::safesoul_og_patrol_role){
+                   SafeSoul::create([
+                       'account_id'=>$id,
+                       'points'=>ConstantValues::safesoul_OG_patrol_points,
+                       'comment'=> 'Ог патрульный',
+                       'query_param'=>ConstantValues::safesoul_og_patrol_role
+                   ]);
+               }
+               if($currentRole === ConstantValues::safesoul_patrol_role){
+                   SafeSoul::create([
+                       'account_id'=>$id,
+                       'points'=>ConstantValues::safesoul_patrol_points,
+                       'comment'=> 'патрульный',
+                       'query_param'=>ConstantValues::safesoul_patrol_role
+                   ]);
+                }
+
+//            if($originalRole === ConstantValues::safesoul_og_patrol_role && ($currentRole === 'patrol' || $currentRole ==='observer' || $currentRole ==='scout')) {
+//                SafeSoul::create([
+//                    'account_id' => $account->id,
+//                    'points' => -ConstantValues::safesoul_OG_patrol_points,
+//                    'comment' => 'понижена роль Ог патрульный',
+//                    'query_param' => ConstantValues::safesoul_og_patrol_role
+//                ]);
+//            }elseif ($originalRole === ConstantValues::safesoul_patrol_role && $currentRole === ConstantValues::safesoul_og_patrol_role){
+//                SafeSoul::create([
+//                    'account_id' => $account->id,
+//                    'points' => -ConstantValues::safesoul_patrol_points,
+//                    'comment' => 'получил роль Ог патрульный, потерял очки за роль патруль',
+//                    'query_param' => ConstantValues::safesoul_patrol_role
+//                ]);
+//                SafeSoul::create([
+//                    'account_id' => $account->id,
+//                    'points' => ConstantValues::safesoul_OG_patrol_points,
+//                    'comment' => 'получил роль Ог патрульный',
+//                    'query_param' => ConstantValues::safesoul_og_patrol_role
+//                ]);
             }
         });
     }
