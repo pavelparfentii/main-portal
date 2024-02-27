@@ -14,6 +14,8 @@ class Account extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['created_at', 'updated_at'];
+
     protected static function booted()
     {
         static::created(function ($account){
@@ -41,7 +43,6 @@ class Account extends Model
 
 //            $originalRole = $account->getOriginal('role');
             $currentRole = $account->role;
-            Log::info($currentRole . $account->id);
 
             $id = $account->id;
             if ($account->isDirty('role')) {

@@ -285,5 +285,7 @@ trait TwitterTrait
         return $totalRetweetsPoints;
     }
 
+//https://api.twitter.com/2/tweets/search/recent?query=from:igor_3000A -is:retweet -is:reply&tweet.fields=id,text,author_id,created_at&max_results=100
+
 
 }

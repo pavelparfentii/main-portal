@@ -19,4 +19,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/invites', [\App\Http\Controllers\TemporaryController::class, 'dataAccamulation']);
+
+Route::get('/points', [\App\Http\Controllers\PointsController::class, 'getPointsData']);
+
+Route::get('/generate', [\App\Http\Controllers\PointsController::class, 'generateToken']);
 //Route::get('/twitter', [\App\Http\Controllers\TemporaryController::class, 'getIgorProjectPosts']);

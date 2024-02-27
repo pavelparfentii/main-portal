@@ -4,10 +4,12 @@ namespace App\Traits;
 use App\ConstantValues;
 use App\Models\Account;
 use App\Models\SafeSoul;
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 trait SafeSoulTrait{
@@ -34,6 +36,8 @@ trait SafeSoulTrait{
                             usleep(5000);
                             $account->update([
                                 'twitter_username'=>$item['twitter_username'],
+                                'twitter_name'=>$item['twitter_name'],
+                                'twitter_avatar'=> isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
                                 'twitter_id'=>$item['twitter_id'],
                                 'role'=>$item['role'],
                                 'discord_id'=>$item['discord_id']
@@ -48,6 +52,8 @@ trait SafeSoulTrait{
                             $account = new Account([
                                 'wallet'=> $item['wallet'],
                                 'twitter_username'=>$item['twitter_username'],
+                                'twitter_name'=>$item['twitter_name'],
+                                'twitter_avatar'=>isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
                                 'twitter_id'=>$item['twitter_id'],
                                 'role'=>$item['role'],
                                 'auth_id'=>$item['auth_id'],
@@ -296,5 +302,34 @@ trait SafeSoulTrait{
             );
 
 
+    }
+
+    private function downloadTwitterAvatar($result): ?string
+    {
+        $TWITTER_AVATAR_PATH = 'twitter/avatars';
+
+        try {
+
+            if (isset($result)) {
+
+//                $url = str_replace('_normal', '', $result);
+                $url=$result;
+
+                $contents = file_get_contents($url);
+
+                $filename = $TWITTER_AVATAR_PATH. '/'. md5($url) . '.' . pathinfo($url, PATHINFO_EXTENSION);
+
+                // Save the file to the public disk
+                Storage::disk('public')->put($filename, $contents);
+
+                $fullUrl = url('storage/' .$filename);
+                return $fullUrl;
+            }
+
+        } catch (Exception $exception) {
+            Log::error('Error while loading twitter avatar: ' . $exception->getMessage());
+        }
+
+        return null;
     }
 }
