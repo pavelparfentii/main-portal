@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\ConstantValues;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -132,7 +133,7 @@ class Account extends Model
         });
     }
 
-    public function incrementPoints(string $type, ?string $tweet_id =null): void
+    public function incrementPoints(string $type, ?string $tweet_id =null, ?string $comment_id=null): void
     {
         if($type === 'likes'){
             $twitter = new Twitter([
@@ -146,6 +147,20 @@ class Account extends Model
                 'points' => ConstantValues::twitter_projects_tweet_retweet_points,
                 'comment' => 'ретвит нашего твита tweet_id=' . $tweet_id,
                 'query_param' => '3projects_retweets'
+            ]);
+            $this->twitters()->save($twitter);
+        }elseif ($type === 'quotes'){
+            $twitter = new Twitter([
+                'points' => ConstantValues::twitter_projects_tweet_quote_points,
+                'comment' => 'Ретвит нашего твита с комментарием  tweet_id=' . $tweet_id . ' quote_id=' . $comment_id,
+                'query_param' => '3projects_quotes'
+            ]);
+            $this->twitters()->save($twitter);
+        }elseif($type === 'comments'){
+            $twitter = new Twitter([
+                'points' => ConstantValues::twitter_projects_tweet_quote_points,
+                'comment' => 'Коммента нашего твита с комментарием tweet_id=' . $tweet_id . ' comment_id='.$comment_id,
+                'query_param' => '3projects_comments'
             ]);
             $this->twitters()->save($twitter);
         }
@@ -186,6 +201,12 @@ class Account extends Model
     {
         return $this->hasMany(Twitter::class);
     }
+
+    public function discordRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(DiscordRole::class, 'account_discord_role', 'account_id', 'discord_role_id');
+    }
+
 
 
 }

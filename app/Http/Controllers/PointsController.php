@@ -3,17 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AuthHelper;
+use App\Http\Resources\AccountResource;
 use App\Models\Account;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PointsController extends Controller
 {
 
-    public function getPointsData(Request $request)
+    public function getPointsData(Request $request): JsonResponse
     {
         $account = AuthHelper::auth($request);
-        $topAccounts = DB::table('accounts')
+//        $topAccounts = DB::table('accounts')
+//            ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
+//            ->orderByDesc('total_points')
+//            ->take(100)
+//            ->get();
+        $topAccounts = Account::with('discordRoles')
             ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
             ->orderByDesc('total_points')
             ->take(100)
@@ -55,7 +62,7 @@ class PointsController extends Controller
         }
 
         return response()->json([
-            'topAccounts' => $topAccounts,
+            'topAccounts' => AccountResource::collection($topAccounts),
         ]);
     }
 

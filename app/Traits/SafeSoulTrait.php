@@ -3,6 +3,7 @@ namespace App\Traits;
 
 use App\ConstantValues;
 use App\Models\Account;
+use App\Models\DiscordRole;
 use App\Models\SafeSoul;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
 
 trait SafeSoulTrait{
 
@@ -73,6 +75,44 @@ trait SafeSoulTrait{
         }
 
 
+    }
+
+    public function getDiscordRolesWithNamesForAccounts()
+    {
+        $accounts = Account::whereNotNull('discord_id')->get();
+
+        foreach ($accounts as $account){
+            $process = new Process([
+                'node',
+                base_path('node/getDiscordRolesWithNames.js'),
+                $account->discord_id,
+            ]);
+            usleep(500000);
+            $process->run();
+            if ($process->isSuccessful()) {
+                $data = json_decode($process->getOutput());
+                if($data->state === 'success' && !is_null($data->data)){
+                    if(is_array($data->data) && count($data->data)>0){
+                        $roles = $data->data;
+                        $roleIds = [];
+                        foreach ($roles as $role) {
+
+                            $existingRole = DiscordRole::updateOrCreate(
+                                ['role_id' => $role->id],
+                                ['name' => $role->name]
+                            );
+                            // Collect role IDs to sync later
+                            $roleIds[] = $existingRole->id;
+                        }
+
+                        // Now sync the roles with the account
+                        $account->discordRoles()->sync($roleIds);
+                    }
+                }
+            }else{
+                Log::info('Process error getDiscordRole function:' . $process->getErrorOutput());
+            }
+        }
     }
 
     public function getActivity()

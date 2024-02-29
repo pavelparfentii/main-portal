@@ -15,6 +15,9 @@ class Kernel extends ConsoleKernel
         // Update accounts data
          $schedule->command('app:update-user-data-command')->dailyAt('00:30');
 
+        // Update discord data
+        $schedule->command('app:get-discord-roles-for-accounts-command')->dailyAt('00:45');
+
          //Safesoul activity
         $schedule->command('app:safe-soul-activity-command')->weeklyOn(1, '01:00');
 

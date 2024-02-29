@@ -198,6 +198,10 @@ trait TwitterTrait
 
         $retweetsCountPerAccount = [];
 
+        $quotesCountPerAccount = [];
+
+        $commentsCountPerAccount = [];
+
         while(isset($results['data'])){
             foreach ($results['data'] as $result) {
                 $tweet_ids[] = $result['id'];
@@ -263,6 +267,59 @@ trait TwitterTrait
                         break;
                     }
                 }
+
+                $quotesResult = self::get3ProjectsQuotesUsers($this->apiKey, $id);
+                while(isset($quotesResult['data'])){
+                    sleep(1);
+                    foreach ($quotesResult['data'] as $quotedUser) {
+//                        $twitterId = $quotedUser['id'];
+                        $twitterId = $quotedUser['author_id'];
+                        $quoteId = $quotedUser['id'];
+
+                        if (isset($allAccounts[$twitterId]) && (!isset($quotesCountPerAccount[$twitterId]) || $quotesCountPerAccount[$twitterId] < 7)) {
+                            $account = $allAccounts[$twitterId];
+                            // model method
+                            $account->incrementPoints('quotes', $twitterId, $quoteId);
+
+                            if (!isset($quotesCountPerAccount[$twitterId])) {
+                                $quotesCountPerAccount[$twitterId] = 1;
+                            } else {
+                                $quotesCountPerAccount[$twitterId]++;
+                            }
+                        }
+                    }
+                    if (isset($quotesResult['meta']['next_token'])) {
+                        $quotesResult = self::get3ProjectsLikingUsers($this->apiKey, $id, $quotesResult['meta']['next_token']);
+                    }else{
+                        break;
+                    }
+                }
+
+                $commentsResult = self::get3ProjectsCommentsUsers($this->apiKey, $id);
+                while(isset($commentsResult['data'])){
+                    sleep(1);
+                    foreach ($commentsResult['data'] as $commentedUser) {
+                        $twitterId = $commentedUser['author_id'];
+                        $commentId = $commentedUser['id'];
+
+                        if (isset($allAccounts[$twitterId]) && (!isset($commentsCountPerAccount[$twitterId]) || $commentsCountPerAccount[$twitterId] < 21)) {
+                            $account = $allAccounts[$twitterId];
+                            // model method
+                            $account->incrementPoints('comments', $twitterId, $commentId);
+
+                            if (!isset($commentsCountPerAccount[$twitterId])) {
+                                $commentsCountPerAccount[$twitterId] = 1;
+                            } else {
+                                $commentsCountPerAccount[$twitterId]++;
+                            }
+                        }
+                    }
+                    if (isset($commentsResult['meta']['next_token'])) {
+                        $commentsResult = self::get3ProjectsCommentsUsers($this->apiKey, $id, $commentsResult['meta']['next_token']);
+                    }else{
+                        break;
+                    }
+                }
             }
         }
     }
@@ -314,6 +371,50 @@ trait TwitterTrait
     private function get3ProjectsRetweetingUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
     {
         $url = "https://api.twitter.com/2/tweets/$tweet_id/retweeted_by?max_results=100";
+        Log::info($url);
+        if ($paginationToken) {
+            $url .= ('&pagination_token=' . $paginationToken);
+        }
+
+        try {
+            $result = Http::withToken($apiKey)->get($url);
+
+            if ($result->ok()) {
+                Log::info($result->json());
+                return $result->json();
+            }
+        } catch (\Exception $e) {
+
+            Log::error('Twitter API request failed: ' . $e->getMessage());
+        }
+    }
+
+    private function get3ProjectsQuotesUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
+    {
+        $url = "https://api.twitter.com/2/tweets/$tweet_id/quote_tweets?max_results=100&exclude=retweets,replies&expansions=author_id";
+
+        Log::info($url);
+        if ($paginationToken) {
+            $url .= ('&pagination_token=' . $paginationToken);
+        }
+
+        try {
+            $result = Http::withToken($apiKey)->get($url);
+
+            if ($result->ok()) {
+                Log::info($result->json());
+                return $result->json();
+            }
+        } catch (\Exception $e) {
+
+            Log::error('Twitter API request failed: ' . $e->getMessage());
+        }
+    }
+
+    private function get3ProjectsCommentsUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
+    {
+        $url = "https://api.twitter.com/2/tweets/search/recent?query=conversation_id:$tweet_id&tweet.fields=id,text,author_id,created_at&max_results=100";
+
         Log::info($url);
         if ($paginationToken) {
             $url .= ('&pagination_token=' . $paginationToken);
