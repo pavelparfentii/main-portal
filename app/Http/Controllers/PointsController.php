@@ -14,7 +14,7 @@ class PointsController extends Controller
     {
         $account = AuthHelper::auth($request);
         $topAccounts = DB::table('accounts')
-            ->select('id', 'wallet', 'twitter_username', 'total_points')
+            ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
             ->orderByDesc('total_points')
             ->take(100)
             ->get();
