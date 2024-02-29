@@ -38,6 +38,8 @@ class PointsController extends Controller
                     'id' => $account->id,
                     'wallet' => $account->wallet,
                     'twitter_username' => $account->twitter_username,
+                    'twitter_name'=>$account->twitter_name,
+                    'twitter_avatar'=>$account->twitter_avatar,
                     'total_points' => $account->total_points,
                     'rank' => $userRank,
                     'current_user' => true

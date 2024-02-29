@@ -40,6 +40,11 @@ class ConstantValues
 
     const twitter_active_week_points = 10.000;
 
+    const twitter_projects_tweet_retweet_points = 1.000;
+    const twitter_projects_tweet_quote_points = 1.500;
+    const twitter_projects_tweet_comment_points = 0.100;
+    const twitter_projects_tweet_likes_points = 0.001;
+
     //DA
 
     const animal_owner = 400.000;

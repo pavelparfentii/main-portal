@@ -187,6 +187,154 @@ trait TwitterTrait
         }
     }
 
+    //27.02
+    public function get3TwitterAccountsTweetsAndAnalytics()
+    {
+        $results = self::getProjectsTweets($this->apiKey);
+
+        $tweet_ids = [];
+
+        $likesCountPerAccount = [];
+
+        $retweetsCountPerAccount = [];
+
+        while(isset($results['data'])){
+            foreach ($results['data'] as $result) {
+                $tweet_ids[] = $result['id'];
+            }
+            if (isset($results['meta']['next_token'])) {
+                $results = self::getProjectsTweets($this->apiKey, $results['meta']['next_token']);
+            }else{
+                break;
+            }
+        }
+
+        if(isset($tweet_ids) && count($tweet_ids)>0){
+
+            $allAccounts = Account::all()->keyBy('twitter_id');
+            foreach ($tweet_ids as $id){
+                $likesResult = self::get3ProjectsLikingUsers($this->apiKey, $id);
+                sleep(1);
+
+                while (isset($likesResult['data'])) {
+                    foreach ($likesResult['data'] as $likedUser) {
+                        $twitterId = $likedUser['id'];
+
+                        if (isset($allAccounts[$twitterId]) && (!isset($likesCountPerAccount[$twitterId]) || $likesCountPerAccount[$twitterId] < 604)) {
+                            $account = $allAccounts[$twitterId];
+                            // model method
+                            $account->incrementPoints('likes', $twitterId);
+
+                            if (!isset($likesCountPerAccount[$twitterId])) {
+                                $likesCountPerAccount[$twitterId] = 1;
+                            } else {
+                                $likesCountPerAccount[$twitterId]++;
+                            }
+                        }
+                    }
+                    if (isset($likesResult['meta']['next_token'])) {
+                        $likesResult = self::get3ProjectsLikingUsers($this->apiKey, $id, $likesResult['meta']['next_token']);
+                    }else{
+                        break;
+                    }
+                }
+
+                $retweetsResult = self::get3ProjectsRetweetingUsers($this->apiKey, $id);
+                while(isset($retweetsResult['data'])){
+                    sleep(1);
+                    foreach ($retweetsResult['data'] as $retweetedUser) {
+                        $twitterId = $retweetedUser['id'];
+
+                        if (isset($allAccounts[$twitterId]) && (!isset($retweetsCountPerAccount[$twitterId]) || $retweetsCountPerAccount[$twitterId] < 7)) {
+                            $account = $allAccounts[$twitterId];
+                            // model method
+                            $account->incrementPoints('retweets', $twitterId);
+
+                            if (!isset($retweetsCountPerAccount[$twitterId])) {
+                                $retweetsCountPerAccount[$twitterId] = 1;
+                            } else {
+                                $retweetsCountPerAccount[$twitterId]++;
+                            }
+                        }
+                    }
+                    if (isset($retweetsResult['meta']['next_token'])) {
+                        $retweetsResult = self::get3ProjectsLikingUsers($this->apiKey, $id, $retweetsResult['meta']['next_token']);
+                    }else{
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private function getProjectsTweets(string $apiKey, ?string $paginationToken = null)
+    {
+        $url = 'https://api.twitter.com/2/tweets/search/recent?query=(from:igor_3000A -is:retweet -is:reply) OR (from:SafeSoulETH -is:retweet -is:reply) OR (from:SoulsClubETH -is:retweet -is:reply)&tweet.fields=id,text,author_id,created_at&max_results=100';
+        Log::info($url);
+        if ($paginationToken) {
+            $url .= ('&pagination_token=' . $paginationToken);
+        }
+
+        try {
+            $result = Http::withToken($apiKey)->get($url);
+
+            if ($result->ok()) {
+                Log::info($result->json());
+                return $result->json();
+            }
+        } catch (\Exception $e) {
+
+            Log::error('Twitter API request failed: ' . $e->getMessage());
+        }
+
+        return [];
+    }
+
+    private function get3ProjectsLikingUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
+    {
+        $url = "https://api.twitter.com/2/tweets/$tweet_id/liking_users?max_results=100";
+        Log::info($url);
+        if ($paginationToken) {
+            $url .= ('&pagination_token=' . $paginationToken);
+        }
+
+        try {
+            $result = Http::withToken($apiKey)->get($url);
+
+            if ($result->ok()) {
+                Log::info($result->json());
+                return $result->json();
+            }
+        } catch (\Exception $e) {
+
+            Log::error('Twitter API request failed: ' . $e->getMessage());
+        }
+    }
+
+    private function get3ProjectsRetweetingUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
+    {
+        $url = "https://api.twitter.com/2/tweets/$tweet_id/retweeted_by?max_results=100";
+        Log::info($url);
+        if ($paginationToken) {
+            $url .= ('&pagination_token=' . $paginationToken);
+        }
+
+        try {
+            $result = Http::withToken($apiKey)->get($url);
+
+            if ($result->ok()) {
+                Log::info($result->json());
+                return $result->json();
+            }
+        } catch (\Exception $e) {
+
+            Log::error('Twitter API request failed: ' . $e->getMessage());
+        }
+    }
+
+
+    //27.02
+
     private static function getPosts(string $apiKey, ?string $paginationToken = null)
     {
 //        $currentDate = date('Y-m-d');

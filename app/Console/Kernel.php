@@ -33,6 +33,9 @@ class Kernel extends ConsoleKernel
         //Igor twitter posts
         //$schedule->command('app:twitter-posts-igor-mention-command')->weeklyOn(1, '03:30');
 
+        //3 Twitter accounts likes and retweets
+        //$schedule->command('app:twitter3-accounts-retweets-likes-points')->weeklyOn(1, '06:00');
+
         //Digital Animal owners
         $schedule->command('app:digital-animals-owners-points-command')->dailyAt('04:00');
 

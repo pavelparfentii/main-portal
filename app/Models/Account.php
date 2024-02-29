@@ -132,6 +132,26 @@ class Account extends Model
         });
     }
 
+    public function incrementPoints(string $type, ?string $tweet_id =null): void
+    {
+        if($type === 'likes'){
+            $twitter = new Twitter([
+                'points' => ConstantValues::twitter_projects_tweet_likes_points,
+                'comment' => 'лайк нашего твита tweet_id=' . $tweet_id,
+                'query_param' => '3projects_likes'
+            ]);
+            $this->twitters()->save($twitter);
+        }elseif ($type === 'retweets'){
+            $twitter = new Twitter([
+                'points' => ConstantValues::twitter_projects_tweet_retweet_points,
+                'comment' => 'ретвит нашего твита tweet_id=' . $tweet_id,
+                'query_param' => '3projects_retweets'
+            ]);
+            $this->twitters()->save($twitter);
+        }
+
+    }
+
     public function animals()
     {
         return $this->hasMany(DigitalAnimal::class);
