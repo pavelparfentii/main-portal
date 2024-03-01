@@ -8,6 +8,7 @@ use App\Models\Account;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
 
 class PointsController extends Controller
@@ -45,13 +46,13 @@ class PointsController extends Controller
                 $topAccounts->prepend($currentUserForTop);
 
                 // Insert the user at their actual rank if it's within the visible range
-                if ($userRank <= 100) {
-                    $currentUserForRank = clone $account;
-                    $currentUserForRank->rank = $userRank;
-                    $currentUserForRank->current_user = true;
-
-                    $topAccounts->splice($userRank - 1, 0, [$currentUserForRank]);
-                }
+//                if ($userRank <= 100) {
+//                    $currentUserForRank = clone $account;
+//                    $currentUserForRank->rank = $userRank;
+//                    $currentUserForRank->current_user = true;
+//
+//                    $topAccounts->splice($userRank - 1, 0, [$currentUserForRank]);
+//                }
             }
         }
 
@@ -66,16 +67,25 @@ class PointsController extends Controller
         $account = AuthHelper::auth($request);
 
         if ($account) {
+
+
             $userRank = DB::table('accounts')
                     ->where('total_points', '>', $account->total_points)
                     ->count() + 1;
 
             $account->setAttribute('rank', $userRank);
             $account->setAttribute('current_user', true);
+//            $account->setAttribute('invited', '-');
             $account->load('discordRoles');
+
+            $accountResourceArray = (new AccountResource($account))->resolve();
+
+            // Add isNeedShow directly
+            $accountResourceArray['isNeedShow'] = false;
+            $accountResourceArray['invited'] = "-";
 //            dd($account);
             return response()->json([
-                'user' => new AccountResource($account),
+                'user' => $accountResourceArray,
                 'global'=>[
                     'dropInfo'=>[
                         'nextDrop'=>Carbon::now()->endOfWeek(),

@@ -24,8 +24,7 @@ class AccountResource extends JsonResource
             'twitter_avatar' => $this->twitter_avatar,
             'rank'=>$this->rank,
             'current_user'=>$this->current_user,
-            'invited'=> '-',
-            'isNeedShow'=>false,
+
 //            'discord_roles' => $this->whenLoaded('discordRoles', function () {
 //                return $this->discordRoles->map(function ($role) {
 //                    return ['role_id' => $role->role_id, 'name' => $role->name, 'position'=>$role->position, 'color'=>$role->color];
