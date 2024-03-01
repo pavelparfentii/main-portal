@@ -25,7 +25,7 @@ class AccountResource extends JsonResource
             'current_user'=>$this->current_user,
             'discord_roles' => $this->discordRoles->map(function ($role) {
                 // Return only what you need from the role
-                return ['role_id' => $role->roles_id, 'name' => $role->name];
+                return ['role_id' => $role->role_id, 'name' => $role->name];
             }),
         ];
     }
