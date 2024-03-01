@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\DiscordRole;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,10 +24,14 @@ class AccountResource extends JsonResource
             'twitter_avatar' => $this->twitter_avatar,
             'rank'=>$this->rank,
             'current_user'=>$this->current_user,
-            'discord_roles' => $this->discordRoles->map(function ($role) {
-                // Return only what you need from the role
-                return ['role_id' => $role->role_id, 'name' => $role->name];
-            }),
+            'invited'=> '-',
+            'isNeedShow'=>false,
+//            'discord_roles' => $this->whenLoaded('discordRoles', function () {
+//                return $this->discordRoles->map(function ($role) {
+//                    return ['role_id' => $role->role_id, 'name' => $role->name, 'position'=>$role->position, 'color'=>$role->color];
+//                });
+//            }, []),
+            'discord_roles'=>DiscordRoleResource::collection($this->whenLoaded('discordRoles'))
         ];
     }
 }

@@ -22,5 +22,7 @@ Route::get('/invites', [\App\Http\Controllers\TemporaryController::class, 'dataA
 
 Route::get('/points', [\App\Http\Controllers\PointsController::class, 'getPointsData']);
 
+Route::get('/portal/info', [\App\Http\Controllers\PointsController::class, 'getInfo']);
+
 Route::get('/generate', [\App\Http\Controllers\PointsController::class, 'generateToken']);
 //Route::get('/twitter', [\App\Http\Controllers\TemporaryController::class, 'getIgorProjectPosts']);

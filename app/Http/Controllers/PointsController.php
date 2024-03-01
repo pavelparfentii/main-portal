@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AuthHelper;
 use App\Http\Resources\AccountResource;
 use App\Models\Account;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,56 +16,97 @@ class PointsController extends Controller
     public function getPointsData(Request $request): JsonResponse
     {
         $account = AuthHelper::auth($request);
-//        $topAccounts = DB::table('accounts')
-//            ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
-//            ->orderByDesc('total_points')
-//            ->take(100)
-//            ->get();
         $topAccounts = Account::with('discordRoles')
             ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
             ->orderByDesc('total_points')
             ->take(100)
             ->get();
 
-        // Add ranks and a flag to indicate the current user
-        foreach ($topAccounts as $index => $acc) {
-            $acc->rank = $index + 1;
-            $acc->current_user = $account && $account->id == $acc->id;
-        }
-
+        // Enrich the collection with rank and current_user flags
+        $topAccounts->transform(function ($item, $key) use ($account) {
+            $item->rank = $key + 1;
+            $item->current_user = $account && $account->id == $item->id;
+            return $item;
+        });
 
         if ($account) {
-            $userInTop = $topAccounts->contains('id', $account->id);
+            $userRank = DB::table('accounts')
+                    ->where('total_points', '>', $account->total_points)
+                    ->count() + 1;
 
-            if (!$userInTop) {
-                $userRank = DB::table('accounts')
-                        ->where('total_points', '>', $account->total_points)
-                        ->count() + 1;
+            // Clone the account object to add as the current user at the top
+            if ($userRank > 1) { // Assuming the current user is outside the top 100
+                $currentUserForTop = clone $account;
+                $currentUserForTop->rank = $userRank;
+                $currentUserForTop->current_user = true;
+                $currentUserForTop->load('discordRoles');
 
-                $accountData = [
-                    'id' => $account->id,
-                    'wallet' => $account->wallet,
-                    'twitter_username' => $account->twitter_username,
-                    'twitter_name'=>$account->twitter_name,
-                    'twitter_avatar'=>$account->twitter_avatar,
-                    'total_points' => $account->total_points,
-                    'rank' => $userRank,
-                    'current_user' => true
-                ];
+                // Insert the user at the top
+                $topAccounts->prepend($currentUserForTop);
 
-                $topAccounts->prepend((object)$accountData);
+                // Insert the user at their actual rank if it's within the visible range
+                if ($userRank <= 100) {
+                    $currentUserForRank = clone $account;
+                    $currentUserForRank->rank = $userRank;
+                    $currentUserForRank->current_user = true;
 
-                // Add the authorized user at their correct rank position as well
-                $allAccounts = $topAccounts->toArray();
-                array_splice($allAccounts, $userRank - 1, 0, [(object)$accountData]);
-                $topAccounts = collect($allAccounts);
+                    $topAccounts->splice($userRank - 1, 0, [$currentUserForRank]);
+                }
             }
         }
 
+        // Use AccountResource to handle collection transformation
         return response()->json([
             'topAccounts' => AccountResource::collection($topAccounts),
         ]);
     }
+
+    public function getInfo(Request $request): JsonResponse
+    {
+        $account = AuthHelper::auth($request);
+
+        if ($account) {
+            $userRank = DB::table('accounts')
+                    ->where('total_points', '>', $account->total_points)
+                    ->count() + 1;
+
+            $account->setAttribute('rank', $userRank);
+            $account->setAttribute('current_user', true);
+            $account->load('discordRoles');
+//            dd($account);
+            return response()->json([
+                'user' => new AccountResource($account),
+                'global'=>[
+                    'dropInfo'=>[
+                        'nextDrop'=>Carbon::now()->endOfWeek(),
+                        'lastDrop'=>Carbon::now()->startOfWeek()
+
+                    ],
+                    'total_users'=> DB::table('accounts')->count(),
+                    'total_teams'=>'-'
+
+                ]
+            ]);
+
+        }else{
+            return response()->json([
+                'user' => null,
+                'global'=>[
+                    'dropInfo'=>[
+                        'nextDrop'=>Carbon::now()->endOfWeek(),
+                        'lastDrop'=>Carbon::now()->startOfWeek()
+
+                    ],
+                    'total_users'=> DB::table('accounts')->count(),
+                    'total_teams'=>'-'
+
+                ]
+            ]);
+        }
+
+
+    }
+
 
 
 }
