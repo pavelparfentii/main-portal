@@ -89,7 +89,7 @@ class PointsController extends Controller
                 'global'=>[
                     'dropInfo'=>[
                         'nextDrop'=>Carbon::now()->endOfWeek(),
-                        'lastDrop'=>Carbon::now()->startOfWeek()
+                        'lastDrop'=>Carbon::now()->subWeek()->endOfWeek()
 
                     ],
                     'total_users'=> DB::table('accounts')->count(),
