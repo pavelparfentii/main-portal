@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\ConstantValues;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -205,6 +206,32 @@ class Account extends Model
     public function discordRoles(): BelongsToMany
     {
         return $this->belongsToMany(DiscordRole::class, 'account_discord_role', 'account_id', 'discord_role_id');
+    }
+
+    public function codes(): HasMany
+    {
+        return $this->hasMany(Code::class);
+    }
+
+    public function invitesSent(): HasMany
+    {
+        return $this->hasMany(Invite::class, 'invited_by');
+    }
+
+    public function invitesReceived(): HasMany
+    {
+        return $this->hasMany(Invite::class, 'whom_invited');
+    }
+
+    public function friends()
+    {
+        return $this->belongsToMany(Account::class, 'account_friend', 'account_id', 'friend_id')->withTimestamps();
+    }
+
+    // Optionally, define the inverse relationship to get the accounts that consider this account a friend
+    public function followers()
+    {
+        return $this->belongsToMany(Account::class, 'account_friend', 'friend_id', 'account_id')->withTimestamps();
     }
 
 

@@ -17,7 +17,7 @@ class PointsController extends Controller
     public function getPointsData(Request $request): JsonResponse
     {
         $account = AuthHelper::auth($request);
-        $topAccounts = Account::with('discordRoles')
+        $topAccounts = Account::with('discordRoles')->with(['friends', 'followers'])
             ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
             ->orderByDesc('total_points')
             ->take(100)
@@ -45,14 +45,6 @@ class PointsController extends Controller
                 // Insert the user at the top
                 $topAccounts->prepend($currentUserForTop);
 
-                // Insert the user at their actual rank if it's within the visible range
-//                if ($userRank <= 100) {
-//                    $currentUserForRank = clone $account;
-//                    $currentUserForRank->rank = $userRank;
-//                    $currentUserForRank->current_user = true;
-//
-//                    $topAccounts->splice($userRank - 1, 0, [$currentUserForRank]);
-//                }
             }
         }
 
@@ -93,7 +85,8 @@ class PointsController extends Controller
 
                     ],
                     'total_users'=> DB::table('accounts')->count(),
-                    'total_teams'=>'-'
+                    'total_teams'=>'-',
+                    'friends'=>$account->friends->count() ?? $account->followers->count(),
 
                 ]
             ]);
@@ -108,8 +101,8 @@ class PointsController extends Controller
 
                     ],
                     'total_users'=> DB::table('accounts')->count(),
-                    'total_teams'=>'-'
-
+                    'total_teams'=>'-',
+                    'friends'=>null
                 ]
             ]);
         }

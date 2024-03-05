@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\DiscordRole;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 
 class AccountResource extends JsonResource
 {
@@ -30,7 +31,21 @@ class AccountResource extends JsonResource
 //                    return ['role_id' => $role->role_id, 'name' => $role->name, 'position'=>$role->position, 'color'=>$role->color];
 //                });
 //            }, []),
-            'discord_roles'=>DiscordRoleResource::collection($this->whenLoaded('discordRoles'))
+            'discord_roles'=>DiscordRoleResource::collection($this->whenLoaded('discordRoles')),
+
+//            'friends' => $this->whenLoaded('friends', function (){
+//                $allFriends = $this->friends->merge($this->whenLoaded('followers'));
+//                return $allFriends->map(function ($friend){
+//                    // Calculate the rank for each friend/follower
+//                    $friendRank = DB::table('accounts')
+//                            ->where('total_points', '>', $friend->total_points)
+//                            ->count() + 1;
+//                    $friend->rank = $friendRank; // Attach the calculated rank
+//
+//                    return new AccountResource($friend); // Use AccountResource for each friend/follower
+//                });
+//            }),
+            'friend'=> $this->relationLoaded('followers') && $this->followers->isNotEmpty(),
         ];
     }
 }

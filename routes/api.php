@@ -24,5 +24,13 @@ Route::get('/points', [\App\Http\Controllers\PointsController::class, 'getPoints
 
 Route::get('/portal/info', [\App\Http\Controllers\PointsController::class, 'getInfo']);
 
-Route::get('/generate', [\App\Http\Controllers\PointsController::class, 'generateToken']);
+Route::get('/invite/code', [\App\Http\Controllers\InviteController::class, 'activateCode']);
+
+Route::get('/generate', [\App\Http\Controllers\MessageController::class, 'generateToken']);
+
+//Broker
+Route::post('/message', [\App\Http\Controllers\MessageController::class, 'message']);
+Route::get('/test', [\App\Http\Controllers\FriendsController::class, 'getFriends']);
+
+Route::get('/points/friends', [\App\Http\Controllers\FriendsController::class, 'getFriendsForAccount']);
 //Route::get('/twitter', [\App\Http\Controllers\TemporaryController::class, 'getIgorProjectPosts']);
