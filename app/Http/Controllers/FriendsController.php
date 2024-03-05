@@ -64,7 +64,6 @@ class FriendsController extends Controller
                     if($friend){
                         $account->friends()->syncWithoutDetaching([$friend->id]);
                 }
-
             }
         }
 
@@ -78,54 +77,71 @@ class FriendsController extends Controller
 
         $account = AuthHelper::auth($request);
 
+        $total = $request->input('period');
+
         if (!$account) {
             return response()->json(['message' => 'non authorized'], 401);
         }
 
-        $friends = $account->friends()->with('discordRoles')->get();
-        if(count($friends) > 0){
+        if($total === 'total'){
             $friends = $account->friends()->with('discordRoles')->get();
-        }elseif (count($account->followers()->with('discordRoles')->get()) > 0){
-            $friends = $account->followers()->with('discordRoles')->get();
-        }else{
-            $friends = $account->friends()->with('discordRoles')->get();
-        }
+            if(count($friends) > 0){
+                $friends = $account->friends()->with('discordRoles')->get();
+            }elseif (count($account->followers()->with('discordRoles')->get()) > 0){
+                $friends = $account->followers()->with('discordRoles')->get();
+            }else{
+                $friends = $account->friends()->with('discordRoles')->get();
 
-        // Assign rank to each friend
-        foreach ($friends as $friend) {
-            $friendRank = DB::table('accounts')
-                    ->where('total_points', '>', $friend->total_points)
+                return response()->json([
+                    'list' => FriendResource::collection($friends),
+                ]);
+            }
+
+            // Assign rank to each friend
+            foreach ($friends as $friend) {
+                $friendRank = DB::table('accounts')
+                        ->where('total_points', '>', $friend->total_points)
+                        ->count() + 1;
+                $friend->rank = $friendRank;
+
+
+            }
+
+            // Calculate rank for the current user
+            $userRank = DB::table('accounts')
+                    ->where('total_points', '>', $account->total_points)
                     ->count() + 1;
-            $friend->rank = $friendRank;
+            $account->rank = $userRank;
+            $account->load('discordRoles');
+
+
+            // Unconditionally include the current user at the top
+            $topCurrentUser = clone $account;
+            $topCurrentUser->current_user = true;
+            $topCurrentUser->load('discordRoles');
+            $allAccounts = collect([$topCurrentUser]);
+
+            // Apply rank filter to friends and possibly include current user in their rank position
+            $rankThreshold = 100;
+            $filteredAndRankedFriends = $friends->push($account) // Add current user for ranking
+            ->sortBy('rank') // Ensure the collection is sorted by rank
+            ->filter(function ($friend) use ($rankThreshold) {
+                return $friend->rank <= $rankThreshold;
+            });
+
+            // Merge the top current user with the filtered and ranked list of friends
+            $allAccounts = $allAccounts->merge($filteredAndRankedFriends);
+
+            return response()->json([
+                'list' => FriendResource::collection($allAccounts),
+            ]);
+        }else{
+            return response()->json([
+                'list' => [],
+            ]);
         }
 
-        // Calculate rank for the current user
-        $userRank = DB::table('accounts')
-                ->where('total_points', '>', $account->total_points)
-                ->count() + 1;
-        $account->rank = $userRank;
 
-
-        // Unconditionally include the current user at the top
-        $topCurrentUser = clone $account;
-        $topCurrentUser->current_user = true;
-        $topCurrentUser->load('discordRoles');
-        $allAccounts = collect([$topCurrentUser]);
-
-        // Apply rank filter to friends and possibly include current user in their rank position
-        $rankThreshold = 100;
-        $filteredAndRankedFriends = $friends->push($account) // Add current user for ranking
-        ->sortBy('rank') // Ensure the collection is sorted by rank
-        ->filter(function ($friend) use ($rankThreshold) {
-            return $friend->rank <= $rankThreshold;
-        });
-
-        // Merge the top current user with the filtered and ranked list of friends
-        $allAccounts = $allAccounts->merge($filteredAndRankedFriends);
-
-        return response()->json([
-            'friends' => FriendResource::collection($allAccounts),
-        ]);
 
     }
 }

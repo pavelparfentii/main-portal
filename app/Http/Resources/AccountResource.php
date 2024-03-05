@@ -45,7 +45,8 @@ class AccountResource extends JsonResource
 //                    return new AccountResource($friend); // Use AccountResource for each friend/follower
 //                });
 //            }),
-            'friend'=> $this->relationLoaded('followers') && $this->followers->isNotEmpty(),
+//            'friend'=> $this->relationLoaded('followers') && $this->followers->isNotEmpty(),
+            'friend'=>$this->friend
         ];
     }
 }

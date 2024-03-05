@@ -16,42 +16,101 @@ class PointsController extends Controller
 
     public function getPointsData(Request $request): JsonResponse
     {
+//        $account = AuthHelper::auth($request);
+//        $topAccounts = Account::with('discordRoles')
+//            ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
+//            ->orderByDesc('total_points')
+//            ->take(100)
+//            ->get();
+//
+//        // Enrich the collection with rank and current_user flags
+//        $topAccounts->transform(function ($item, $key) use ($account) {
+//            $item->rank = $key + 1;
+//            $item->current_user = $account && $account->id == $item->id;
+//            return $item;
+//        });
+//
+//        if ($account) {
+//            $userRank = DB::table('accounts')
+//                    ->where('total_points', '>', $account->total_points)
+//                    ->count() + 1;
+//
+//            // Clone the account object to add as the current user at the top
+//            if ($userRank > 1) { // Assuming the current user is outside the top 100
+//                $currentUserForTop = clone $account;
+//                $currentUserForTop->rank = $userRank;
+//                $currentUserForTop->current_user = true;
+//                $currentUserForTop->load('discordRoles');
+//                $currentUserForTop->load('followers');
+//
+//                $allFriends = $currentUserForTop->friends->merge($currentUserForTop->followers);
+//                // Apply any transformation or additional logic to $allFriends here
+//
+//                // Then attach the transformed collection to the $currentUserForTop
+//                $currentUserForTop->setAttribute('friend', $allFriends);
+//
+//                // Insert the user at the top
+//                $topAccounts->prepend($currentUserForTop);
+//
+//            }
+//        }
+//
+//        // Use AccountResource to handle collection transformation
+//        return response()->json([
+//            'topAccounts' => AccountResource::collection($topAccounts),
+//        ]);
+
         $account = AuthHelper::auth($request);
-        $topAccounts = Account::with('discordRoles')->with(['friends', 'followers'])
-            ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
-            ->orderByDesc('total_points')
-            ->take(100)
-            ->get();
 
-        // Enrich the collection with rank and current_user flags
-        $topAccounts->transform(function ($item, $key) use ($account) {
-            $item->rank = $key + 1;
-            $item->current_user = $account && $account->id == $item->id;
-            return $item;
-        });
+        // Assuming 'friends' returns a collection of Account models representing the user's friends
+        // Retrieve the IDs of all friends for the current user to optimize the check later
 
-        if ($account) {
-            $userRank = DB::table('accounts')
-                    ->where('total_points', '>', $account->total_points)
-                    ->count() + 1;
+        $period = $request->input('period');
 
-            // Clone the account object to add as the current user at the top
-            if ($userRank > 1) { // Assuming the current user is outside the top 100
-                $currentUserForTop = clone $account;
-                $currentUserForTop->rank = $userRank;
-                $currentUserForTop->current_user = true;
-                $currentUserForTop->load('discordRoles');
+        if($period === 'total'){
+            $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
 
-                // Insert the user at the top
-                $topAccounts->prepend($currentUserForTop);
+            $topAccounts = Account::with('discordRoles')
+                ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
+                ->orderByDesc('total_points')
+                ->take(100)
+                ->get();
 
+            // Enrich the collection with rank, current_user flags, and is_friend flag
+            $topAccounts->transform(function ($item, $key) use ($account, $friendIds) {
+                $item->rank = $key + 1;
+                $item->current_user = $account && $account->id == $item->id;
+                // Set is_friend to true or false based on the presence of the item's id in friendIds array
+                $item->friend = in_array($item->id, $friendIds);
+                return $item;
+            });
+
+            if ($account) {
+                $userRank = DB::table('accounts')
+                        ->where('total_points', '>', $account->total_points)
+                        ->count() + 1;
+
+                if ($userRank > 1) { // Assuming the current user is outside the top 100
+                    $currentUserForTop = clone $account;
+                    $currentUserForTop->rank = $userRank;
+                    $currentUserForTop->current_user = true;
+                    $currentUserForTop->friend = false; // The user is not a friend to themselves
+                    $currentUserForTop->load(['discordRoles', 'followers']);
+
+                    $topAccounts->prepend($currentUserForTop);
+                }
             }
+
+            return response()->json([
+                'list' => AccountResource::collection($topAccounts),
+            ]);
+        }else{
+            return response()->json([
+                'list' => [],
+            ]);
         }
 
-        // Use AccountResource to handle collection transformation
-        return response()->json([
-            'topAccounts' => AccountResource::collection($topAccounts),
-        ]);
+
     }
 
     public function getInfo(Request $request): JsonResponse
