@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Facades\JWTFactory;
 
@@ -76,7 +77,17 @@ class MessageController extends Controller
 //            }
 //        }
 
-        Log::info($request);
+
+        $data = $request->all(); // Convert request data to array if it's not already
+        Log::info($data);
+        $authId = $data['auth_id']; // Extract the 'auth_id'
+
+        unset($data['auth_id']); // Remove 'auth_id' from the data to be updated
+
+        // Now $data only contains what needs to be updated
+        DB::table('accounts')->where('auth_id', $authId)->update($data);
+
+
     }
 
     public function downloadTwitterAvatar($result): ?string

@@ -17,7 +17,8 @@ use Symfony\Component\Process\Process;
 trait SafeSoulTrait{
 
 //    private string $safesoul = 'http://127.0.0.1:8000/';
-    private string $safesoul = 'https://safesoul.test-dev.site/';
+//    private string $safesoul = 'https://safesoul.test-dev.site/';
+    private string $safesoul = 'https://api.safesoul.club/';
 
     public function getAccountsUpdate()
     {

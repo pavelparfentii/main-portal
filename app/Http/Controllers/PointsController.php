@@ -68,7 +68,7 @@ class PointsController extends Controller
         $period = $request->input('period');
 
         if($period === 'total'){
-            $friendIds = $account ? $account->friends->pluck('id')->toArray() : $account->followers->pluck('id')->toArray();
+            $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
 
             $topAccounts = Account::with('discordRoles')
                 ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
@@ -164,6 +164,8 @@ class PointsController extends Controller
                 ]
             ]);
         }
+
+
 
 
     }

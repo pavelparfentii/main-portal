@@ -28,11 +28,12 @@ class FriendsController extends Controller
             if (!empty($bottomCursor)) {
                 $url .= "&cursor=$bottomCursor"; // Add the cursor to the URL if it's not the first request
             }
-            usleep(700000);
+//            usleep(700000);
             $response = $client->request('GET', $url, [
                 'headers' => [
                     'X-RapidAPI-Host' => 'twitter241.p.rapidapi.com',
-                    'X-RapidAPI-Key' => 'be57165779msh42e81c435e412e1p1a5e97jsn890a5a58f40f',
+//                    'X-RapidAPI-Key' => 'be57165779msh42e81c435e412e1p1a5e97jsn890a5a58f40f',
+                    'X-RapidAPI-Key'=>'85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
                 ],
             ]);
 
