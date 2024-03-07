@@ -69,6 +69,7 @@ class PointsController extends Controller
 
         if($period === 'total'){
             $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
+//            $friendIds = $account->friends->pluck('account_friend.friend_id')->toArray();
 
             $topAccounts = Account::with('discordRoles')
                 ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
@@ -80,7 +81,7 @@ class PointsController extends Controller
             $topAccounts->transform(function ($item, $key) use ($account, $friendIds) {
                 $item->rank = $key + 1;
                 $item->current_user = $account && $account->id == $item->id;
-                // Set is_friend to true or false based on the presence of the item's id in friendIds array
+
                 $item->friend = in_array($item->id, $friendIds);
                 return $item;
             });
@@ -144,7 +145,7 @@ class PointsController extends Controller
                     ],
                     'total_users'=> DB::table('accounts')->count(),
                     'total_teams'=>'-',
-                    'friends'=>$account->friends->count() ?? $account->followers->count(),
+                    'friends'=>$account->friends->count() ?? [],
 
                 ]
             ]);
@@ -164,10 +165,6 @@ class PointsController extends Controller
                 ]
             ]);
         }
-
-
-
-
     }
 
 

@@ -5,8 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\ConstantValues;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -17,6 +19,8 @@ class Account extends Model
     protected $guarded = [];
 
     protected $hidden = ['created_at', 'updated_at'];
+
+//    protected $appends = ['is_friend'];
 
     protected static function booted()
     {
@@ -233,6 +237,43 @@ class Account extends Model
     {
         return $this->belongsToMany(Account::class, 'account_friend', 'friend_id', 'account_id')->withTimestamps();
     }
+
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
+    }
+
+    public function createdTeam(): HasOne
+    {
+        return $this->hasOne(Team::class, 'account_id');
+    }
+
+    public function createTeamAndAssign($teamData)
+    {
+        DB::transaction(function () use ($teamData) {
+
+            if ($this->team_id) {
+
+
+                $this->team_id = null;
+                $this->save();
+            }
+
+
+            $team = Team::create($teamData);
+
+            $this->team()->associate($team);
+            $this->save();
+        });
+    }
+
+
+
+//    public function getIsFriendAttribute()
+//    {
+//
+//        return $this->friends()->where('friend_id', $this->id)->exists();
+//    }
 
 
 

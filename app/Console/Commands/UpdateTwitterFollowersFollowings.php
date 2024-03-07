@@ -37,6 +37,7 @@ class UpdateTwitterFollowersFollowings extends Command
         foreach ($accounts as $account){
             $this->info($i++);
             // Initialize arrays to hold rest IDs from followers and followings
+
             $followerRestIds = $this->getTwitterUserRestIds($client, $account->twitter_id, 'followers');
             $followingRestIds = $this->getTwitterUserRestIds($client, $account->twitter_id, 'followings');
 
@@ -72,29 +73,45 @@ class UpdateTwitterFollowersFollowings extends Command
                 $url .= "&cursor=$bottomCursor";
             }
 
-            $response = $client->request('GET', $url, [
-                'headers' => [
-                    'X-RapidAPI-Host' => 'twitter241.p.rapidapi.com',
-                    'X-RapidAPI-Key' => '85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
-                ],
-            ]);
+            try {
 
-            $responseBody = json_decode($response->getBody(), true);
-            foreach ($responseBody['result']['timeline']['instructions'] as $instruction) {
-                if (isset($instruction['entries'])) {
-                    foreach ($instruction['entries'] as $entry) {
-                        if (isset($entry['content']['itemContent']['user_results']['result']['rest_id'])) {
-                            $restIds[] = $entry['content']['itemContent']['user_results']['result']['rest_id'];
+                $response = $client->request('GET', $url, [
+                    'headers' => [
+                        'X-RapidAPI-Host' => 'twitter241.p.rapidapi.com',
+                        'X-RapidAPI-Key' => '85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
+                    ],
+                ]);
+
+                $responseBody = json_decode($response->getBody(), true);
+                if(isset($responseBody['result'])){
+                    foreach ($responseBody['result']['timeline']['instructions'] as $instruction) {
+                        if (isset($instruction['entries'])) {
+                            foreach ($instruction['entries'] as $entry) {
+                                if (isset($entry['content']['itemContent']['user_results']['result']['rest_id'])) {
+                                    $restIds[] = $entry['content']['itemContent']['user_results']['result']['rest_id'];
+                                }
+                            }
                         }
                     }
+                }else{
+                    break;
                 }
+
+
+                $bottomCursor = $responseBody['cursor']['bottom'];
+
+                // Extract the first part of the bottom cursor to check if it's "0"
+                list($firstPart, ) = explode('|', $bottomCursor, 2);
+//                list($firstPart, ) = explode('|', $bottomCursor, 2);
+            } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+                // Log the error or handle it as needed
+                $this->error("An error occurred while fetching data: " . $e->getMessage());
+                // Optionally, break or continue depending on how you want to handle failures
+                break;
             }
 
-//            $bottomCursor = $responseBody['cursor']['bottom'] ?? null;
-            $bottomCursor = $responseBody['cursor']['bottom'];
-
             // Extract the first part of the bottom cursor to check if it's "0"
-            list($firstPart, ) = explode('|', $bottomCursor, 2);
+//            list($firstPart, ) = explode('|', $bottomCursor, 2);
 
             // Exit the loop if there's no cursor or it's the end of the list
         } while (!empty($bottomCursor) && $firstPart !== "0");
