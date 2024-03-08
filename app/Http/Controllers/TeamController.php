@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AuthHelper;
+use App\Http\Resources\AccountResource;
 use App\Models\Account;
 use App\Models\Team;
 use Dotenv\Util\Str;
@@ -66,24 +67,42 @@ class TeamController extends Controller
             return response()->json(['message'=>'non authorized'], 401);
         }
 
-        if ($account->team_id) {
-
-            $account->team_id = null;
-            $account->save();
-        }
-
         $slug = $request->slug;
 
         $team = Team::where('slug', $slug)->first();
 
-        $account->team()->associate($team->id);
+        if ($account->team_id == $team->id) {
+            return response()->json(['message' => 'You are already a member of this team'], 400);
+        }
 
-        $account->save();
+        $isFriendWithCreator = $account->friends()->where('id', $team->account_id)->exists();
 
-        $team = $account->team()->first();
-        $team->load('creator');
+        $creatorIsFriendWithAccount = $team->creator->friends()->where('id', $account->id)->exists();
 
-        return response()->json($team);
+
+        if ($isFriendWithCreator && $creatorIsFriendWithAccount) {
+
+            if ($account->team_id) {
+
+                $account->team_id = null;
+                $account->save();
+            }
+
+            $account->team()->associate($team->id);
+
+            $account->save();
+
+            $team = $account->team()->first();
+            $team->load('creator');
+            $team->load('accounts.discordRoles');
+
+            return response()->json($team);
+        } else {
+            // Return an error if the friendship condition is not met
+            return response()->json(['message' => 'You must be friends with the team creator to join'], 403);
+        }
+
+
 
     }
 
@@ -110,25 +129,54 @@ class TeamController extends Controller
         // Get IDs of all friends of the currently authenticated user
         $friendIds = $currentUser->friends()->pluck('id')->toArray();
 
+
+        $isFriendOfCreator = $currentUser->id !== $team->creator->id && in_array($team->creator->id, $friendIds);
+
         // Calculate ranks and friend status for each account in the team
         foreach ($team->accounts as $teamAccount) {
             $teamAccount->friend = in_array($teamAccount->id, $friendIds);
+
             // This might not be efficient for large numbers of accounts; consider optimizing
             $teamAccount->rank = Account::where('total_points', '>', $teamAccount->total_points)->count() + 1;
             $teamAccount->current_user = ($currentUser->id === $teamAccount->id);
+            $teamAccount->is_friend_of_creator = $isFriendOfCreator;
         }
 
-//        $teamWithAccountsAndFriendStatus = Team::with(['accounts', 'accounts.friends' => function ($query) use ($accountId) {
-//            $query->where('account_friend.friend_id', $accountId);
-//        }])->first();
+        $sortedAccounts = $team->accounts->sortBy('rank');
 
+// Optionally, reset the keys if you want them to be in sequential order after sorting
+        $sortedAccounts = $sortedAccounts->values();
 
-
+// Replace the team's accounts with the sorted list
+        $team->setRelation('accounts', $sortedAccounts);
 
         return response()->json([
-           'team'=>$team,
+            'team'=>$team,
             'total_members'=>$team->accounts()->count(),
             'total_points'=>$team->accounts()->sum('total_points')
         ]);
+    }
+
+    public function getTeamsList(Request $request)
+    {
+
+        $period = $request->input('period');
+
+        if($period === 'total'){
+            $teams = Team::with('creator', 'accounts')->get();
+
+            foreach ($teams as $team){
+                $team->team_total_points = $team->accounts->sum('total_points');
+            }
+
+            return response()->json([
+                'list'=>$teams]);
+        }else{
+            return response()->json([
+                'list'=>[]]);
+        }
+
+
+
     }
 }

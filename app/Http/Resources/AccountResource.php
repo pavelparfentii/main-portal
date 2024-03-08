@@ -46,7 +46,8 @@ class AccountResource extends JsonResource
 //                });
 //            }),
 //            'friend'=> $this->relationLoaded('followers') && $this->followers->isNotEmpty(),
-            'friend'=>$this->friend
+            'friend'=>$this->friend,
+            'team'=>new TeamResource($this->whenLoaded('team'))
         ];
     }
 }

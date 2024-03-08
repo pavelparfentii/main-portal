@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AuthHelper;
 use App\Http\Resources\AccountResource;
 use App\Http\Resources\FriendResource;
+use App\Http\Resources\TeamResource;
 use App\Models\Account;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -223,15 +224,16 @@ class FriendsController extends Controller
                 ->where('total_points', '>', $account->total_points)
                 ->count() + 1;
         $account->rank = $userRank;
+        $account->load(['discordRoles', 'team.accounts']);
 
         // Always include the current user at the top with current_user set to true
         $currentUserData = clone $account;
         $currentUserData->current_user = true;
-        $currentUserData->load('discordRoles');
+        $currentUserData->load(['discordRoles', 'team.accounts']);
         $currentUserData->rank = $userRank;
         $allAccounts = collect([$currentUserData]);
 
-        $friends = $account->friends()->with('discordRoles')->get();
+        $friends = $account->friends()->with('discordRoles', 'team.accounts')->get();
 
         // Check if the user has friends
         if ($friends->isNotEmpty()) {
@@ -241,6 +243,7 @@ class FriendsController extends Controller
                         ->where('total_points', '>', $friend->total_points)
                         ->count() + 1;
                 $friend->rank = $friendRank;
+                $friend->team = $friend->team ? new TeamResource($account->team) : null;
                 $friend->current_user = false;
             }
 
@@ -254,6 +257,7 @@ class FriendsController extends Controller
             if ($userRank <= $sortedFriends->count()) {
                 $currentUserRankData = clone $account;
                 $currentUserRankData->current_user = true;
+                $currentUserRankData->team = $account->team ? new TeamResource($account->team) : null;
                 $allAccounts->push($currentUserRankData);
             }
         }

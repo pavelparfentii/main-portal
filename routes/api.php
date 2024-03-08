@@ -33,10 +33,11 @@ Route::post('/message', [\App\Http\Controllers\MessageController::class, 'messag
 Route::get('/test', [\App\Http\Controllers\FriendsController::class, 'getFriends']);
 
 Route::get('/points/friends', [\App\Http\Controllers\FriendsController::class, 'getFriendsForAccount']);
-//Route::get('/twitter', [\App\Http\Controllers\TemporaryController::class, 'getIgorProjectPosts']);
 
 Route::post('team/create', [\App\Http\Controllers\TeamController::class, 'makeTeam']);
 
-Route::post('team/join/{slug}', [\App\Http\Controllers\TeamController::class, 'joinTeam']);
+Route::post('team/{slug}/join', [\App\Http\Controllers\TeamController::class, 'joinTeam']);
 
-Route::get('team/list/{slug}', [\App\Http\Controllers\TeamController::class, 'getTeamList']);
+Route::get('team/{slug}', [\App\Http\Controllers\TeamController::class, 'getTeamList']);
+
+Route::get('/points/teams', [\App\Http\Controllers\TeamController::class, 'getTeamsList']);

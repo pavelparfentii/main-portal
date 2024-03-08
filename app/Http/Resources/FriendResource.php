@@ -24,6 +24,7 @@ class FriendResource extends JsonResource
             'rank'=>$this->rank,
             'current_user'=>$this->current_user,
             'discord_roles'=>DiscordRoleResource::collection($this->whenLoaded('discordRoles')),
+            'team' => new TeamResource($this->whenLoaded('team'))
            ];
     }
 }

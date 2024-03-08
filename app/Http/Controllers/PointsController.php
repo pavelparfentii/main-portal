@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\AuthHelper;
 use App\Http\Resources\AccountResource;
+use App\Http\Resources\TeamResource;
 use App\Models\Account;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -71,8 +72,8 @@ class PointsController extends Controller
             $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
 //            $friendIds = $account->friends->pluck('account_friend.friend_id')->toArray();
 
-            $topAccounts = Account::with('discordRoles')
-                ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar')
+            $topAccounts = Account::with(['discordRoles', 'friends', 'team.accounts'])
+                ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar', 'team_id')
                 ->orderByDesc('total_points')
                 ->take(100)
                 ->get();
@@ -81,8 +82,9 @@ class PointsController extends Controller
             $topAccounts->transform(function ($item, $key) use ($account, $friendIds) {
                 $item->rank = $key + 1;
                 $item->current_user = $account && $account->id == $item->id;
-
                 $item->friend = in_array($item->id, $friendIds);
+//                $item->load('team');
+                $item->team = $item->team ? new TeamResource($account->team) : null;
                 return $item;
             });
 
@@ -96,7 +98,7 @@ class PointsController extends Controller
                     $currentUserForTop->rank = $userRank;
                     $currentUserForTop->current_user = true;
                     $currentUserForTop->friend = false; // The user is not a friend to themselves
-                    $currentUserForTop->load(['discordRoles', 'followers']);
+                    $currentUserForTop->load(['discordRoles', 'friends', 'team.accounts']);
 
                     $topAccounts->prepend($currentUserForTop);
                 }
