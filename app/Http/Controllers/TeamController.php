@@ -164,7 +164,7 @@ class TeamController extends Controller
 
         $period = $request->input('period');
 
-        if ($period === 'all') {
+        if ($period === 'total') {
             // Load teams with their creators and accounts eagerly
             $teams = Team::with(['creator', 'accounts'])->get();
 
