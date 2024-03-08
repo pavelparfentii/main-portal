@@ -75,9 +75,19 @@ class TeamController extends Controller
             return response()->json(['message' => 'You are already a member of this team'], 400);
         }
 
-        $isFriendWithCreator = $account->friends()->where('id', $team->account_id)->exists();
+        if ($account->id === $team->creator->id) {
 
-        $creatorIsFriendWithAccount = $team->creator->friends()->where('id', $account->id)->exists();
+            $isFriendWithCreator = true;
+            $creatorIsFriendWithAccount = true;
+        } else {
+//            // For other accounts, check if there's a friendship between the account and the creator
+//            $isFriendWithCreator = $account->friends()->where('id', $team->creator->id)->exists();
+//            $creatorIsFriendWithAccount = $team->creator->friends()->where('id', $account->id)->exists();
+            $isFriendWithCreator = $account->friends()->where('id', $team->account_id)->exists();
+
+            $creatorIsFriendWithAccount = $team->creator->friends()->where('id', $account->id)->exists();
+        }
+
 
 
         if ($isFriendWithCreator && $creatorIsFriendWithAccount) {
@@ -166,27 +176,41 @@ class TeamController extends Controller
 
         if ($period === 'total') {
             // Load teams with their creators and accounts eagerly
+
             $teams = Team::with(['creator', 'accounts'])->get();
+
+
 
             // Calculate total points for each team
             foreach ($teams as $team) {
                 $team->team_total_points = $team->accounts->sum('total_points');
+                foreach ($team->accounts as $account) {
+                    unset($account->wallet);
+                }
             }
+
 
             // Sort teams by their total points in descending order
             $teams = $teams->sortByDesc('team_total_points')->values();
 
-            // Unfortunately, calculating rank directly in a query similar to the accounts example is not straightforward
-            // because we're working with a sum of points across related models. We'll use a simplified approach:
             foreach ($teams as $index => $team) {
-                // Simply use the sorted position as a proxy for rank
+
                 $team->rank = $index + 1;
+                unset($team->creator->wallet);
+//                unset($team->accounts()->wallet);
             }
 
             if($currentUser){
+                $friendIds = $currentUser->friends()->pluck('id')->toArray();
+
+
+                $isFriendOfCreator = $currentUser->id !== $team->creator->id && in_array($team->creator->id, $friendIds);
+
                 foreach ($teams as $index => $team) {
                     // Simply use the sorted position as a proxy for rank
                     $team->in_team = $currentUser && $currentUser->team_id === $team->id;
+                    $team->is_friend = $isFriendOfCreator;
+
                 }
 
                 return response()->json(['list' => $teams]);
