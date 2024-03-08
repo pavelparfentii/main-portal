@@ -147,7 +147,7 @@ class PointsController extends Controller
 
                     ],
                     'total_users'=> DB::table('accounts')->count(),
-                    'total_teams'=>'-',
+                    'total_teams'=>DB::table('teams')->count(),
                     'friends'=>$account->friends->count() ?? [],
 
                 ]
@@ -163,7 +163,7 @@ class PointsController extends Controller
 
                     ],
                     'total_users'=> DB::table('accounts')->count(),
-                    'total_teams'=>'-',
+                    'total_teams'=>DB::table('teams')->count(),
                     'friends'=>null
                 ]
             ]);

@@ -201,6 +201,7 @@ class TeamController extends Controller
 
     public function leaveTeam(Request $request)
     {
+
         $account = AuthHelper::auth($request);
 
         if(!$account){
@@ -214,5 +215,34 @@ class TeamController extends Controller
 
             return response()->json(['message' => 'success'], 200);
         }
+    }
+
+    public function checkName(Request $request)
+    {
+        $account = AuthHelper::auth($request);
+
+        if(!$account){
+            return response()->json(['message'=>'non authorized'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|unique:teams|max:255|min:3',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+
+        $slug = \Illuminate\Support\Str::slug($request->name);
+
+
+        $teamWithSlug = Team::where('slug', $slug)->first();
+
+        if ($teamWithSlug) {
+
+            return response()->json(['message' => 'The name has already been taken and cannot be used.'], 422) ;
+        }
+
     }
 }
