@@ -41,3 +41,5 @@ Route::post('team/{slug}/join', [\App\Http\Controllers\TeamController::class, 'j
 Route::get('team/{slug}', [\App\Http\Controllers\TeamController::class, 'getTeamList']);
 
 Route::get('/points/teams', [\App\Http\Controllers\TeamController::class, 'getTeamsList']);
+
+Route::get('/team/leave', [\App\Http\Controllers\TeamController::class, 'leaveTeam']);

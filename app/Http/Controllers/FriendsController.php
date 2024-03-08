@@ -243,7 +243,7 @@ class FriendsController extends Controller
                         ->where('total_points', '>', $friend->total_points)
                         ->count() + 1;
                 $friend->rank = $friendRank;
-                $friend->team = $friend->team ? new TeamResource($account->team) : null;
+                $friend->team = $friend->team ? new TeamResource($friend->team) : null;
                 $friend->current_user = false;
             }
 

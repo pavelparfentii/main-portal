@@ -84,7 +84,8 @@ class PointsController extends Controller
                 $item->current_user = $account && $account->id == $item->id;
                 $item->friend = in_array($item->id, $friendIds);
 //                $item->load('team');
-                $item->team = $item->team ? new TeamResource($account->team) : null;
+                $item->team = $item->team ? new TeamResource($item->team) : null;
+
                 return $item;
             });
 

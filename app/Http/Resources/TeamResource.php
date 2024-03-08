@@ -18,6 +18,8 @@ class TeamResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+//            'creator_id' => $this->creator->id ?? null,
+            'team_avatar'=> $this->team_avatar,
             'members' => AccountResource::collection($this->whenLoaded('accounts')),
 
         ];

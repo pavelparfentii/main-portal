@@ -160,23 +160,59 @@ class TeamController extends Controller
     public function getTeamsList(Request $request)
     {
 
+        $currentUser = AuthHelper::auth($request);
+
         $period = $request->input('period');
 
-        if($period === 'total'){
-            $teams = Team::with('creator', 'accounts')->get();
+        if ($period === 'all') {
+            // Load teams with their creators and accounts eagerly
+            $teams = Team::with(['creator', 'accounts'])->get();
 
-            foreach ($teams as $team){
+            // Calculate total points for each team
+            foreach ($teams as $team) {
                 $team->team_total_points = $team->accounts->sum('total_points');
             }
 
-            return response()->json([
-                'list'=>$teams]);
-        }else{
-            return response()->json([
-                'list'=>[]]);
+            // Sort teams by their total points in descending order
+            $teams = $teams->sortByDesc('team_total_points')->values();
+
+            // Unfortunately, calculating rank directly in a query similar to the accounts example is not straightforward
+            // because we're working with a sum of points across related models. We'll use a simplified approach:
+            foreach ($teams as $index => $team) {
+                // Simply use the sorted position as a proxy for rank
+                $team->rank = $index + 1;
+            }
+
+            if($currentUser){
+                foreach ($teams as $index => $team) {
+                    // Simply use the sorted position as a proxy for rank
+                    $team->in_team = $currentUser && $currentUser->team_id === $team->id;
+                }
+
+                return response()->json(['list' => $teams]);
+            }
+
+            return response()->json(['list' => $teams]);
+        } else {
+            return response()->json(['list' => []]);
         }
 
+    }
 
+    public function leaveTeam(Request $request)
+    {
+        $account = AuthHelper::auth($request);
 
+        if(!$account){
+            return response()->json(['message'=>'non authorized'], 401);
+        }
+
+        if ($account->team_id) {
+
+            $account->team_id = null;
+            $account->save();
+
+            return response()->json(['message' => 'success'], 200);
+        }
     }
 }
