@@ -13,6 +13,8 @@ class Team extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['created_at', 'updated_at'];
+
     public function accounts(): HasMany
     {
         return $this->hasMany(Account::class);

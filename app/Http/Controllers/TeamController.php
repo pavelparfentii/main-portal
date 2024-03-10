@@ -88,8 +88,6 @@ class TeamController extends Controller
             $creatorIsFriendWithAccount = $team->creator->friends()->where('id', $account->id)->exists();
         }
 
-
-
         if ($isFriendWithCreator && $creatorIsFriendWithAccount) {
 
             if ($account->team_id) {
@@ -111,8 +109,6 @@ class TeamController extends Controller
             // Return an error if the friendship condition is not met
             return response()->json(['message' => 'You must be friends with the team creator to join'], 403);
         }
-
-
 
     }
 
@@ -136,7 +132,7 @@ class TeamController extends Controller
             ], 200);
         }
 
-        // Get IDs of all friends of the currently authenticated user
+
         $friendIds = $currentUser->friends()->pluck('id')->toArray();
 
 
@@ -145,8 +141,7 @@ class TeamController extends Controller
         // Calculate ranks and friend status for each account in the team
         foreach ($team->accounts as $teamAccount) {
             $teamAccount->friend = in_array($teamAccount->id, $friendIds);
-
-            // This might not be efficient for large numbers of accounts; consider optimizing
+            unset($teamAccount->wallet);
             $teamAccount->rank = Account::where('total_points', '>', $teamAccount->total_points)->count() + 1;
             $teamAccount->current_user = ($currentUser->id === $teamAccount->id);
             $teamAccount->is_friend_of_creator = $isFriendOfCreator;
@@ -163,7 +158,9 @@ class TeamController extends Controller
         return response()->json([
             'team'=>$team,
             'total_members'=>$team->accounts()->count(),
-            'total_points'=>$team->accounts()->sum('total_points')
+            'total_points'=>$team->accounts()->sum('total_points'),
+            'is_friend_of_creator'=>$isFriendOfCreator,
+            'in_team' => $currentUser && $currentUser->team_id === $team->id
         ]);
     }
 
@@ -178,8 +175,6 @@ class TeamController extends Controller
             // Load teams with their creators and accounts eagerly
 
             $teams = Team::with(['creator', 'accounts'])->get();
-
-
 
             // Calculate total points for each team
             foreach ($teams as $team) {
@@ -203,6 +198,13 @@ class TeamController extends Controller
             if($currentUser){
                 $friendIds = $currentUser->friends()->pluck('id')->toArray();
 
+                // Calculate total points for each team
+                foreach ($teams as $team) {
+                    $team->team_total_points = $team->accounts->sum('total_points');
+                    foreach ($team->accounts as $account) {
+                        $account->friend = in_array($account->id, $friendIds);
+                    }
+                }
 
                 $isFriendOfCreator = $currentUser->id !== $team->creator->id && in_array($team->creator->id, $friendIds);
 
