@@ -99,7 +99,7 @@ class PointsController extends Controller
             $accountResourceArray = (new AccountResource($account))->resolve();
 
             // Add isNeedShow directly
-            $accountResourceArray['isNeedShow'] = false;
+//            $accountResourceArray['isNeedShow'] = false;
             $accountResourceArray['invited'] = "-";
 //            dd($account);
             return response()->json([
@@ -131,6 +131,23 @@ class PointsController extends Controller
                     'friends'=>null
                 ]
             ]);
+        }
+    }
+
+    public function needShow(Request $request)
+    {
+        $account = AuthHelper::auth($request);
+
+        if ($account) {
+            $account->isNeedShow = !$account->isNeedShow;
+            $account->save();
+            return response()->json([
+                'success' => true,
+                'isNeedShow' => $account->isNeedShow
+            ]);
+        }else {
+            // Handle the case where the account is not authenticated
+            return response()->json(['error' => 'Unauthorized'], 401);
         }
     }
 

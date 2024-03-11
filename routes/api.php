@@ -45,3 +45,5 @@ Route::get('/points/teams', [\App\Http\Controllers\TeamController::class, 'getTe
 Route::post('team/leave', [\App\Http\Controllers\TeamController::class, 'leaveTeam']);
 
 Route::post('/team/check/name', [\App\Http\Controllers\TeamController::class, 'checkName']);
+
+Route::post('/points/needshow', [\App\Http\Controllers\PointsController::class, 'needShow']);

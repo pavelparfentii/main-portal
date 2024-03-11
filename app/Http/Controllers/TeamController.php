@@ -190,7 +190,7 @@ class TeamController extends Controller
 //          Uncomment here
 //            'is_friend_of_creator'=>$currentUser->id === $team->creator->id ? true : $isFriendOfCreator,
             'is_friend_of_creator'=>true,
-            'in_team' => $currentUser && $currentUser->team_id === $team->ide
+            'in_team' => $currentUser && $currentUser->team_id === $team->id
         ]);
     }
 
@@ -227,7 +227,7 @@ class TeamController extends Controller
 
                 $team->rank = $index + 1;
                 unset($team->creator->wallet);
-//                unset($team->accounts()->wallet);
+
             }
 
             if($currentUser){
