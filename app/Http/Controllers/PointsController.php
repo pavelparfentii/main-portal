@@ -21,7 +21,6 @@ class PointsController extends Controller
 
         $account = AuthHelper::auth($request);
 
-
         $period = $request->input('period');
 
         if($period === 'total'){
@@ -44,14 +43,13 @@ class PointsController extends Controller
                 $item->rank = $key + 1;
                 $item->current_user = $account && $account->id == $item->id;
                 $item->friend = in_array($item->id, $friendIds);
-//                $item->load('team');
+
                 $item->team = $item->team ? new TeamResource($item->team) : null;
 
                 return $item;
             });
 
             if ($account) {
-
 
                 $userRank = DB::table('accounts')
                         ->where('total_points', '>', $account->total_points)

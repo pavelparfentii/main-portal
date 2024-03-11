@@ -219,7 +219,6 @@ class TeamController extends Controller
                 }
             }
 
-
             // Sort teams by their total points in descending order
             $teams = $teams->sortByDesc('team_total_points')->values();
 
