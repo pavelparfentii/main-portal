@@ -203,6 +203,11 @@ class TeamController extends Controller
 
         if ($period === 'total') {
             // Load teams with their creators and accounts eagerly
+            $token = $request->bearerToken();
+
+            if($token && !$currentUser){
+                return response()->json(['error' => 'token expired or wrong'], 403);
+            }
 
             $teams = Team::with(['creator', 'accounts'])->get();
 
