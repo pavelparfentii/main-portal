@@ -168,11 +168,18 @@ class TeamController extends Controller
 
         // Calculate ranks and friend status for each account in the team
         foreach ($team->accounts as $teamAccount) {
-            $teamAccount->friend = in_array($teamAccount->id, $friendIds);
+
             unset($teamAccount->wallet);
             $teamAccount->rank = Account::where('total_points', '>', $teamAccount->total_points)->count() + 1;
             $teamAccount->current_user = ($currentUser->id === $teamAccount->id);
-            $teamAccount->is_friend_of_creator = $isFriendOfCreator;
+            if(empty($teamAccount->twitter_username)){
+                $teamAccount->friend = false;
+                $teamAccount->is_friend_of_creator = false;
+            }else{
+                $teamAccount->friend = in_array($teamAccount->id, $friendIds);
+                $teamAccount->is_friend_of_creator = $isFriendOfCreator;
+            }
+
         }
 
         $sortedAccounts = $team->accounts->sortBy('rank');
