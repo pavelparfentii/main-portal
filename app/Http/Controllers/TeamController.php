@@ -107,7 +107,23 @@ class TeamController extends Controller
             return response()->json($team);
         } else {
             // Return an error if the friendship condition is not met
-            return response()->json(['message' => 'You must be friends with the team creator to join'], 403);
+            //UNCOMMENT WHEN READY
+//            return response()->json(['message' => 'You must be friends with the team creator to join'], 403);
+            if ($account->team_id) {
+
+                $account->team_id = null;
+                $account->save();
+            }
+
+            $account->team()->associate($team->id);
+
+            $account->save();
+
+            $team = $account->team()->first();
+            $team->load('creator');
+            $team->load('accounts.discordRoles');
+
+            return response()->json($team);
         }
 
     }
@@ -138,6 +154,12 @@ class TeamController extends Controller
 
         $isFriendOfCreator = $currentUser->id !== $team->creator->id && in_array($team->creator->id, $friendIds);
 
+//        if ($currentUser->id === $team->creator->id) {
+//
+//            $isFriendWithCreator = true;
+//            $creatorIsFriendWithAccount = true;
+//        }
+
         // Calculate ranks and friend status for each account in the team
         foreach ($team->accounts as $teamAccount) {
             $teamAccount->friend = in_array($teamAccount->id, $friendIds);
@@ -159,8 +181,10 @@ class TeamController extends Controller
             'team'=>$team,
             'total_members'=>$team->accounts()->count(),
             'total_points'=>$team->accounts()->sum('total_points'),
-            'is_friend_of_creator'=>$isFriendOfCreator,
-            'in_team' => $currentUser && $currentUser->team_id === $team->id
+//          Uncomment here
+//            'is_friend_of_creator'=>$currentUser->id === $team->creator->id ? true : $isFriendOfCreator,
+            'is_friend_of_creator'=>true,
+            'in_team' => $currentUser && $currentUser->team_id === $team->ide
         ]);
     }
 
