@@ -30,11 +30,12 @@ class RecountPoints extends Command
 
         foreach ($accounts as $account) {
             // Calculate the sum of points from digital animals
-            $totalDigitalAnimalPoints = $account->digitalAnimals->sum('points');
+            $totalDigitalAnimalPoints = $account->animals->sum('points');
 
             // Update the account's total_points
             $account->total_points = $totalDigitalAnimalPoints;
             $account->save();
+
         }
     }
 }

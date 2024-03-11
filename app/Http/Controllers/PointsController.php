@@ -27,9 +27,13 @@ class PointsController extends Controller
         if($period === 'total'){
             $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
 
+
+            $loadRelations = ['discordRoles', 'friends', 'team.accounts'];
+            // If the current user does not have a twitter_username, adjust the relations to be loaded
+
 //            $friendIds = $account->friends->pluck('account_friend.friend_id')->toArray();
 
-            $topAccounts = Account::with(['discordRoles', 'friends', 'team.accounts'])
+            $topAccounts = Account::with($loadRelations)
                 ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar', 'team_id')
                 ->orderByDesc('total_points')
                 ->take(100)
@@ -58,7 +62,11 @@ class PointsController extends Controller
                     $currentUserForTop->rank = $userRank;
                     $currentUserForTop->current_user = true;
                     $currentUserForTop->friend = false; // The user is not a friend to themselves
-                    $currentUserForTop->load(['discordRoles', 'friends', 'team.accounts']);
+                    if (empty($account->twitter_username)) {
+                        $loadRelations = []; // Adjust this based on what you still want to load, if anything
+
+                    }
+                    $currentUserForTop->load($loadRelations);
 
                     $topAccounts->prepend($currentUserForTop);
                 }
