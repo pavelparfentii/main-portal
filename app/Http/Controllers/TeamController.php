@@ -148,6 +148,12 @@ class TeamController extends Controller
             ], 200);
         }
 
+        $token = $request->bearerToken();
+
+        if($token && !$currentUser){
+            return response()->json(['error' => 'token expired or wrong'], 403);
+        }
+
 
         $friendIds = $currentUser->friends()->pluck('id')->toArray();
 

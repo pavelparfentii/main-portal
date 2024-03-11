@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Exceptions\InvalidTokenException;
 use App\Models\Account;
 use Carbon\Carbon;
 
@@ -77,7 +78,9 @@ class AuthHelper
             Log::info('jwt exception: ' . $exception);
 
 //            return response()->json(['error' => 'token expired or wrong'], 403);
-            throw new HttpException(403, 'Token expired or incorrect');
+//            throw new InvalidTokenException();
+            return false;
+//            throw new HttpException(403, 'Token expired or incorrect');
         }
 
 //        $tokenParts = explode(".", $token);

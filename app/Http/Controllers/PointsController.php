@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class PointsController extends Controller
 {
@@ -25,6 +26,7 @@ class PointsController extends Controller
 
         if($period === 'total'){
             $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
+
 //            $friendIds = $account->friends->pluck('account_friend.friend_id')->toArray();
 
             $topAccounts = Account::with(['discordRoles', 'friends', 'team.accounts'])
@@ -45,6 +47,8 @@ class PointsController extends Controller
             });
 
             if ($account) {
+
+
                 $userRank = DB::table('accounts')
                         ->where('total_points', '>', $account->total_points)
                         ->count() + 1;
@@ -58,6 +62,11 @@ class PointsController extends Controller
 
                     $topAccounts->prepend($currentUserForTop);
                 }
+            }
+            $token = $request->bearerToken();
+
+            if($token && !$account){
+                return response()->json(['error' => 'token expired or wrong'], 403);
             }
 
 
@@ -77,7 +86,6 @@ class PointsController extends Controller
         $account = AuthHelper::auth($request);
 
         if ($account) {
-
 
             $userRank = DB::table('accounts')
                     ->where('total_points', '>', $account->total_points)
