@@ -20,11 +20,6 @@ class PointsController extends Controller
 
         $account = AuthHelper::auth($request);
 
-        if (!$account) {
-            return response()->json(['message' => 'Non authorized'], 401);
-        }
-        // Assuming 'friends' returns a collection of Account models representing the user's friends
-        // Retrieve the IDs of all friends for the current user to optimize the check later
 
         $period = $request->input('period');
 
@@ -64,6 +59,7 @@ class PointsController extends Controller
                     $topAccounts->prepend($currentUserForTop);
                 }
             }
+
 
             return response()->json([
                 'list' => AccountResource::collection($topAccounts),

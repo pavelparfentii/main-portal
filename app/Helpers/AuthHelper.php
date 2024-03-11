@@ -4,10 +4,13 @@ namespace App\Helpers;
 
 use App\Models\Account;
 use Carbon\Carbon;
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -72,8 +75,9 @@ class AuthHelper
         } catch (JWTException $exception) {
 //            throw new InvalidTokenException('Invalid or expired token');
             Log::info('jwt exception: ' . $exception);
+
 //            return response()->json(['error' => 'token expired or wrong'], 403);
-            return false;
+            throw new HttpException(403, 'Token expired or incorrect');
         }
 
 //        $tokenParts = explode(".", $token);
