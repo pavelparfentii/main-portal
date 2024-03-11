@@ -275,6 +275,22 @@ class Account extends Model
 //        return $this->friends()->where('friend_id', $this->id)->exists();
 //    }
 
+    public function adjustPointsAndWipeSafesouls() {
+        $accounts = Account::with('safeSouls')->get();
+
+        foreach ($accounts as $account) {
+
+            $pointsToDeduct = $account->safesouls->sum('points');
+
+
+            $account->total_points -= $pointsToDeduct;
+            $account->save();
+        }
+
+        // Wipe the safesouls table after adjustments
+        SafeSoul::query()->delete();
+    }
+
 
 
 }
