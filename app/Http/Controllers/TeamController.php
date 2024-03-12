@@ -132,7 +132,7 @@ class TeamController extends Controller
     {
         $slug = $request->slug;
 
-        $team = Team::where('slug', $slug)->with('creator')->with('accounts.discordRoles')->first();
+        $team = Team::where('slug', $slug)->with('creator')->with('accounts')->first();
 
         if(!$team){
             return response()->json(['message'=>'not found'], 403);
@@ -160,6 +160,10 @@ class TeamController extends Controller
 
         $isFriendOfCreator = $currentUser->id !== $team->creator->id && in_array($team->creator->id, $friendIds);
 
+        if(empty($currentUser->twitter_username)){
+            $isFriendOfCreator = false;
+        }
+
 //        if ($currentUser->id === $team->creator->id) {
 //
 //            $isFriendWithCreator = true;
@@ -172,12 +176,16 @@ class TeamController extends Controller
             unset($teamAccount->wallet);
             $teamAccount->rank = Account::where('total_points', '>', $teamAccount->total_points)->count() + 1;
             $teamAccount->current_user = ($currentUser->id === $teamAccount->id);
-            if(empty($teamAccount->twitter_username)){
+            if(empty($teamAccount->twitter_username) || empty($currentUser->twitter_username)){
                 $teamAccount->friend = false;
                 $teamAccount->is_friend_of_creator = false;
             }else{
                 $teamAccount->friend = in_array($teamAccount->id, $friendIds);
                 $teamAccount->is_friend_of_creator = $isFriendOfCreator;
+            }
+
+            if(!empty($currentUser->discord_id)){
+                $teamAccount->load('discordRoles');
             }
 
         }
@@ -209,7 +217,7 @@ class TeamController extends Controller
         $period = $request->input('period');
 
         if ($period === 'total') {
-            // Load teams with their creators and accounts eagerly
+
             $token = $request->bearerToken();
 
             if($token && !$currentUser){
@@ -243,16 +251,32 @@ class TeamController extends Controller
                 foreach ($teams as $team) {
                     $team->team_total_points = $team->accounts->sum('total_points');
                     foreach ($team->accounts as $account) {
-                        $account->friend = in_array($account->id, $friendIds);
+
+
+//                        $account->friend = in_array($account->id, $friendIds);
+
+                        if(empty($account->twitter_username)){
+                            $account->friend = false;
+                        }else{
+                            $account->friend = in_array($account->id, $friendIds);
+                        }
                     }
                 }
 
                 $isFriendOfCreator = $currentUser->id !== $team->creator->id && in_array($team->creator->id, $friendIds);
 
+//                dd($currentUser);
+                if(empty($currentUser->twitter_username)){
+
+                    $isFriendOfCreator = false;
+                }
+
                 foreach ($teams as $index => $team) {
                     // Simply use the sorted position as a proxy for rank
                     $team->in_team = $currentUser && $currentUser->team_id === $team->id;
+
                     $team->is_friend = $isFriendOfCreator;
+
 
                 }
 

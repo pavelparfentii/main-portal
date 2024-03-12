@@ -84,8 +84,19 @@ class MessageController extends Controller
 
         unset($data['auth_id']); // Remove 'auth_id' from the data to be updated
 
-        // Now $data only contains what needs to be updated
+
         DB::table('accounts')->where('auth_id', $authId)->update($data);
+
+        if (!empty($data['twitter_avatar'])) {
+            $downloadedAvatarUrl = $this->downloadTwitterAvatar($data['twitter_avatar']);
+            if ($downloadedAvatarUrl !== null) {
+
+                $data['twitter_avatar'] = $downloadedAvatarUrl;
+            } else {
+
+                unset($data['twitter_avatar']);
+            }
+        }
 
 
     }

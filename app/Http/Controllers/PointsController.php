@@ -42,7 +42,11 @@ class PointsController extends Controller
             $topAccounts->transform(function ($item, $key) use ($account, $friendIds) {
                 $item->rank = $key + 1;
                 $item->current_user = $account && $account->id == $item->id;
-                $item->friend = in_array($item->id, $friendIds);
+                if(!empty($account->twitter_username)){
+                    $item->friend = in_array($item->id, $friendIds);
+                }else{
+                    $item->friend = false;
+                }
 
                 $item->team = $item->team ? new TeamResource($item->team) : null;
 
@@ -60,10 +64,10 @@ class PointsController extends Controller
                     $currentUserForTop->rank = $userRank;
                     $currentUserForTop->current_user = true;
                     $currentUserForTop->friend = false; // The user is not a friend to themselves
-                    if (empty($account->twitter_username)) {
-                        $loadRelations = []; // Adjust this based on what you still want to load, if anything
+                    // if (empty($account->twitter_username)) {
+                    //     $loadRelations = []; // Adjust this based on what you still want to load, if anything
 
-                    }
+                    // }
                     $currentUserForTop->load($loadRelations);
 
                     $topAccounts->prepend($currentUserForTop);
@@ -100,7 +104,10 @@ class PointsController extends Controller
             $account->setAttribute('rank', $userRank);
             $account->setAttribute('current_user', true);
 //            $account->setAttribute('invited', '-');
-            $account->load('discordRoles');
+
+            if(!empty($account->discord_id)){
+                $account->load('discordRoles');
+            }
 
             $accountResourceArray = (new AccountResource($account))->resolve();
 
@@ -118,7 +125,7 @@ class PointsController extends Controller
                     ],
                     'total_users'=> DB::table('accounts')->count(),
                     'total_teams'=>DB::table('teams')->count(),
-                    'friends'=>$account->friends->count() ?? [],
+                    'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
 
                 ]
             ]);
