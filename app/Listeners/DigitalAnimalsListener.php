@@ -22,10 +22,10 @@ class DigitalAnimalsListener
      */
     public function handle(DigitalAnimalsCreationEvent $event): void
     {
-        $currentTotal = DB::table('accounts')->where('id', $event->accountId)->value('total_points');
-
-        $newTotal = $currentTotal + $event->digital->points;
-
-        DB::table('accounts')->where('id', $event->accountId)->update(['total_points'=>$newTotal]);
+//        $currentTotal = DB::table('accounts')->where('id', $event->accountId)->value('total_points');
+//
+//        $newTotal = $currentTotal + $event->digital->points;
+//
+//        DB::table('accounts')->where('id', $event->accountId)->update(['total_points'=>$newTotal]);
     }
 }

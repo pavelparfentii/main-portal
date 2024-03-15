@@ -75,7 +75,7 @@ class AuthHelper
 
         } catch (JWTException $exception) {
 //            throw new InvalidTokenException('Invalid or expired token');
-            Log::info('jwt exception: ' . $exception);
+//            Log::info('jwt exception: ' . $exception);
 
 //            return response()->json(['error' => 'token expired or wrong'], 403);
 //            throw new InvalidTokenException();

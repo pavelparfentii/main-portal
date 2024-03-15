@@ -19,16 +19,16 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:get-discord-roles-for-accounts-command')->weeklyOn(1, '00:45');
 
          //Safesoul activity
-        $schedule->command('app:safe-soul-activity-command')->weeklyOn(1, '01:00');
+        $schedule->command('app:safe-soul-activity-command')->weeklyOn(6, '01:00');
 
         //Safesoul achieve
-        $schedule->command('app:safe-soul-achieve-command')->weeklyOn(1, '01:30');
+        $schedule->command('app:safe-soul-achieve-command')->weeklyOn(6, '01:30');
 
         //Safesoul invites
-        $schedule->command('app:safe-soul-invites-command')->weeklyOn(1, '02:00');
+        $schedule->command('app:safe-soul-invites-command')->weeklyOn(6, '02:00');
 
         //Safesoul 100 reports
-        $schedule->command('app:safe-soul100-reports-command')->weeklyOn(1, '02:30');
+        $schedule->command('app:safe-soul100-reports-command')->dailyAt('02:30');
 
         //Safesoulclub and SafesoulEth twitter posts
         $schedule->command('app:twitter-posts-s-s-mention-command')->weeklyOn(1, '03:00');

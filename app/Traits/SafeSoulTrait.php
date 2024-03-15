@@ -5,6 +5,7 @@ use App\ConstantValues;
 use App\Models\Account;
 use App\Models\DiscordRole;
 use App\Models\SafeSoul;
+use App\Models\Week;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -26,45 +27,55 @@ trait SafeSoulTrait{
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ux9AgzrHauOq6sF8kZSetP4eCAB7z2OoxLOQP1fpQCZflMrPBQdUVdQehCdGDrPZ',
-            ])->get( $this->safesoul .'api/airdrop/user/info');
+            ])->timeout(45)->get( $this->safesoul .'api/airdrop/user/info');
 
             if($response->status() ==200){
 
                 $data = $response->json();
+//                Log::info($data);
                 if(isset($data)){
                     foreach ($data as $item){
 
-                        $account = Account::where('wallet', $item['wallet'])->first();
-                        if($account){
-                            usleep(5000);
-                            $account->update([
-                                'twitter_username'=>$item['twitter_username'],
-                                'twitter_name'=>$item['twitter_name'],
-                                'twitter_avatar'=> isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
-                                'twitter_id'=>$item['twitter_id'],
-                                'role'=>$item['role'],
-                                'discord_id'=>$item['discord_id']
-                            ]);
-                            $account->save();
-                            if(!is_null($account->role) && $account->wallet == '0xf7bf7651733db500ff13321c2d39e4beaced70bd'){
-                                $this->info($item['role']);
-                                $this->info($account->wallet);
+                            $account = Account::where('wallet', $item['wallet'])->first();
+                            if($account){
+                                Week::getCurrentWeekForAccount($account);
+                                usleep(5000);
+                                $role = isset($account->discord_id) || $item['discord_id'] ? $this->checkRole($account->discord_id) : null;
+                                if(isset($account->discord_id) || $item['discord_id']){
+                                    $account->updateRoleAndAdjustPoints($role);
+                                }
+                                $account->update([
+                                    'twitter_username'=>$item['twitter_username'],
+                                    'twitter_name'=>$item['twitter_name'],
+                                    'twitter_avatar'=> isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
+                                    'twitter_id'=>$item['twitter_id'],
+                                    'role'=>$role,
+                                    'discord_id'=>$item['discord_id']
+                                ]);
+
+
+                                $account->save();
+
+
+                            }else{
+
+                                $account = new Account([
+                                    'wallet'=> $item['wallet'],
+                                    'twitter_username'=>$item['twitter_username'],
+                                    'twitter_name'=>$item['twitter_name'],
+                                    'twitter_avatar'=>isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
+                                    'twitter_id'=>$item['twitter_id'],
+//                                'role'=>$item['role'],
+                                    'auth_id'=>$item['auth_id'],
+                                    'discord_id'=>$item['discord_id']
+                                ]);
+                                $role = isset($account->discord_id) || $item['discord_id'] ? $this->checkRole($account->discord_id) : null;
+                                $account->role = $role;
+                                $account->save();
+
                             }
 
-                        }else{
-                            $account = new Account([
-                                'wallet'=> $item['wallet'],
-                                'twitter_username'=>$item['twitter_username'],
-                                'twitter_name'=>$item['twitter_name'],
-                                'twitter_avatar'=>isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
-                                'twitter_id'=>$item['twitter_id'],
-                                'role'=>$item['role'],
-                                'auth_id'=>$item['auth_id'],
-                                'discord_id'=>$item['discord_id']
-                            ]);
-                            $account->save();
 
-                        }
                     }
                 }
                 return $response->json(['ok'=>'sdsfd'],200);
@@ -74,7 +85,6 @@ trait SafeSoulTrait{
         } catch (\Exception $e){
             Log::info('getAccountsUpdate error: '. $e);
         }
-
 
     }
 
@@ -130,12 +140,16 @@ trait SafeSoulTrait{
                     foreach ($data as $wallet){
                         $account = Account::where('wallet', $wallet)->first();
                         if($account){
+                            $currentWeek = Week::getCurrentWeekForAccount($account);
                             $safeSoul = new SafeSoul([
+                                'account_id' => $account->id,
+//                                'week_id' => $currentWeek->id,
                                 'points' => ConstantValues::safesoul_activity_points,
                                 'comment'=> 'активность в сейфсол',
                                 'query_param'=>'safesoul_activity'
                             ]);
-                            $account->safeSouls()->save($safeSoul);
+                            $currentWeek->safeSouls()->save($safeSoul);
+                            $currentWeek->increment('points', ConstantValues::safesoul_activity_points);
                         }else{
                             Log::info('safesoul activity update error, no such account ');
                         }
@@ -166,16 +180,22 @@ trait SafeSoulTrait{
 
                         if ($account && isset($achievement['achieves'])) {
                             foreach ($achievement['achieves'] as $key => $value) {
-                                $safeSoul = $account->safeSouls()->where('query_param', $value)->first();
+                                $currentWeek = Week::getCurrentWeekForAccount($account);
+//                                $safeSoul = $account->safeSouls()->where('query_param', $value)->first();
+                                $safeSoul =  SafeSoul::where('query_param', $value)
+                                    ->where('account_id', $account->id)->first();
 
                                 if (!$safeSoul) {
                                     $safeSoul = new SafeSoul([
+                                        'account_id' => $account->id,
+//                                'week_id' => $currentWeek->id,
                                         'points' => ConstantValues::safesoul_achievement_points,
-                                        'comment' => 'ачивки',
+                                        'comment' => 'ачивки' . $value,
                                         'query_param' => $value
                                     ]);
+                                    $currentWeek->safeSouls()->save($safeSoul);
+                                    $currentWeek->increment('points', ConstantValues::safesoul_achievement_points);
 
-                                    $account->safeSouls()->save($safeSoul);
                                 }
                             }
                         }
@@ -205,39 +225,58 @@ trait SafeSoulTrait{
                         if ($account && isset($invite['invites'])) {
                             foreach ($invite['invites'] as $key => $value) {
 //                                dd($invite['invites']);
-                                $safeSoul = $account->safeSouls()->where('query_param', $key)->first();
+                                $currentWeek = Week::getCurrentWeekForAccount($account);
+//                                $safeSoul = $account->safeSouls()->where('query_param', $key)->first();
+                                $safeSoul =  SafeSoul::where('query_param', $key)
+                                    ->where('account_id', $account->id)->first();
 
                                 $lux = Str::contains($key, ['_2k_', '_10k_', '_50k_']);
                                 if (!$safeSoul && !$lux) {
                                     $safeSoul = new SafeSoul([
-                                        'points' => ConstantValues::safesoul_invited_person,
+                                        'account_id' => $account->id,
+//                                'week_id' => $currentWeek->id,
+                                        'claim_points' => ConstantValues::safesoul_invited_person,
                                         'comment' => 'Инвайт человека, wallet = '. $value,
                                         'query_param' => $key
                                     ]);
 
-                                    $account->safeSouls()->save($safeSoul);
+                                    $currentWeek->safeSouls()->save($safeSoul);
+                                    $currentWeek->increment('claim_points', ConstantValues::safesoul_invited_person);
+
                                 }elseif (!$safeSoul && $lux){
                                     if(Str::contains($key, '_2k_')){
                                         $safeSoul = new SafeSoul([
-                                            'points' => ConstantValues::safesoul_invited_2k,
+                                            'account_id' => $account->id,
+//                                'week_id' => $currentWeek->id,
+                                            'claim_points' => ConstantValues::safesoul_invited_2k,
                                             'comment' => 'Инвайт человека c 2k ,wallet = '. $value,
                                             'query_param' => $key
                                         ]);
-                                        $account->safeSouls()->save($safeSoul);
+
+                                        $currentWeek->safeSouls()->save($safeSoul);
+                                        $currentWeek->increment('claim_points', ConstantValues::safesoul_invited_2k);
+
                                     }elseif (Str::contains($value, '_10k_')){
                                         $safeSoul = new SafeSoul([
-                                            'points' => ConstantValues::safesoul_invited_10k,
+                                            'account_id' => $account->id,
+//                                'week_id' => $currentWeek->id,
+                                            'claim_points' => ConstantValues::safesoul_invited_10k,
                                             'comment' => 'Инвайт человека c 10k, wallet' . $value,
                                             'query_param' => $key
                                         ]);
-                                        $account->safeSouls()->save($safeSoul);
+                                        $currentWeek->safeSouls()->save($safeSoul);
+                                        $currentWeek->increment('claim_points', ConstantValues::safesoul_invited_10k);
                                     }else{
                                         $safeSoul = new SafeSoul([
-                                            'points' => ConstantValues::safesoul_invited_50k,
+                                            'account_id' => $account->id,
+//                                'week_id' => $currentWeek->id,
+                                            'claim_points' => ConstantValues::safesoul_invited_50k,
                                             'comment' => 'Инвайт человека c 50k, wallet'. $value,
                                             'query_param' => $key
                                         ]);
-                                        $account->safeSouls()->save($safeSoul);
+                                        $currentWeek->safeSouls()->save($safeSoul);
+                                        $currentWeek->increment('claim_points', ConstantValues::safesoul_invited_50k);
+//                                        $account->safeSouls()->save($safeSoul);
                                     }
                                 }
                             }
@@ -283,7 +322,6 @@ trait SafeSoulTrait{
 
                         }
                     }
-
                 }
             }else{
                 Log::info('safesoul reports update error: ' . $response->status() );
@@ -330,17 +368,29 @@ trait SafeSoulTrait{
 
     private function updateSafeSoulPoints($accountId, $pointsToAdd, $vote)
     {
-        // Logic to update points in the safe_souls table
-        // You can use the SafeSoul model or DB facade for this
-        // For example:
+        DB::transaction(function () use ($accountId, $pointsToAdd, $vote) {
+            // Find the Account by ID
+            $account = Account::findOrFail($accountId); // Using findOrFail to automatically handle account not found.
 
-            SafeSoul::updateOrCreate(
-                ['account_id' => $accountId, 'query_param'=>$vote],
-                ['points' => $pointsToAdd,
-                 'comment'=>'за каждые 100 отправленных репортов',
+            // Get the current Week for the Account, or create if it doesn't exist
+            $currentWeek = Week::getCurrentWeekForAccount($account);
 
+            // Update or Create a SafeSoul entry
+            $safesoul = SafeSoul::updateOrCreate(
+                [
+                    'account_id' => $accountId,
+                    'query_param' => $vote,
+                    'week_id' => $currentWeek->id // Ensuring we are specifying the week.
                 ],
+                [
+                    'claim_points' => $pointsToAdd,
+                    'comment' => 'за каждые 100 отправленных репортов',
+                ]
             );
+
+            // Increment claim_points in the Week table
+            $currentWeek->increment('claim_points', $pointsToAdd);
+        });
 
 
     }
@@ -372,5 +422,42 @@ trait SafeSoulTrait{
         }
 
         return null;
+    }
+
+    private function checkRole($discordId)
+    {
+        $scriptPath = base_path('./node/discord/role/checkRole');
+
+//        dd($discordId);
+        $process = new Process(['node', $scriptPath, $discordId]);
+        $process->run();
+
+// Check if the process was successful
+        if ($process->isSuccessful()) {
+            // Get the output of the script
+            $output = $process->getOutput();
+
+
+            $result = json_decode($output, true);
+
+            if ($result['state'] === 'success') {
+
+                $data = $result['data'];
+
+                return $data;
+
+            } else {
+
+                $errorMessage = $result['data'];
+                return null;
+
+            }
+        } else {
+            // Handle the case when the process fails
+            $exitCode = $process->getExitCode();
+            $errorOutput = $process->getErrorOutput();
+            Log::info($process->getErrorOutput());
+            return null;
+        }
     }
 }

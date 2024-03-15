@@ -7,6 +7,7 @@ namespace App\Traits;
 use App\ConstantValues;
 use App\Models\Account;
 use App\Models\DigitalAnimal;
+use App\Models\Week;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -32,7 +33,7 @@ trait DigitalAnimalsTrait
 
                 $data = json_decode($process->getOutput());
                 if (is_array($data) && (count($data) > 0)) {
-                    $animals = $account->animals()->where('query_param', 'like', 'token_%')->get();
+                    $animals = DigitalAnimal::where('query_param', 'like', 'token_%')->where('account_id', $account->id)->get();
 
                     $existingQueryParams = $animals->pluck('query_param')->toArray();
 
@@ -49,12 +50,17 @@ trait DigitalAnimalsTrait
                         $this->info($token);
                         $queryParam = 'token_' . $token;
                         if (!in_array($queryParam, $existingQueryParams)) {
+
+                            $currentWeek = Week::getCurrentWeekForAccount($account);
+
                             $newAnimal = new DigitalAnimal([
+                                'account_id'=>$account->id,
                                 'points' => ConstantValues::animal_owner,
                                 'comment' => 'Владение животным: ' . $token,
                                 'query_param' => $queryParam
                             ]);
-                            $account->animals()->save($newAnimal);
+                            $currentWeek->animals()->save($newAnimal);
+                            $currentWeek->increment('points', ConstantValues::animal_owner);
                         }
                     }
                 }
@@ -73,17 +79,24 @@ trait DigitalAnimalsTrait
         $accounts = Account::whereIn('id', $ids)->get();
 
         foreach ($accounts as $account){
-           $animalsCount = $account->animals()->where('query_param', 'like', 'token_%')->count();
 
-           $lord = $account->animals()->where('query_param', 'lord_20')->first();
+            $animalsCount = DigitalAnimal::where('query_param', 'like', 'token_%')->where('account_id', $account->id)->count();
+//           $animalsCount = $account->animals()->where('query_param', 'like', 'token_%')->count();
 
+//           $lord = $account->animals()->where('query_param', 'lord_20')->first();
+           $lord = DigitalAnimal::where('query_param', 'lord_20')->where('account_id', $account->id)->first();
+           $currentWeek = Week::getCurrentWeekForAccount($account);
            if($animalsCount >= 20 && !$lord){
                $newLord = new DigitalAnimal([
+                   'account_id'=>$account->id,
                    'points' => ConstantValues::lord_20,
                    'comment' => 'Лорд (владение больше 20)',
                    'query_param' => 'lord_20'
                ]);
-               $account->animals()->save($newLord);
+//               $account->animals()->save($newLord);
+               $currentWeek->animals()->save($newLord);
+               $currentWeek->increment('points', ConstantValues::lord_20);
+
            }elseif($animalsCount >= 20 && $lord){
                continue;
            }elseif($animalsCount < 20 && $lord){
@@ -92,7 +105,9 @@ trait DigitalAnimalsTrait
                    'comment' => 'Лорд (владение больше 20)',
                    'query_param' => 'not_lord_20'
                ]);
-               $account->animals()->save($newLord);
+//               $account->animals()->save($newLord);
+               $currentWeek->animals()->save($newLord);
+               $currentWeek->increment('points', -ConstantValues::lord_20);
            }
         }
 
@@ -108,6 +123,7 @@ trait DigitalAnimalsTrait
                 base_path('node/getRoleDiscord.js'),
                 $account->discord_id,
             ]);
+            $currentWeek = Week::getCurrentWeekForAccount($account);
 
             $process->run();
             if ($process->isSuccessful()) {
@@ -116,9 +132,14 @@ trait DigitalAnimalsTrait
                     if(is_array($data->data)){
                         $roles = $data->data;
                         //maybe issuees here
-                        $animals = $account->animals()->where('query_param', 'like', 'discord_%')->get();
+//                        $animals = $account->animals()->where('query_param', 'like', 'discord_%')->get();
+//
+//                        $existingQueryParams = $animals->pluck('query_param')->toArray();
 
-                        $existingQueryParams = $animals->pluck('query_param')->toArray();
+                        $existingQueryParams = DigitalAnimal::where('query_param', 'like', 'discord_%')
+                            ->where('account_id', $account->id)
+                            ->pluck('query_param')
+                            ->toArray();
 
                         if(!empty($animals)){
                             foreach ($animals as $animal) {
@@ -132,12 +153,16 @@ trait DigitalAnimalsTrait
 
                         foreach ($roles as $role){
                             if (!in_array($role, $existingQueryParams)) {
+
                                 $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
                                     'points' => ConstantValues::animal_discord_role_points,
                                     'comment' => 'Подключенные роли в дискорде '. $role,
                                     'query_param' => $role
                                 ]);
-                                $account->animals()->save($newAnimal);
+//                                $account->animals()->save($newAnimal);
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', ConstantValues::animal_discord_role_points);
                             }
                         }
 
@@ -168,6 +193,7 @@ trait DigitalAnimalsTrait
 //        dd($accounts);
 
         foreach ($accounts as $account){
+            $currentWeek = Week::getCurrentWeekForAccount($account);
             foreach ($tokenNumbers as $token){
                 $process = new Process([
                     'node',
@@ -190,24 +216,24 @@ trait DigitalAnimalsTrait
                         $this->info($data->data);
                         if (!in_array($queryParam, $existingQueryParams)) {
                             $newAnimal = new DigitalAnimal([
-                                'points' => ConstantValues::animal_discord_role_points,
+                                'account_id'=>$account->id,
+                                'claim_points' => ConstantValues::animal_discord_role_points,
                                 'comment' => $data->data,
                                 'query_param' => $queryParam
                             ]);
-                            $account->animals()->save($newAnimal);
+//                            $account->animals()->save($newAnimal);
+                            $currentWeek->animals()->save($newAnimal);
+                            $currentWeek->increment('claim_points', ConstantValues::animal_discord_role_points);
                         }
 
                     }elseif($data->state === 'error' && !is_null($data->data)){
                         continue;
-//                        $this->info($token);
-//                        $this->info($account->wallet);
-//                        $this->info($data->data);
+
                     }
                 }
             }
 
         }
-
 
     }
 

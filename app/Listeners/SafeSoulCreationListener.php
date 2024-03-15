@@ -22,10 +22,10 @@ class SafeSoulCreationListener
      */
     public function handle(SafeSoulCreationEvent $event): void
     {
-        $currentTotal = DB::table('accounts')->where('id', $event->accountId)->value('total_points');
-
-        $newTotal = $currentTotal + $event->safe->points;
-
-        DB::table('accounts')->where('id', $event->accountId)->update(['total_points'=>$newTotal]);
+//        $currentTotal = DB::table('accounts')->where('id', $event->accountId)->value('total_points');
+//
+//        $newTotal = $currentTotal + $event->safe->points;
+//
+//        DB::table('accounts')->where('id', $event->accountId)->update(['total_points'=>$newTotal]);
     }
 }

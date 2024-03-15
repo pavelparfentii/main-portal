@@ -22,30 +22,36 @@ class Account extends Model
 
 //    protected $appends = ['is_friend'];
 
-protected static function booted()
-{
-     static::created(function ($account){
-         if($account->role === ConstantValues::safesoul_og_patrol_role){
-             $safeSoul = new SafeSoul([
-                 'account_id'=>$account->id,
-                 'points'=>ConstantValues::safesoul_OG_patrol_points,
-                 'comment'=> 'Ог патрульный',
-                 'query_param'=>ConstantValues::safesoul_og_patrol_role
-             ]);
-             $account->safeSouls()->save($safeSoul);
-         }
-         if($account->role === ConstantValues::safesoul_patrol_role){
-             $safeSoul = new SafeSoul([
-                 'account_id'=>$account->id,
-                 'points'=>ConstantValues::safesoul_patrol_points,
-                 'comment'=> 'патрульный',
-                 'query_param'=>ConstantValues::safesoul_patrol_role
-             ]);
-             $account->safeSouls()->save($safeSoul);
-         }
-     });
+    protected static function booted()
+    {
+        static::created(function ($account) {
 
-    static::saved(function ($account){
+            $currentWeek = Week::getCurrentWeekForAccount($account);
+            if ($account->role === ConstantValues::safesoul_og_patrol_role) {
+                $safeSoul = new SafeSoul([
+                    'account_id' => $account->id,
+                    'week_id' => $currentWeek->id,
+                    'points' => ConstantValues::safesoul_OG_patrol_points,
+                    'comment' => 'роль Ог патрульный',
+                    'query_param' => ConstantValues::safesoul_og_patrol_role
+                ]);
+                $currentWeek->safeSouls()->save($safeSoul);
+                $currentWeek->increment('points', ConstantValues::safesoul_OG_patrol_points);
+            }
+            if ($account->role === ConstantValues::safesoul_patrol_role) {
+                $safeSoul = new SafeSoul([
+                    'account_id' => $account->id,
+                    'week_id' => $currentWeek->id,
+                    'points' => ConstantValues::safesoul_patrol_points,
+                    'comment' => 'роль патрульный',
+                    'query_param' => ConstantValues::safesoul_patrol_role
+                ]);
+                $currentWeek->safeSouls()->save($safeSoul);
+                $currentWeek->increment('points', ConstantValues::safesoul_OG_patrol_points);
+            }
+        });
+
+        static::saved(function ($account) {
 
             //something strange here
 //        $currentRole = $account->role;
@@ -115,77 +121,202 @@ protected static function booted()
 //            }
 //        }
 
-    });
-}
+        });
+    }
 
-    public function incrementPoints(string $type, ?string $tweet_id =null, ?string $comment_id=null): void
+    public function updateRoleAndAdjustPoints($newRole)
     {
-        if($type === 'likes'){
+        $originalRole = $this->role;
+
+        // Proceed only if the role is actually changing
+        if ($originalRole == $newRole) {
+            return; // No change, so no need to adjust points
+        }
+
+        DB::transaction(function () use ($newRole, $originalRole) {
+            Log::info('here');
+            // Update the role
+            $this->role = $newRole;
+            $this->save();
+
+            $currentWeek = Week::getCurrentWeekForAccount($this);
+
+            // Check for existing points entries related to patrol roles
+            $patrolEntryExists = SafeSoul::where('query_param', ConstantValues::safesoul_patrol_role)
+                ->where('account_id', $this->id)
+                ->exists();
+            $ogPatrolEntryExists = SafeSoul::where('query_param', ConstantValues::safesoul_og_patrol_role)
+                ->where('account_id', $this->id)
+                ->exists();
+
+            // Handle the transition from patrol to og_patrol
+            if ($originalRole === ConstantValues::safesoul_patrol_role && $newRole === ConstantValues::safesoul_og_patrol_role) {
+                if ($patrolEntryExists) {
+                    $currentWeek->safeSouls()->create([
+
+                        'account_id' => $this->id,
+//                        'week_id' => $currentWeek->id,
+                        'points' => -ConstantValues::safesoul_patrol_points,
+                        'comment' => 'Downgraded role from патрульный, points subtracted',
+                        'query_param' => 'downgraded_' . ConstantValues::safesoul_patrol_role,
+
+                    ]);
+                }
+                $currentWeek->safeSouls()->create([
+                    'account_id' => $this->id,
+                    'points' => ConstantValues::safesoul_OG_patrol_points,
+                    'comment' => 'Upgraded to role Ог патрульный, points added',
+                    'query_param' => ConstantValues::safesoul_og_patrol_role,
+                ]);
+                SafeSoul::where('query_param', ConstantValues::safesoul_patrol_role)
+                    ->where('account_id', $this->id)
+                    ->delete();
+                $currentWeek->increment('points', -ConstantValues::safesoul_patrol_points);
+                $currentWeek->increment('points', ConstantValues::safesoul_og_patrol_role);
+
+            } // Handle the transition from og_patrol to patrol
+            elseif ($originalRole === ConstantValues::safesoul_og_patrol_role && $newRole === ConstantValues::safesoul_patrol_role) {
+                if ($ogPatrolEntryExists) {
+                    $currentWeek->safeSouls()->create([
+                        'account_id' => $this->id,
+                        'points' => -ConstantValues::safesoul_OG_patrol_points,
+                        'comment' => 'Downgraded from Ог патрульный, points subtracted',
+                        'query_param' =>'downgraded_' .  ConstantValues::safesoul_og_patrol_role,
+                    ]);
+                }
+                $currentWeek->safeSouls()->create([
+                    'account_id' => $this->id,
+                    'points' => ConstantValues::safesoul_patrol_points,
+                    'comment' => 'Upgraded to патрульный, points added',
+                    'query_param' => ConstantValues::safesoul_patrol_role,
+                ]);
+
+                SafeSoul::where('query_param', ConstantValues::safesoul_og_patrol_role)
+                    ->where('account_id', $this->id)
+                    ->delete();
+                $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
+                $currentWeek->increment('points', -ConstantValues::safesoul_og_patrol_role);
+            }elseif ($newRole !== ConstantValues::safesoul_og_patrol_role && $newRole !== ConstantValues::safesoul_patrol_role){
+                if ($patrolEntryExists) {
+                    $currentWeek->safeSouls()->create([
+
+                        'account_id' => $this->id,
+//                        'week_id' => $currentWeek->id,
+                        'points' => -ConstantValues::safesoul_patrol_points,
+                        'comment' => 'Downgraded role from патрульный, points subtracted',
+                        'query_param' => 'downgraded_' . ConstantValues::safesoul_patrol_role,
+
+                    ]);
+
+                    SafeSoul::where('query_param', ConstantValues::safesoul_patrol_role)
+                        ->where('account_id', $this->id)
+                        ->delete();
+                    $currentWeek->increment('points', -ConstantValues::safesoul_patrol_points);
+                }
+                if ($ogPatrolEntryExists) {
+                    $currentWeek->safeSouls()->create([
+                        'account_id' => $this->id,
+                        'points' => -ConstantValues::safesoul_OG_patrol_points,
+                        'comment' => 'Downgraded from Ог патрульный, points subtracted',
+                        'query_param' =>'downgraded_' .  ConstantValues::safesoul_og_patrol_role,
+                    ]);
+
+                    SafeSoul::where('query_param', ConstantValues::safesoul_og_patrol_role)
+                        ->where('account_id', $this->id)
+                        ->delete();
+
+                    $currentWeek->increment('points', -ConstantValues::safesoul_OG_patrol_points);
+                }
+            }
+
+        });
+    }
+
+    public function incrementPoints(string $type, ?string $tweet_id = null, ?string $comment_id = null): void
+    {
+        $currentWeek = Week::getCurrentWeekForAccount($this);
+
+        if ($type === 'likes') {
             $twitter = new Twitter([
-                'points' => ConstantValues::twitter_projects_tweet_likes_points,
+                'account_id'=>$this->id,
+                'claim_points' => ConstantValues::twitter_projects_tweet_likes_points,
                 'comment' => 'лайк нашего твита tweet_id=' . $tweet_id,
                 'query_param' => '3projects_likes'
             ]);
-            $this->twitters()->save($twitter);
-        }elseif ($type === 'retweets'){
+            $currentWeek->twitters()->save($twitter);
+            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_likes_points);
+        } elseif ($type === 'retweets') {
             $twitter = new Twitter([
-                'points' => ConstantValues::twitter_projects_tweet_retweet_points,
+                'account_id'=>$this->id,
+                'claim_points' => ConstantValues::twitter_projects_tweet_retweet_points,
                 'comment' => 'ретвит нашего твита tweet_id=' . $tweet_id,
                 'query_param' => '3projects_retweets'
             ]);
-            $this->twitters()->save($twitter);
-        }elseif ($type === 'quotes'){
+            $currentWeek->twitters()->save($twitter);
+            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_retweet_points);
+        } elseif ($type === 'quotes') {
             $twitter = new Twitter([
-                'points' => ConstantValues::twitter_projects_tweet_quote_points,
+                'account_id'=>$this->id,
+                'claim_points' => ConstantValues::twitter_projects_tweet_quote_points,
                 'comment' => 'Ретвит нашего твита с комментарием  tweet_id=' . $tweet_id . ' quote_id=' . $comment_id,
                 'query_param' => '3projects_quotes'
             ]);
-            $this->twitters()->save($twitter);
-        }elseif($type === 'comments'){
+
+            $currentWeek->twitters()->save($twitter);
+            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_quote_points);
+        } elseif ($type === 'comments') {
             $twitter = new Twitter([
-                'points' => ConstantValues::twitter_projects_tweet_quote_points,
-                'comment' => 'Коммента нашего твита с комментарием tweet_id=' . $tweet_id . ' comment_id='.$comment_id,
+                'account_id'=>$this->id,
+                'claim_points' => ConstantValues::twitter_projects_tweet_quote_points,
+                'comment' => 'Коммента нашего твита с комментарием tweet_id=' . $tweet_id . ' comment_id=' . $comment_id,
                 'query_param' => '3projects_comments'
             ]);
-            $this->twitters()->save($twitter);
+            $currentWeek->twitters()->save($twitter);
+            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_quote_points);
+//            $this->twitters()->save($twitter);
         }
 
     }
 
-    public function animals()
+    public function weeks(): HasMany
     {
-        return $this->hasMany(DigitalAnimal::class);
+        return $this->hasMany(Week::class);
     }
 
-    public function games()
-    {
-        return $this->hasMany(DigitalGame::class);
-    }
-
-    public function digitalSouls()
-    {
-        return $this->hasMany(DigitalSoul::class);
-    }
-
-    public function safeSouls()
-    {
-        return $this->hasMany(SafeSoul::class);
-    }
-
-    public function stores()
-    {
-        return $this->hasMany(Store::class);
-    }
-
-    public function generals()
-    {
-        return $this->hasMany(General::class);
-    }
-
-    public function twitters()
-    {
-        return $this->hasMany(Twitter::class);
-    }
+//    public function animals()
+//    {
+//        return $this->hasMany(DigitalAnimal::class);
+//    }
+//
+//    public function games()
+//    {
+//        return $this->hasMany(DigitalGame::class);
+//    }
+//
+//    public function digitalSouls()
+//    {
+//        return $this->hasMany(DigitalSoul::class);
+//    }
+//
+//    public function safeSouls()
+//    {
+//        return $this->hasMany(SafeSoul::class);
+//    }
+//
+//    public function stores()
+//    {
+//        return $this->hasMany(Store::class);
+//    }
+//
+//    public function generals()
+//    {
+//        return $this->hasMany(General::class);
+//    }
+//
+//    public function twitters()
+//    {
+//        return $this->hasMany(Twitter::class);
+//    }
 
     public function discordRoles(): BelongsToMany
     {
@@ -255,7 +386,8 @@ protected static function booted()
 //        return $this->friends()->where('friend_id', $this->id)->exists();
 //    }
 
-    public function adjustPointsAndWipeSafesouls() {
+    public function adjustPointsAndWipeSafesouls()
+    {
         $accounts = Account::with('safeSouls')->get();
 
         foreach ($accounts as $account) {
@@ -270,7 +402,6 @@ protected static function booted()
         // Wipe the safesouls table after adjustments
         SafeSoul::query()->delete();
     }
-
 
 
 }

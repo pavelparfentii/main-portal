@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Events\TwitterCreationEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Twitter extends Model
 {
@@ -12,9 +13,13 @@ class Twitter extends Model
 
     protected $guarded = [];
 
-    public function account()
+//    public function account()
+//    {
+//        return $this->belongsTo(Account::class);
+//    }
+    public function week(): BelongsTo
     {
-        return $this->belongsTo(Account::class);
+        return $this->belongsTo(Week::class);
     }
 
     protected static function booted()
