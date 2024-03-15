@@ -243,7 +243,7 @@ class TeamController extends Controller
             'team'=>$team,
             'total_members'=>$team->accounts()->count(),
             'total_points'=>$team->accounts()->sum('total_points'),
-            'week_points' => $teamTotalWeekPoints,
+            'team_week_points' => $teamTotalWeekPoints,
 //          Uncomment here
 //            'is_friend_of_creator'=>$currentUser->id === $team->creator->id ? true : $isFriendOfCreator,
             'is_friend_of_creator'=>true,
