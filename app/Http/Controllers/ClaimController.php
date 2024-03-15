@@ -36,8 +36,9 @@ class ClaimController extends Controller
                 $currentUserWeek->claimed = true;
                 $currentUserWeek->save();
 
-
                 $account->save();
+
+                return response()->json([], 200);
             }
         }
     }
