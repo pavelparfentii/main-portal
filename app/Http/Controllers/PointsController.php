@@ -198,7 +198,8 @@ class PointsController extends Controller
             // Отримуємо очки користувача за поточний тиждень
             $currentUserWeekPoints = $account->weeks()
                     ->where('week_number', $currentWeekNumber)
-                    ->where('active', true) // Враховуємо активні тижні, якщо потрібно
+                    ->where('active', true)
+                    ->where('claimed', false)
                     ->first()
                     ->claim_points ?? 0;
 

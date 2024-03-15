@@ -302,9 +302,9 @@ class UpdateDiscordRolesTableCommand extends Command
 
         foreach ($discordRoles as $role)
             DiscordRole::updateOrCreate(
-                ['role_id' => $role['id']], // Attributes to find the model
+                ['role_id' => $role['id']],
                 [
-                    'name' => $role['role'], // Values to update or create with
+                    'name' => $role['role'],
                     'color' => $role['color'],
                     'position' => $role['position']
                 ]
