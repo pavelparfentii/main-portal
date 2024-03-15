@@ -47,3 +47,5 @@ Route::post('team/leave', [\App\Http\Controllers\TeamController::class, 'leaveTe
 Route::post('/team/check/name', [\App\Http\Controllers\TeamController::class, 'checkName']);
 
 Route::post('/points/needshow', [\App\Http\Controllers\PointsController::class, 'needShow']);
+
+Route::post('/points/claim', [\App\Http\Controllers\ClaimController::class, 'claim']);
