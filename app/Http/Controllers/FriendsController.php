@@ -135,20 +135,22 @@ class FriendsController extends Controller
             ]);
         }elseif ($period == 'week'){
 
-            $currentWeekNumber = Carbon::now()->format('W-Y');
+//            $currentWeekNumber = Carbon::now()->format('W-Y');
+
+            $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
             $currentUserWeekPoints = $account->weeks()
-                    ->where('week_number', '=', $currentWeekNumber)
-                    ->where('active', true)
+                    ->where('week_number', '=', $previousWeekNumber)
+                    ->where('active', false)
                     ->first()
                     ->points ?? 0;
 
             // Розрахунок рангу для поточного користувача на основі points з таблиці weeks
             $userRank = DB::table('accounts')
                     ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
-                    ->where('weeks.week_number', '=', $currentWeekNumber)
+                    ->where('weeks.week_number', '=', $previousWeekNumber)
 //                    ->where('weeks.points', '>', $currentUserWeekPoints)
-                    ->where('weeks.active', true)
+                    ->where('weeks.active', false)
                     ->count() + 1;
 
             $account->total_points = $currentUserWeekPoints; // Використання week.points як total_points
@@ -162,18 +164,18 @@ class FriendsController extends Controller
             $allAccounts = collect([$currentUserData]);
 
             // Обробка друзів аналогічно з використанням week.points
-            $friends = $account->friends()->with(['discordRoles', 'team.accounts'])->get()->each(function ($friend) use ($currentWeekNumber) {
+            $friends = $account->friends()->with(['discordRoles', 'team.accounts'])->get()->each(function ($friend) use ($previousWeekNumber) {
                 $friendWeekPoints = $friend->weeks()
-                        ->where('week_number', '=', $currentWeekNumber)
-                        ->where('active', true)
+                        ->where('week_number', '=', $previousWeekNumber)
+                        ->where('active', false)
                         ->first()
                         ->points ?? 0;
 
                 $friendRank = DB::table('accounts')
                         ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
-                        ->where('weeks.week_number', '=', $currentWeekNumber)
+                        ->where('weeks.week_number', '=', $previousWeekNumber)
                         ->where('weeks.points', '>', $friendWeekPoints)
-                        ->where('weeks.active', true)
+                        ->where('weeks.active', false)
                         ->count() + 1;
 
                 $friend->total_points = $friendWeekPoints; // Використання week.points як total_points

@@ -89,14 +89,14 @@ class PointsController extends Controller
             $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
 
             $loadRelations = ['discordRoles', 'friends', 'team.accounts'];
-            $currentWeekNumber = Carbon::now()->format('W-Y'); // Формат тиждень-рік, наприклад "03-2024"
+//            $currentWeekNumber = Carbon::now()->format('W-Y'); // Формат тиждень-рік, наприклад "03-2024"
             $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
             $topAccounts = Account::with($loadRelations)
-                ->join('weeks', function ($join) use ($currentWeekNumber) {
+                ->join('weeks', function ($join) use ($previousWeekNumber) {
                     $join->on('accounts.id', '=', 'weeks.account_id')
-                        ->where('weeks.week_number', '=', $currentWeekNumber) // Тільки записи для поточного тижня
-                        ->where('weeks.active', '=', true); // Враховуємо тільки активні записи, якщо потрібно
+                        ->where('weeks.week_number', '=', $previousWeekNumber) // Тільки записи для поточного тижня
+                        ->where('weeks.active', '=', false); // Враховуємо тільки активні записи, якщо потрібно
                 })
                 ->select('accounts.id', 'accounts.wallet', 'accounts.twitter_username', 'weeks.points as total_points', 'accounts.twitter_name', 'accounts.twitter_avatar', 'accounts.team_id')
                 ->orderByDesc('weeks.points') // Сортування за очками поточного тижня
@@ -125,21 +125,21 @@ class PointsController extends Controller
 
             if ($account) {
                 // Визначаємо номер поточного тижня
-                $currentWeekNumber = Carbon::now()->format('W-Y');
-
+//                $currentWeekNumber = Carbon::now()->format('W-Y');
+                $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
                 // Отримуємо очки користувача за поточний тиждень
                 $currentUserWeekPoints = $account->weeks()
-                        ->where('week_number', $currentWeekNumber)
-                        ->where('active', true) // Враховуємо активні тижні, якщо потрібно
+                        ->where('week_number', $previousWeekNumber)
+                        ->where('active', false) // Враховуємо активні тижні, якщо потрібно
                         ->first()
                         ->points ?? 0;
 //                dd($currentUserWeekPoints);
                 // Розраховуємо ранг користувача на основі його очок за тиждень
                 $userRankBasedOnWeekPoints = DB::table('accounts')
                         ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
-                        ->where('weeks.week_number', '=', $currentWeekNumber)
-//                        ->where('weeks.points', '>', $currentUserWeekPoints)
-                        ->where('weeks.active', true)
+                        ->where('weeks.week_number', '=', $previousWeekNumber)
+                        ->where('weeks.points', '>', $currentUserWeekPoints)
+                        ->where('weeks.active', false)
                         ->count() + 1;
 
                 // Якщо користувач не увійшов до топ-100
@@ -193,12 +193,13 @@ class PointsController extends Controller
 //            $accountResourceArray['isNeedShow'] = false;
             $accountResourceArray['invited'] = "-";
 
-            $currentWeekNumber = Carbon::now()->format('W-Y');
+//            $currentWeekNumber = Carbon::now()->format('W-Y');
+            $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
             // Отримуємо очки користувача за поточний тиждень
             $currentUserWeekPoints = $account->weeks()
-                    ->where('week_number', $currentWeekNumber)
-                    ->where('active', true)
+                    ->where('week_number', $previousWeekNumber)
+                    ->where('active', false)
                     ->where('claimed', false)
                     ->first()
                     ->claim_points ?? 0;

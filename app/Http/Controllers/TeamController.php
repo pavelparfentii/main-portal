@@ -136,8 +136,8 @@ class TeamController extends Controller
         $team = Team::where('slug', $slug)->with('creator')->with('accounts')->first();
 
         $period = $request->input('period', 'total');
-        $currentWeekNumber = Carbon::now()->format('W-Y');
-
+//        $currentWeekNumber = Carbon::now()->format('W-Y');
+        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
 
         if(!$team){
@@ -149,8 +149,8 @@ class TeamController extends Controller
             // Retrieve the points for the current week, or default to 0 if none exist
             $weekPoints = DB::table('weeks')
                 ->where('account_id', $account->id)
-                ->where('week_number', $currentWeekNumber)
-                ->where('active', true)
+                ->where('week_number', $previousWeekNumber)
+                ->where('active', false)
                 ->sum('points'); // Using sum() directly on the query builder
 
             $account->week_points = $weekPoints; // Add week_points attribute to each account
@@ -161,8 +161,8 @@ class TeamController extends Controller
             foreach ($team->accounts as $account) {
                 // Sum only points for the current week
                 $accountWeekPoints = $account->weeks
-                    ->where('week_number', $currentWeekNumber)
-                    ->where('active', true)
+                    ->where('week_number', $previousWeekNumber)
+                    ->where('active', false)
                     ->sum('points');
                 $totalWeekPoints += $accountWeekPoints;
             }
@@ -216,8 +216,8 @@ class TeamController extends Controller
                 $teamAccount->is_friend_of_creator = $isFriendOfCreator;
             }
             $weekPoints = $teamAccount->weeks()
-                    ->where('week_number', $currentWeekNumber)
-                    ->where('active', true)
+                    ->where('week_number', $previousWeekNumber)
+                    ->where('active', false)
                     ->sum('points');
             $teamAccount->week_points = $weekPoints;
 
@@ -394,11 +394,12 @@ class TeamController extends Controller
             if($token && !$currentUser){
                 return response()->json(['error' => 'token expired or wrong'], 403);
             }
-            $currentWeekNumber = Carbon::now()->format('W-Y'); // Current week number in format 'W-Y'
+//            $currentWeekNumber = Carbon::now()->format('W-Y'); // Current week number in format 'W-Y'
+            $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
-            $teams = Team::with(['creator', 'accounts.weeks' => function ($query) use ($currentWeekNumber) {
+            $teams = Team::with(['creator', 'accounts.weeks' => function ($query) use ($previousWeekNumber) {
                 // Filter the weeks related to the current week
-                $query->where('week_number', '=', $currentWeekNumber)->where('active', true);
+                $query->where('week_number', '=', $previousWeekNumber)->where('active', false);
             }])->get();
 
 // Calculate total points for each team for the current week
