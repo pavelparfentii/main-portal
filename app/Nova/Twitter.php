@@ -51,6 +51,7 @@ class Twitter extends Resource
             ID::make()->sortable(),
             Text::make('comment'),
             \Laravel\Nova\Fields\Number::make('points')->step(0.001),
+            \Laravel\Nova\Fields\Number::make('claim_points')->min(0.001)->step(0.001)->sortable(),
             Date::make('created_at')
         ];
     }

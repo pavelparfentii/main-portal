@@ -3,6 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Account;
+use App\Models\DigitalAnimal;
+use App\Models\SafeSoul;
+use App\Models\Twitter;
 use App\Models\Week;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -71,6 +74,10 @@ class RecountPoints extends Command
                     'claim_points' => 0,
                     'claimed'=>true
                 ]);
+
+                SafeSoul::where('account_id', $account->id)->update(['week_id'=>$previousWeek->id]);
+                DigitalAnimal::where('account_id', $account->id)->update(['week_id'=>$previousWeek->id]);
+                Twitter::where('account_id', $account->id)->update(['week_id'=>$previousWeek->id]);
             }
         }
 

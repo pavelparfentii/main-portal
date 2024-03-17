@@ -51,11 +51,7 @@ class Account extends Resource
             Text::make(__('discord_id'), 'discord_id')->onlyOnDetail(),
             Number::make('total_points')->min(0.001)->step(0.001)->sortable(),
 
-            HasMany::make('SafeSoul', 'safeSouls')->hideFromIndex(),
-
-            HasMany::make('Twitter', 'twitters')->hideFromIndex(),
-
-            HasMany::make('DigitalAnimal', 'animals')->hideFromIndex()
+            HasMany::make('Week', 'weeks')->hideFromIndex()
 
         ];
     }

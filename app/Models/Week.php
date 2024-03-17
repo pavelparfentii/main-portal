@@ -47,6 +47,12 @@ class Week extends Model
         return $this->hasMany(Twitter::class);
     }
 
+    public function isClaimPointsUnused()
+    {
+
+        return !$this->claimed && $this->claim_points > 0;
+    }
+
     public static function getCurrentWeekForAccount(Account $account)
     {
         $currentDate = Carbon::now();
