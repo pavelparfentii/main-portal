@@ -31,7 +31,6 @@ class ClaimController extends Controller
 
                 $account->total_points += $currentUserWeekPoints;
 
-
 //                $currentUserWeek->claim_points = 0;
                 $currentUserWeek->claimed = true;
                 $currentUserWeek->save();

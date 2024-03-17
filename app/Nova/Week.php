@@ -64,11 +64,13 @@ class Week extends Resource
 //                ->where('active', false)
 //                ->select();
 
+            Text::make('Week number', 'week_number'),
+
             Number::make('points')->min(0.001)->step(0.001)->sortable(),
 
             Number::make('claim_points')->min(0.001)->step(0.001)->sortable(),
 
-            Text::make('Week number', 'week_number'),
+
 
             HasMany::make('SafeSoul', 'safeSouls')->hideFromIndex(),
 

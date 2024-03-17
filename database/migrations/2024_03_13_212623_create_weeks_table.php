@@ -53,7 +53,7 @@ return new class extends Migration
 
         Schema::table('twitters', function (Blueprint $table) {
             $table->unsignedBigInteger('week_id')->nullable();
-            $table->foreignId('week_id')->after('id')->constrained('weeks')->onDelete('set null');
+            $table->foreign('week_id')->references('id')->on('weeks')->onDelete('set null');
             $table->decimal('claim_points', 10, 3)->default(0);
         });
 
