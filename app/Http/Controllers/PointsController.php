@@ -193,16 +193,25 @@ class PointsController extends Controller
 //            $accountResourceArray['isNeedShow'] = false;
             $accountResourceArray['invited'] = "-";
 
-//            $currentWeekNumber = Carbon::now()->format('W-Y');
             $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
-            // Отримуємо очки користувача за поточний тиждень
+//            dd($account->id);
             $currentUserWeekPoints = $account->weeks()
-                    ->where('week_number', $previousWeekNumber)
-                    ->where('active', false)
-                    ->where('claimed', false)
-                    ->first()
-                    ->claim_points ?? 0;
+                ->where('week_number', $previousWeekNumber)
+                ->where('active', false)
+                ->where('claimed', true)
+                ->first()
+                ->claim_points ?? 0;
+//            dd($currentUserWeekPoints);
+
+            if($account->isNeedShow){
+                $accountResourceArray['claimed_points']= $currentUserWeekPoints;
+            }
+
+//            $currentWeekNumber = Carbon::now()->format('W-Y');
+
+            // Отримуємо очки користувача за поточний тиждень
+
 
 //            dd($currentUserWeekPoints);
 
@@ -218,7 +227,7 @@ class PointsController extends Controller
                     'total_users'=> DB::table('accounts')->count(),
                     'total_teams'=>DB::table('teams')->count(),
                     'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
-                    'claimed'=>$currentUserWeekPoints > 0 ? false : true,
+//                    'claimed'=>$currentUserWeekPoints,
 
                 ]
             ]);

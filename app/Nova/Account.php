@@ -2,6 +2,7 @@
 
 namespace App\Nova;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Laravel\Nova\Fields\HasMany;
 use Laravel\Nova\Fields\ID;
@@ -42,6 +43,8 @@ class Account extends Resource
      */
     public function fields(NovaRequest $request)
     {
+        $previousWeek = Carbon::now()->subWeek()->format('W-Y');
+
         return [
             ID::make()->sortable(),
             Text::make(__('Wallet'), 'wallet')->sortable(),
@@ -50,6 +53,14 @@ class Account extends Resource
             Text::make(__('Twitter_id'), 'twitter_id')->onlyOnDetail(),
             Text::make(__('discord_id'), 'discord_id')->onlyOnDetail(),
             Number::make('total_points')->min(0.001)->step(0.001)->sortable(),
+
+            Number::make('claim_points', function () use($previousWeek){
+                $claim_points = $this->weeks()
+                    ->where('week_number', $previousWeek)
+                    ->pluck('claim_points')
+                    ->first();
+                return $claim_points;
+            })->sortable(),
 
             HasMany::make('Week', 'weeks')->hideFromIndex()
 

@@ -17,23 +17,27 @@ class ClaimController extends Controller
         }
 
         $currentWeekNumber = Carbon::now()->format('W-Y');
+//        $previousWeekNumber =
+        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
 
-        $currentUserWeek = $account->weeks()
-            ->where('week_number', $currentWeekNumber)
-            ->where('active', true)
+        $previousUserWeek = $account->weeks()
+            ->where('week_number', $previousWeekNumber)
+            ->where('active', false)
             ->first();
 
-        if ($currentUserWeek) {
-            $currentUserWeekPoints = $currentUserWeek->claim_points ?? 0;
+        if ($previousUserWeek) {
+            $previousUserWeekPoints = $currentUserWeek->claim_points ?? 0;
 
-            if ($currentUserWeekPoints > 0) {
+            if ($previousUserWeekPoints) {
 
-                $account->total_points += $currentUserWeekPoints;
+                $account->total_points += $previousUserWeekPoints;
 
 //                $currentUserWeek->claim_points = 0;
-                $currentUserWeek->claimed = true;
-                $currentUserWeek->save();
+                $previousUserWeek->claimed = true;
+                $previousUserWeek->save();
+
+                $account->isNeedShow= true;
 
                 $account->save();
 
