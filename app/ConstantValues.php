@@ -52,4 +52,11 @@ class ConstantValues
     const animal_discord_role_points = 10.000;
     const animal_long_range_owner_points = 100.00;
 
+    //Referral
+    const null_balance = 1.000;
+    const balance_2k = 10.000;
+    const balance_10k = 20.000;
+    const balance_50k = 50.000;
+
+
 }

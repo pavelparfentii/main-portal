@@ -189,24 +189,33 @@ class PointsController extends Controller
 
             $accountResourceArray = (new AccountResource($account))->resolve();
 
-            // Add isNeedShow directly
-//            $accountResourceArray['isNeedShow'] = false;
-            $accountResourceArray['invited'] = "-";
 
             $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
 //            dd($account->id);
             $currentUserWeekPoints = $account->weeks()
-                ->where('week_number', $previousWeekNumber)
-                ->where('active', false)
-                ->where('claimed', true)
-                ->first()
-                ->claim_points ?? 0;
+                    ->where('week_number', $previousWeekNumber)
+                    ->where('active', false)
+                    ->where('claimed', false)
+                    ->first()
+                    ->claim_points ?? null;
 //            dd($currentUserWeekPoints);
 
-            if($account->isNeedShow){
-                $accountResourceArray['claimed_points']= $currentUserWeekPoints;
-            }
+            // if($account->isNeedShow){
+            $accountResourceArray['claimed_points']= $currentUserWeekPoints ?? $account->weeks()
+                    ->where('week_number', $previousWeekNumber)
+                    ->where('active', false)
+                    ->where('claimed', true)
+                    ->first()
+                    ->claim_points;
+
+            $accountResourceArray['invited'] = $account->invitesSent()->count() ?? 0;
+            // }
+
+            $claimed = $account->weeks()
+                ->where('week_number', $previousWeekNumber)
+                ->where('active', false)
+                ->where('claimed', false)->first();
 
 //            $currentWeekNumber = Carbon::now()->format('W-Y');
 
@@ -227,7 +236,7 @@ class PointsController extends Controller
                     'total_users'=> DB::table('accounts')->count(),
                     'total_teams'=>DB::table('teams')->count(),
                     'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
-//                    'claimed'=>$currentUserWeekPoints,
+                    'claimed'=>$claimed ? false : true,
 
                 ]
             ]);

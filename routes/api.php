@@ -49,3 +49,5 @@ Route::post('/team/check/name', [\App\Http\Controllers\TeamController::class, 'c
 Route::post('/points/needshow', [\App\Http\Controllers\PointsController::class, 'needShow']);
 
 Route::post('/points/claim', [\App\Http\Controllers\ClaimController::class, 'claim']);
+
+Route::post('/invite/account', [\App\Http\Controllers\InviteController::class, 'inviteUser']);
