@@ -56,14 +56,15 @@ class InviteController extends Controller
         }
 
         $checkCode = Code::where('value', $code)->first();
+        $inviter = Account::where('id', $checkCode->id)->first();
 
-        if(!$checkCode){
+        if(!$checkCode || !$inviter){
             return response()->json(['message'=>'no such code in database '], 403);
         }
 
         $currentWeek = Week::getCurrentWeekForAccount($account);
 
-        $inviter = Account::where('id', $checkCode->id)->first();
+
         $inviterCurrentWeek = Week::getCurrentWeekForAccount($inviter);
 
 
@@ -76,7 +77,7 @@ class InviteController extends Controller
 
         if(empty($inviteCheck)){
 
-            if (!is_null($account->wallet) && isset($account->wallet)) {
+            if ($account->wallet !== '' && isset($account->wallet) && !is_null($account->wallet)) {
                 $process = new Process([
                     'node',
                     base_path('node/getInvitedBalanceWallet.js'),
@@ -234,7 +235,7 @@ class InviteController extends Controller
                         'account_id' => $inviter->id,
 //                                'week_id' => $currentWeek->id,
                         'points' => ConstantValues::null_balance,
-                        'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet,
+                        'comment' => 'Инвайт человека, рефералка без истории кошелька',
                         'query_param' => $checkCode->value
                     ]);
 
@@ -253,8 +254,9 @@ class InviteController extends Controller
                 'used_code'=>$checkCode->value
             ]);
             return response()->json([
-               'invited' => DB::table('invites')
-                   ->where('used_code', $checkCode->value)->count()
+//               'invited' => DB::table('invites')
+//                   ->where('used_code', $checkCode->value)->count(),
+               'points'=> $safeSoul->points
             ]);
 
         }else{

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\ConstantValues;
@@ -25,6 +26,33 @@ class Account extends Model
     protected static function booted()
     {
         static::created(function ($account) {
+
+            //create previous week and attach to new account
+            $currentDate = Carbon::now();
+            $startOfWeek = $currentDate->copy()->subWeek()->startOfWeek();
+            $endOfWeek = $currentDate->copy()->subWeek()->endOfWeek();
+
+            $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+
+            $previousWeek = Week::where('account_id', $account->id)
+                ->where('start_date', '<=', $startOfWeek)
+                ->where('end_date', '>=', $endOfWeek)
+                ->where('active', false)
+                ->first();
+
+
+            if (!$previousWeek) {
+
+                $previousWeek = $account->weeks()->create([
+                    'week_number' => $previousWeekNumber,
+                    'start_date' => $startOfWeek->toDateString(),
+                    'end_date' => $endOfWeek->toDateString(),
+                    'active' => false,
+                    'points' => 0.000,
+                    'claim_points' => 0.000,
+                    'claimed' => true
+                ]);
+            }
 
             $currentWeek = Week::getCurrentWeekForAccount($account);
             if ($account->role === ConstantValues::safesoul_og_patrol_role) {
@@ -267,12 +295,12 @@ class Account extends Model
         } elseif ($type === 'comments') {
             $twitter = new Twitter([
                 'account_id'=>$this->id,
-                'claim_points' => ConstantValues::twitter_projects_tweet_quote_points,
+                'claim_points' => ConstantValues::twitter_projects_tweet_comment_points,
                 'comment' => 'Коммента нашего твита с комментарием tweet_id=' . $tweet_id . ' comment_id=' . $comment_id,
                 'query_param' => '3projects_comments'
             ]);
             $currentWeek->twitters()->save($twitter);
-            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_quote_points);
+            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_comment_points);
 //            $this->twitters()->save($twitter);
         }
 

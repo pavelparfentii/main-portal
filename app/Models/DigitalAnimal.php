@@ -25,9 +25,9 @@ class DigitalAnimal extends Model
 
     protected static function booted()
     {
-        static::created(function($animal){
-            $accountId = $animal->account_id;
-            event(new DigitalAnimalsCreationEvent($animal, $accountId));
-        });
+//        static::created(function($animal){
+//            $accountId = $animal->account_id;
+//            event(new DigitalAnimalsCreationEvent($animal, $accountId));
+//        });
     }
 }

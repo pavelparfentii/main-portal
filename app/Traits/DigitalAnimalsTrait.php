@@ -74,7 +74,10 @@ trait DigitalAnimalsTrait
 
     public function lordPoints()
     {
-        $ids = DB::table('digital_animals')->where('query_param', 'like', 'token_%')->distinct()->pluck('account_id');
+        $ids = DB::table('digital_animals')
+            ->where('query_param', 'like', 'token_%')
+            ->distinct()
+            ->pluck('account_id');
 
         $accounts = Account::whereIn('id', $ids)->get();
 
@@ -101,6 +104,7 @@ trait DigitalAnimalsTrait
                continue;
            }elseif($animalsCount < 20 && $lord){
                $newLord = new DigitalAnimal([
+                   'account_id'=>$account->id,
                    'points' => -ConstantValues::lord_20,
                    'comment' => 'Лорд (владение больше 20)',
                    'query_param' => 'not_lord_20'
@@ -205,7 +209,7 @@ trait DigitalAnimalsTrait
                 $process->run();
                 if ($process->isSuccessful()) {
 
-                    $animals = $account->animals()->where('query_param', 'like', 'token_owner_year_%')->get();
+                    $animals = $currentWeek->animals()->where('query_param', 'like', 'token_owner_year_%')->get();
 
                     $existingQueryParams = $animals->pluck('query_param')->toArray();
 
@@ -217,13 +221,13 @@ trait DigitalAnimalsTrait
                         if (!in_array($queryParam, $existingQueryParams)) {
                             $newAnimal = new DigitalAnimal([
                                 'account_id'=>$account->id,
-                                'claim_points' => ConstantValues::animal_discord_role_points,
+                                'claim_points' => ConstantValues::animal_long_range_owner_points,
                                 'comment' => $data->data,
                                 'query_param' => $queryParam
                             ]);
 //                            $account->animals()->save($newAnimal);
                             $currentWeek->animals()->save($newAnimal);
-                            $currentWeek->increment('claim_points', ConstantValues::animal_discord_role_points);
+                            $currentWeek->increment('claim_points', ConstantValues::animal_long_range_owner_points);
                         }
 
                     }elseif($data->state === 'error' && !is_null($data->data)){

@@ -31,7 +31,7 @@ class AuthHelper
 //            dd($decodedToken);
             $authId = !is_null($decodedToken['sub']) ? $decodedToken['sub'] : null;
 
-            $userWallet = strtolower($decodedToken['wallet_address']);
+            $userWallet = !is_null($decodedToken['wallet_address']) ? strtolower($decodedToken['wallet_address']) : null;
             $tokenTwitterName = !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['name'] : null;
             $tokenTwitterUsername =!is_null($decodedToken['twitter']) ? $decodedToken['twitter']['user_name'] : null;
 //            $tokenTwitterAvatar = !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['profile_image_url'] : null;
@@ -39,11 +39,11 @@ class AuthHelper
             $discordId = !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null;
 
 
-            if (!is_null($userWallet) || !is_null($tokenTwitterUsername) || !is_null($discordId)) {
+            if (!is_null($userWallet) || !is_null($tokenTwitterUsername) || !is_null($discordId) || isset($authId)) {
                 $account = Account::where('wallet', $userWallet)
-//                    ->orWhere('twitter_username', $tokenTwitterUsername)
-//                    ->orWhere('discord_id', $discordId)
-//                    ->orWhere('auth_id', $authId)
+                    //    ->orWhere('twitter_username', $tokenTwitterUsername)
+                    //    ->orWhere('discord_id', $discordId)
+                    ->orWhere('auth_id', $authId)
                     ->first();
 
                 if (!$account) {
@@ -56,7 +56,8 @@ class AuthHelper
                         'twitter_name' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['name'] : null,
 //                        'twitter_avatar' => !is_null($decodedToken['twitter']) ? $account->downloadTwitterAvatar($decodedToken['twitter']['profile_image_url']) : null,
                         'discord_id' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null,
-                        'auth_id'=>$authId
+                        'auth_id'=>$authId,
+                        'isNeedShow' => false,
 //                        'discord_name' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['user_name'] : null
 
                     ]);
@@ -77,8 +78,6 @@ class AuthHelper
 //            throw new InvalidTokenException('Invalid or expired token');
 //            Log::info('jwt exception: ' . $exception);
 
-//            return response()->json(['error' => 'token expired or wrong'], 403);
-//            throw new InvalidTokenException();
             return false;
 //            throw new HttpException(403, 'Token expired or incorrect');
         }
