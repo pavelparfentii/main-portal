@@ -27,7 +27,7 @@ class ClaimController extends Controller
             ->first();
 
         if ($previousUserWeek) {
-            $previousUserWeekPoints = $currentUserWeek->claim_points ?? 0;
+            $previousUserWeekPoints = $previousUserWeek->claim_points ?? 0;
 
             if ($previousUserWeekPoints) {
 
@@ -35,6 +35,9 @@ class ClaimController extends Controller
 
 //                $currentUserWeek->claim_points = 0;
                 $previousUserWeek->claimed = true;
+                $previousUserWeek->claimed_points = $previousUserWeekPoints;
+                $previousUserWeek->claim_points = 0;
+
                 $previousUserWeek->save();
 
                 $account->isNeedShow= true;

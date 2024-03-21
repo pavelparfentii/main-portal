@@ -23,6 +23,8 @@ class DigitalAnimal extends Resource
      * @var string
      */
     public static $title = 'id';
+    public static $perPageViaRelationship = 25;
+
 
     /**
      * The columns that should be searched.

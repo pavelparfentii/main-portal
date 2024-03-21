@@ -75,7 +75,7 @@ class Account extends Model
                     'query_param' => ConstantValues::safesoul_patrol_role
                 ]);
                 $currentWeek->safeSouls()->save($safeSoul);
-                $currentWeek->increment('points', ConstantValues::safesoul_OG_patrol_points);
+                $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
             }
         });
 
@@ -160,14 +160,42 @@ class Account extends Model
         if ($originalRole == $newRole) {
             return; // No change, so no need to adjust points
         }
+        $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $this->id)->first();
+
+        if($newRole === ConstantValues::safesoul_og_patrol_role){
+
+            $safeSoul = new SafeSoul([
+                'account_id' => $this->id,
+//                            'week_id' => $currentWeek->id,
+                'points' => ConstantValues::safesoul_OG_patrol_points,
+                'comment' => 'Ог патрульный',
+                'query_param' => ConstantValues::safesoul_OG_patrol_points
+            ]);
+
+            $currentWeek->safeSouls()->save($safeSoul);
+            $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
+
+        }elseif($newRole == ConstantValues::safesoul_patrol_points){
+            $safeSoul = new SafeSoul([
+                'account_id' => $this->id,
+//                            'week_id' => $currentWeek->id,
+                'points' => ConstantValues::safesoul_patrol_points,
+                'comment' => 'роль патрульный',
+                'query_param' => ConstantValues::safesoul_patrol_role
+            ]);
+            $currentWeek->safeSouls()->save($safeSoul);
+            $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
+        }
 
         DB::transaction(function () use ($newRole, $originalRole) {
-            Log::info('here');
+
             // Update the role
             $this->role = $newRole;
             $this->save();
 
-            $currentWeek = Week::getCurrentWeekForAccount($this);
+//            $currentWeek = Week::getCurrentWeekForAccount($this);
+            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $this->id)->first();
+
 
             // Check for existing points entries related to patrol roles
             $patrolEntryExists = SafeSoul::where('query_param', ConstantValues::safesoul_patrol_role)
@@ -225,36 +253,8 @@ class Account extends Model
                 $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
                 $currentWeek->increment('points', -ConstantValues::safesoul_og_patrol_role);
             }elseif ($newRole !== ConstantValues::safesoul_og_patrol_role && $newRole !== ConstantValues::safesoul_patrol_role){
-                if ($patrolEntryExists) {
-                    $currentWeek->safeSouls()->create([
 
-                        'account_id' => $this->id,
-//                        'week_id' => $currentWeek->id,
-                        'points' => -ConstantValues::safesoul_patrol_points,
-                        'comment' => 'Downgraded role from патрульный, points subtracted',
-                        'query_param' => 'downgraded_' . ConstantValues::safesoul_patrol_role,
 
-                    ]);
-
-                    SafeSoul::where('query_param', ConstantValues::safesoul_patrol_role)
-                        ->where('account_id', $this->id)
-                        ->delete();
-                    $currentWeek->increment('points', -ConstantValues::safesoul_patrol_points);
-                }
-                if ($ogPatrolEntryExists) {
-                    $currentWeek->safeSouls()->create([
-                        'account_id' => $this->id,
-                        'points' => -ConstantValues::safesoul_OG_patrol_points,
-                        'comment' => 'Downgraded from Ог патрульный, points subtracted',
-                        'query_param' =>'downgraded_' .  ConstantValues::safesoul_og_patrol_role,
-                    ]);
-
-                    SafeSoul::where('query_param', ConstantValues::safesoul_og_patrol_role)
-                        ->where('account_id', $this->id)
-                        ->delete();
-
-                    $currentWeek->increment('points', -ConstantValues::safesoul_OG_patrol_points);
-                }
             }
 
         });

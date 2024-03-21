@@ -36,6 +36,8 @@ class Week extends Resource
      */
     public static $title = 'week_number';
 
+    public static $perPageViaRelationship = 25;
+
     /**
      * The columns that should be searched.
      *

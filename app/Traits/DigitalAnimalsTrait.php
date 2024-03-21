@@ -8,6 +8,7 @@ use App\ConstantValues;
 use App\Models\Account;
 use App\Models\DigitalAnimal;
 use App\Models\Week;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +19,9 @@ trait DigitalAnimalsTrait
     public function getAnimals()
     {
 
-        $accounts = Account::cursor();
+        $accounts =  Account::whereNotNull('wallet')
+            ->where('wallet', '!=', '')
+            ->cursor();
 
         foreach ($accounts as $account) {
             $process = new Process([
@@ -51,7 +54,8 @@ trait DigitalAnimalsTrait
                         $queryParam = 'token_' . $token;
                         if (!in_array($queryParam, $existingQueryParams)) {
 
-                            $currentWeek = Week::getCurrentWeekForAccount($account);
+//                            $currentWeek = Week::getCurrentWeekForAccount($account);
+                            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id)->first();
 
                             $newAnimal = new DigitalAnimal([
                                 'account_id'=>$account->id,
@@ -88,7 +92,8 @@ trait DigitalAnimalsTrait
 
 //           $lord = $account->animals()->where('query_param', 'lord_20')->first();
            $lord = DigitalAnimal::where('query_param', 'lord_20')->where('account_id', $account->id)->first();
-           $currentWeek = Week::getCurrentWeekForAccount($account);
+//           $currentWeek = Week::getCurrentWeekForAccount($account);
+            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id)->first();
            if($animalsCount >= 20 && !$lord){
                $newLord = new DigitalAnimal([
                    'account_id'=>$account->id,
@@ -127,7 +132,8 @@ trait DigitalAnimalsTrait
                 base_path('node/getRoleDiscord.js'),
                 $account->discord_id,
             ]);
-            $currentWeek = Week::getCurrentWeekForAccount($account);
+//            $currentWeek = Week::getCurrentWeekForAccount($account);
+            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id)->first();
 
             $process->run();
             if ($process->isSuccessful()) {
@@ -197,7 +203,8 @@ trait DigitalAnimalsTrait
 //        dd($accounts);
 
         foreach ($accounts as $account){
-            $currentWeek = Week::getCurrentWeekForAccount($account);
+//            $currentWeek = Week::getCurrentWeekForAccount($account);
+            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id)->first();
             foreach ($tokenNumbers as $token){
                 $process = new Process([
                     'node',
@@ -221,7 +228,7 @@ trait DigitalAnimalsTrait
                         if (!in_array($queryParam, $existingQueryParams)) {
                             $newAnimal = new DigitalAnimal([
                                 'account_id'=>$account->id,
-                                'claim_points' => ConstantValues::animal_long_range_owner_points,
+                                'points' => ConstantValues::animal_long_range_owner_points,
                                 'comment' => $data->data,
                                 'query_param' => $queryParam
                             ]);

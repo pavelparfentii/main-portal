@@ -32,7 +32,7 @@ class InviteController extends Controller
 
         }else{
             $code = new Code([
-                'value' => Str::random(36),
+                'value' => Str::random(6),
                 'active' => true
             ]);
             $account->codes()->save($code);
@@ -54,9 +54,14 @@ class InviteController extends Controller
         if(empty($code)){
             return response()->json(['message'=>'no code provided'], 403);
         }
+        $recentCreationThreshold = now()->subMinutes(5);
+        if ($account->created_at <= $recentCreationThreshold) {
+
+            return response()->json(['message' => 'Action applicable only to recently created accounts'], 403);
+        }
 
         $checkCode = Code::where('value', $code)->first();
-        $inviter = Account::where('id', $checkCode->id)->first();
+        $inviter = Account::where('id', $checkCode->account_id)->first();
 
         if(!$checkCode || !$inviter){
             return response()->json(['message'=>'no such code in database '], 403);
@@ -247,9 +252,9 @@ class InviteController extends Controller
             }
             $invite = Invite::create([
                 'invited_by'=>$checkCode->account->id,
-                'inviter_wallet'=>$checkCode->account->wallet ?? null,
+                'inviter_wallet'=>$checkCode->account->wallet ?? 'empty',
                 'whom_invited'=>$account->id,
-                'invitee_wallet'=>$account->wallet ?? null,
+                'invitee_wallet'=>$account->wallet ?? 'empty',
                 'code_id'=>$checkCode->id,
                 'used_code'=>$checkCode->value
             ]);

@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\DiscordRole;
 use App\Models\SafeSoul;
 use App\Models\Week;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,8 @@ trait SafeSoulTrait{
                                     'twitter_avatar'=> isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
                                     'twitter_id'=>$item['twitter_id'],
                                     'role'=>$role,
-                                    'discord_id'=>$item['discord_id']
+                                    'discord_id'=>$item['discord_id'],
+                                    'auth_id'=>$item['auth_id']
                                 ]);
 
 
@@ -140,7 +142,9 @@ trait SafeSoulTrait{
                     foreach ($data as $wallet){
                         $account = Account::where('wallet', $wallet)->first();
                         if($account){
-                            $currentWeek = Week::getCurrentWeekForAccount($account);
+//                            $currentWeek = Week::getCurrentWeekForAccount($account);
+                            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id);
+
                             $safeSoul = new SafeSoul([
                                 'account_id' => $account->id,
 //                                'week_id' => $currentWeek->id,
@@ -180,7 +184,8 @@ trait SafeSoulTrait{
 
                         if ($account && isset($achievement['achieves'])) {
                             foreach ($achievement['achieves'] as $key => $value) {
-                                $currentWeek = Week::getCurrentWeekForAccount($account);
+//                                $currentWeek = Week::getCurrentWeekForAccount($account);
+                                $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id);
 //                                $safeSoul = $account->safeSouls()->where('query_param', $value)->first();
                                 $safeSoul =  SafeSoul::where('query_param', $value)
                                     ->where('account_id', $account->id)->first();
@@ -225,7 +230,8 @@ trait SafeSoulTrait{
                         if ($account && isset($invite['invites'])) {
                             foreach ($invite['invites'] as $key => $value) {
 //                                dd($invite['invites']);
-                                $currentWeek = Week::getCurrentWeekForAccount($account);
+//                                $currentWeek = Week::getCurrentWeekForAccount($account);
+                                $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id);
 //                                $safeSoul = $account->safeSouls()->where('query_param', $key)->first();
                                 $safeSoul =  SafeSoul::where('query_param', $key)
                                     ->where('account_id', $account->id)->first();

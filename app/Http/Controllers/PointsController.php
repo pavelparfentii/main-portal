@@ -207,7 +207,7 @@ class PointsController extends Controller
                     ->where('active', false)
                     ->where('claimed', true)
                     ->first()
-                    ->claim_points;
+                    ->claim_points ?? null;
 
             $accountResourceArray['invited'] = $account->invitesSent()->count() ?? 0;
             // }
