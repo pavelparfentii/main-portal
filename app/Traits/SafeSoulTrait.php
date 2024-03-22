@@ -142,13 +142,12 @@ trait SafeSoulTrait{
                     foreach ($data as $wallet){
                         $account = Account::where('wallet', $wallet)->first();
                         if($account){
-//                            $currentWeek = Week::getCurrentWeekForAccount($account);
-                            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id);
+                            $currentWeek = Week::getCurrentWeekForAccount($account);
 
                             $safeSoul = new SafeSoul([
                                 'account_id' => $account->id,
 //                                'week_id' => $currentWeek->id,
-                                'points' => ConstantValues::safesoul_activity_points,
+                                'claim_points' => ConstantValues::safesoul_activity_points,
                                 'comment'=> 'активность в сейфсол',
                                 'query_param'=>'safesoul_activity'
                             ]);
@@ -184,8 +183,8 @@ trait SafeSoulTrait{
 
                         if ($account && isset($achievement['achieves'])) {
                             foreach ($achievement['achieves'] as $key => $value) {
-//                                $currentWeek = Week::getCurrentWeekForAccount($account);
-                                $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id);
+                                $currentWeek = Week::getCurrentWeekForAccount($account);
+
 //                                $safeSoul = $account->safeSouls()->where('query_param', $value)->first();
                                 $safeSoul =  SafeSoul::where('query_param', $value)
                                     ->where('account_id', $account->id)->first();
@@ -230,8 +229,8 @@ trait SafeSoulTrait{
                         if ($account && isset($invite['invites'])) {
                             foreach ($invite['invites'] as $key => $value) {
 //                                dd($invite['invites']);
-//                                $currentWeek = Week::getCurrentWeekForAccount($account);
-                                $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id);
+                                $currentWeek = Week::getCurrentWeekForAccount($account);
+
 //                                $safeSoul = $account->safeSouls()->where('query_param', $key)->first();
                                 $safeSoul =  SafeSoul::where('query_param', $key)
                                     ->where('account_id', $account->id)->first();
@@ -354,51 +353,45 @@ trait SafeSoulTrait{
                 ->whereBetween('created_at', [now()->subDays(7), now()])
                 ->count() === 1;
 
-//        return SafeSoul::where('account_id', $accountId)
-//                ->whereIn('query_param', $votes)
-////                ->where('processed', true)
-//                ->whereBetween('created_at', [now()->subDays(7), now()])
-//                ->count() === count($votes);
     }
 
     private function hasReachedWeeklyLimit($accountId, $pointsToAdd)
     {
 
+        $currentWeek = Week::getCurrentWeekForAccount(Account::findOrFail($accountId));
+
+        // Sum claim_points for the current week
         $weeklyTotal = SafeSoul::where('account_id', $accountId)
-            ->whereBetween('created_at', [now()->subDays(7), now()])
-            ->sum('points');
+            ->where('week_id', $currentWeek->id) // Ensure we're looking at the current week
+            ->sum('claim_points');
 
         // Check if adding the new points would exceed the weekly limit
-        return $weeklyTotal > ConstantValues::safesoul_reports_limit;
+        return ($weeklyTotal + $pointsToAdd) > ConstantValues::safesoul_reports_limit;
     }
 
     private function updateSafeSoulPoints($accountId, $pointsToAdd, $vote)
     {
-        DB::transaction(function () use ($accountId, $pointsToAdd, $vote) {
-            // Find the Account by ID
-            $account = Account::findOrFail($accountId); // Using findOrFail to automatically handle account not found.
 
-            // Get the current Week for the Account, or create if it doesn't exist
-            $currentWeek = Week::getCurrentWeekForAccount($account);
+        $currentWeek = Week::getCurrentWeekForAccount(Account::findOrFail($accountId));
 
-            // Update or Create a SafeSoul entry
-            $safesoul = SafeSoul::updateOrCreate(
-                [
+
+            $safesoul = SafeSoul::where([
+                'account_id' => $accountId,
+                'query_param' => $vote,
+
+            ])->first();
+
+            if (!$safesoul) {
+
+                $safesoul = SafeSoul::create([
                     'account_id' => $accountId,
                     'query_param' => $vote,
-                    'week_id' => $currentWeek->id // Ensuring we are specifying the week.
-                ],
-                [
                     'claim_points' => $pointsToAdd,
                     'comment' => 'за каждые 100 отправленных репортов',
-                ]
-            );
-
-            // Increment claim_points in the Week table
-            $currentWeek->increment('claim_points', $pointsToAdd);
-        });
-
-
+                ]);
+                $currentWeek->safeSouls()->save($safesoul);
+                $currentWeek->increment('claim_points', $pointsToAdd);
+            }
     }
 
     private function downloadTwitterAvatar($result): ?string

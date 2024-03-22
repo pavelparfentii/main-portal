@@ -40,13 +40,22 @@ trait DigitalAnimalsTrait
 
                     $existingQueryParams = $animals->pluck('query_param')->toArray();
 
+                    $deletedAnimalsCount = 0;
+
                     // Check and delete animals that are not in the data
                     foreach ($animals as $animal) {
-                        // Remove 'token_' prefix for comparison
+
                         $numericToken = substr($animal->query_param, strlen('token_'));
                         if (!in_array($numericToken, $data)) {
                             $animal->delete();
+                            $deletedAnimalsCount++;
                         }
+                    }
+
+                    if ($deletedAnimalsCount > 0) {
+                        $currentWeek = Week::getCurrentWeekForAccount($account);
+                        $pointsToDeduct = $deletedAnimalsCount * ConstantValues::animal_owner;
+                        $currentWeek->decrement('points', $pointsToDeduct);
                     }
 
                     foreach ($data as $token) {
@@ -54,8 +63,7 @@ trait DigitalAnimalsTrait
                         $queryParam = 'token_' . $token;
                         if (!in_array($queryParam, $existingQueryParams)) {
 
-//                            $currentWeek = Week::getCurrentWeekForAccount($account);
-                            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id)->first();
+                            $currentWeek = Week::getCurrentWeekForAccount($account);
 
                             $newAnimal = new DigitalAnimal([
                                 'account_id'=>$account->id,
@@ -92,8 +100,8 @@ trait DigitalAnimalsTrait
 
 //           $lord = $account->animals()->where('query_param', 'lord_20')->first();
            $lord = DigitalAnimal::where('query_param', 'lord_20')->where('account_id', $account->id)->first();
-//           $currentWeek = Week::getCurrentWeekForAccount($account);
-            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id)->first();
+           $currentWeek = Week::getCurrentWeekForAccount($account);
+
            if($animalsCount >= 20 && !$lord){
                $newLord = new DigitalAnimal([
                    'account_id'=>$account->id,
@@ -132,8 +140,7 @@ trait DigitalAnimalsTrait
                 base_path('node/getRoleDiscord.js'),
                 $account->discord_id,
             ]);
-//            $currentWeek = Week::getCurrentWeekForAccount($account);
-            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id)->first();
+            $currentWeek = Week::getCurrentWeekForAccount($account);
 
             $process->run();
             if ($process->isSuccessful()) {
@@ -151,14 +158,14 @@ trait DigitalAnimalsTrait
                             ->pluck('query_param')
                             ->toArray();
 
-                        if(!empty($animals)){
-                            foreach ($animals as $animal) {
-
-                                if (!in_array($animal->query_param, $roles)) {
-                                    $animal->delete();
-                                }
-                            }
-                        }
+//                        if(!empty($animals)){
+//                            foreach ($animals as $animal) {
+//
+//                                if (!in_array($animal->query_param, $roles)) {
+//                                    $animal->delete();
+//                                }
+//                            }
+//                        }
 
 
                         foreach ($roles as $role){
@@ -203,8 +210,8 @@ trait DigitalAnimalsTrait
 //        dd($accounts);
 
         foreach ($accounts as $account){
-//            $currentWeek = Week::getCurrentWeekForAccount($account);
-            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $account->id)->first();
+            $currentWeek = Week::getCurrentWeekForAccount($account);
+
             foreach ($tokenNumbers as $token){
                 $process = new Process([
                     'node',
@@ -216,9 +223,11 @@ trait DigitalAnimalsTrait
                 $process->run();
                 if ($process->isSuccessful()) {
 
-                    $animals = $currentWeek->animals()->where('query_param', 'like', 'token_owner_year_%')->get();
-
-                    $existingQueryParams = $animals->pluck('query_param')->toArray();
+                    $existingQueryParams = DigitalAnimal::where('query_param', 'like', 'token_owner_year_%')
+                    ->where('account_id', $account->id)
+                        ->pluck('query_param')
+                        ->toArray();
+//                    $existingQueryParams = $animals->pluck('query_param')->toArray();
 
                     $data = json_decode($process->getOutput());
                     if($data->state === 'success' && !is_null($data->data)){
@@ -234,7 +243,7 @@ trait DigitalAnimalsTrait
                             ]);
 //                            $account->animals()->save($newAnimal);
                             $currentWeek->animals()->save($newAnimal);
-                            $currentWeek->increment('claim_points', ConstantValues::animal_long_range_owner_points);
+                            $currentWeek->increment('points', ConstantValues::animal_long_range_owner_points);
                         }
 
                     }elseif($data->state === 'error' && !is_null($data->data)){
@@ -245,7 +254,94 @@ trait DigitalAnimalsTrait
             }
 
         }
+    }
 
+    public function getCommitedPassOwners()
+    {
+        $accounts =  Account::whereNotNull('wallet')
+            ->where('wallet', '!=', '')
+            ->cursor();
+
+        foreach ($accounts as $account) {
+            $currentWeek = Week::getCurrentWeekForAccount($account);
+
+            $process = new Process([
+                'node',
+                base_path('node/checkCommitedOwnershipNft.js'),
+                $account->wallet,
+            ]);
+            $process->run();
+            if (!$process->isSuccessful()) {
+                // Handle error or continue to the next iteration
+                continue;
+            }
+
+            if ($process->isSuccessful()) {
+                $data = json_decode($process->getOutput());
+                var_dump($data->totalOwned);
+                $existingPass = DigitalAnimal::where('query_param', 'like', 'committed_owner_%')
+                    ->where('account_id', $account->id)->first();
+                if(isset($data->totalOwned) && ($data->totalOwned > 0) || isset($existingPass)){
+                    $this->info($account->wallet . ' '. $data->totalOwned);
+                    if($existingPass){
+                        $countPass = substr($existingPass->query_param, strlen('committed_owner_'));
+                        if((int)$countPass == (int)$data->totalOwned ){
+                            continue;
+                        }elseif ((int)$data->totalOwned >(int)$countPass){
+                            $points = ((int)$data->totalOwned -(int) $countPass) * ConstantValues::committed_pass_points;
+                            $newAnimal = new DigitalAnimal([
+                                'account_id'=>$account->id,
+                                'points' => $points,
+                                'comment' => $data->message,
+                                'query_param' => 'committed_owner_' . $data->totalOwned
+                            ]);
+//                            $account->animals()->save($newAnimal);
+                            $currentWeek->animals()->save($newAnimal);
+                            $currentWeek->increment('points', $points);
+                            $existingPass->update(['query_param'=>null]);
+                        }elseif ((int)$countPass > (int)$data->totalOwned){
+                            if((int)$data->totalOwned == 0){
+                                $points = $existingPass->points;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => -$points,
+                                    'comment' => $data->message,
+                                    'query_param' => null
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', -$points);
+                                $existingPass->update(['query_param'=>null]);
+                            }elseif ((int)$data->totalOwned >0){
+                                $points = ((int)$data->totalOwned - (int) $countPass) * ConstantValues::committed_pass_points;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => $points,
+                                    'comment' => $data->message,
+                                    'query_param' => 'committed_owner_' . $data->totalOwned
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', -$points);
+                                $existingPass->update(['query_param'=>null]);
+                            }
+                        }
+
+                    }else{
+                        $newAnimal = new DigitalAnimal([
+                            'account_id'=>$account->id,
+                            'points' => (int)$data->totalOwned * ConstantValues::committed_pass_points,
+                            'comment' => $data->message,
+                            'query_param' => 'committed_owner_' . $data->totalOwned
+                        ]);
+//                            $account->animals()->save($newAnimal);
+                        $currentWeek->animals()->save($newAnimal);
+                        $currentWeek->increment('points', ConstantValues::committed_pass_points);
+                    }
+                }
+
+            }
+        }
     }
 
 }

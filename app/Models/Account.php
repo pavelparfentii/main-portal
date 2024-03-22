@@ -160,9 +160,9 @@ class Account extends Model
         if ($originalRole == $newRole) {
             return; // No change, so no need to adjust points
         }
-        $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $this->id)->first();
 
-        if($newRole === ConstantValues::safesoul_og_patrol_role){
+        $currentWeek = Week::getCurrentWeekForAccount($this);
+        if(is_null($originalRole) && $newRole === ConstantValues::safesoul_og_patrol_role){
 
             $safeSoul = new SafeSoul([
                 'account_id' => $this->id,
@@ -173,9 +173,9 @@ class Account extends Model
             ]);
 
             $currentWeek->safeSouls()->save($safeSoul);
-            $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
+            $currentWeek->increment('points', ConstantValues::safesoul_OG_patrol_points);
 
-        }elseif($newRole == ConstantValues::safesoul_patrol_points){
+        }elseif(is_null($originalRole) && $newRole == ConstantValues::safesoul_patrol_role){
             $safeSoul = new SafeSoul([
                 'account_id' => $this->id,
 //                            'week_id' => $currentWeek->id,
@@ -195,7 +195,6 @@ class Account extends Model
 
 //            $currentWeek = Week::getCurrentWeekForAccount($this);
             $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $this->id)->first();
-
 
             // Check for existing points entries related to patrol roles
             $patrolEntryExists = SafeSoul::where('query_param', ConstantValues::safesoul_patrol_role)
@@ -252,9 +251,6 @@ class Account extends Model
                     ->delete();
                 $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
                 $currentWeek->increment('points', -ConstantValues::safesoul_og_patrol_role);
-            }elseif ($newRole !== ConstantValues::safesoul_og_patrol_role && $newRole !== ConstantValues::safesoul_patrol_role){
-
-
             }
 
         });
