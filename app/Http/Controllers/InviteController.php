@@ -52,16 +52,36 @@ class InviteController extends Controller
         if(!$account){
             return response()->json(['message'=>'non authorized'], 401);
         }
-        if(empty($code) || $code == ''){
-            return response()->json(['message'=>'no code provided'], 403);
+
+        if ($account->blocked_until && $account->blocked_until > now()) {
+
+            return response()->json(['message' => 'User is blocked for 24 hours'], 422);
         }
 
+        $maxAttempts = 3;
+        $blockPeriod = now()->addHours(24);
         $checkCode = Code::where('value', $code)->first();
-        $inviter = Account::where('id', $checkCode->account_id)->first();
 
-        if(!$checkCode || !$inviter){
-            return response()->json(['message'=>'no such code in database '], 403);
+        if(!$checkCode ){
+//            return response()->json(['message'=>'no such code in database '], 403);
+
+            $account->increment('code_attempts');
+
+
+            if ($account->code_attempts >= $maxAttempts) {
+
+                $account->update(['blocked_until' => $blockPeriod]);
+                return response()->json(['message' => 'User is blocked for 24 hours'], 422);
+            }
+
+
+            return response()->json(['message' => 'Wrong code, please try again'], 422);
         }
+
+        $account->update(['code_attempts' => 0, 'blocked_until'=>null]);
+
+
+        $inviter = Account::where('id', $checkCode->account_id)->first();
 
         $currentWeek = Week::getCurrentWeekForAccount($account);
 
@@ -219,8 +239,7 @@ class InviteController extends Controller
                 'used_code'=>$checkCode->value
             ]);
             return response()->json([
-//               'invited' => DB::table('invites')
-//                   ->where('used_code', $checkCode->value)->count(),
+
                'points'=> $points
             ]);
 
