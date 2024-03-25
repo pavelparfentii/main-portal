@@ -98,12 +98,7 @@ class InviteController extends Controller
 
                     }else{
 
-                            $safeSoul =  SafeSoul::where('query_param', $checkCode->value)
-                                ->where('account_id', $account->id)->first();
-
                             $wallet_balance = number_format($result->data, 2);
-
-                            if (!$safeSoul) {
 
                                 if($wallet_balance >= 2000 && $wallet_balance < 10000){
                                     //new user
@@ -175,9 +170,6 @@ class InviteController extends Controller
                                     $account->total_points += ConstantValues::null_balance;
                                     $account->save();
 
-                                    $currentWeek->safeSouls()->save($safeSoul);
-                                    $currentWeek->increment('points', ConstantValues::null_balance);
-
                                     //inviter
 
                                     $safeSoulI = new SafeSoul([
@@ -192,9 +184,6 @@ class InviteController extends Controller
                                     $inviterCurrentWeek->increment('claim_points', ConstantValues::null_balance);
                                 }
 
-
-
-                        }
                     }
                 }
             }else{
@@ -242,7 +231,7 @@ class InviteController extends Controller
             return response()->json([
 //               'invited' => DB::table('invites')
 //                   ->where('used_code', $checkCode->value)->count(),
-               'points'=> $safeSoul->points
+               'points'=> $invite
             ]);
 
         }else{
