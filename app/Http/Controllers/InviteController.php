@@ -48,10 +48,11 @@ class InviteController extends Controller
         $account = AuthHelper::auth($request);
 
         $code = $request->code;
+
         if(!$account){
             return response()->json(['message'=>'non authorized'], 401);
         }
-        if(empty($code) || $code != ''){
+        if(empty($code) || $code == ''){
             return response()->json(['message'=>'no code provided'], 403);
         }
 
@@ -107,105 +108,88 @@ class InviteController extends Controller
                                 if($wallet_balance >= 2000 && $wallet_balance < 10000){
                                     //new user
 
-                                    $safeSoul = new SafeSoul([
-                                        'account_id' => $account->id,
-//                                'week_id' => $currentWeek->id,
-                                        'points' => ConstantValues::balance_2k,
-                                        'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
-                                        'query_param' => $checkCode->value
-                                    ]);
-
-                                    $currentWeek->safeSouls()->save($safeSoul);
-                                    $currentWeek->increment('points', ConstantValues::balance_2k);
+//                                    $safeSoul = new SafeSoul([
+//                                        'account_id' => $account->id,
+////                                'week_id' => $currentWeek->id,
+//                                        'points' => ConstantValues::balance_2k,
+//                                        'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
+//                                        'query_param' => $checkCode->value
+//                                    ]);
+//
+//                                    $currentWeek->safeSouls()->save($safeSoul);
+//                                    $currentWeek->increment('points', ConstantValues::balance_2k);
+                                    $account->total_points += ConstantValues::balance_2k;
+                                    $account->save();
                                     //inviter
 
                                     $safeSoulI = new SafeSoul([
                                         'account_id' => $inviter->id,
 //                                'week_id' => $currentWeek->id,
-                                        'points' => ConstantValues::balance_2k,
+                                        'claim_points' => ConstantValues::balance_2k,
                                         'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
                                         'query_param' => $checkCode->value
                                     ]);
 
                                     $inviterCurrentWeek->safeSouls()->save($safeSoulI);
-                                    $inviterCurrentWeek->increment('points', ConstantValues::balance_2k);
+                                    $inviterCurrentWeek->increment('claim_points', ConstantValues::balance_2k);
 
 
                                 }elseif ($wallet_balance >= 10000 && $wallet_balance < 50000){
-                                    $safeSoul = new SafeSoul([
-                                        'account_id' => $account->id,
 
-                                        'points' => ConstantValues::balance_10k,
-                                        'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
-                                        'query_param' => $checkCode->value
-                                    ]);
-
-                                    $currentWeek->safeSouls()->save($safeSoul);
-                                    $currentWeek->increment('points', ConstantValues::balance_10k);
+                                    $account->total_points += ConstantValues::balance_10k;
+                                    $account->save();
 
                                     //inviter
 
                                     $safeSoulI = new SafeSoul([
                                         'account_id' => $inviter->id,
 //                                'week_id' => $currentWeek->id,
-                                        'points' => ConstantValues::balance_10k,
+                                        'claim_points' => ConstantValues::balance_10k,
                                         'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
                                         'query_param' => $checkCode->value
                                     ]);
 
                                     $inviterCurrentWeek->safeSouls()->save($safeSoulI);
-                                    $inviterCurrentWeek->increment('points', ConstantValues::balance_10k);
+                                    $inviterCurrentWeek->increment('claim_points', ConstantValues::balance_10k);
 
                                 }elseif($wallet_balance >= 50000){
-                                    $safeSoul = new SafeSoul([
-                                        'account_id' => $account->id,
 
-                                        'points' => ConstantValues::balance_50k,
-                                        'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
-                                        'query_param' => $checkCode->value
-                                    ]);
-
-                                    $currentWeek->safeSouls()->save($safeSoul);
-                                    $currentWeek->increment('points', ConstantValues::balance_50k);
+                                    $account->total_points += ConstantValues::balance_50k;
+                                    $account->save();
 
                                     //inviter
 
                                     $safeSoulI = new SafeSoul([
                                         'account_id' => $inviter->id,
 //                                'week_id' => $currentWeek->id,
-                                        'points' => ConstantValues::balance_10k,
+                                        'claim_points' => ConstantValues::balance_10k,
                                         'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
                                         'query_param' => $checkCode->value
                                     ]);
 
                                     $inviterCurrentWeek->safeSouls()->save($safeSoulI);
-                                    $inviterCurrentWeek->increment('points', ConstantValues::balance_10k);
+                                    $inviterCurrentWeek->increment('claim_points', ConstantValues::balance_10k);
 
                                 }else{
-                                    $safeSoul = new SafeSoul([
-                                        'account_id' => $account->id,
 
-                                        'points' => ConstantValues::null_balance,
-                                        'comment' => 'Инвайт человека без кошелька, рефералка  '. $account->id,
-                                        'query_param' => $checkCode->value
-                                    ]);
+                                    $account->total_points += ConstantValues::null_balance;
+                                    $account->save();
 
                                     $currentWeek->safeSouls()->save($safeSoul);
                                     $currentWeek->increment('points', ConstantValues::null_balance);
 
                                     //inviter
-                                    //inviter
 
                                     $safeSoulI = new SafeSoul([
                                         'account_id' => $inviter->id,
 //                                'week_id' => $currentWeek->id,
-                                        'points' => ConstantValues::null_balance,
+                                        'claim_points' => ConstantValues::null_balance,
                                         'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
                                         'query_param' => $checkCode->value
                                     ]);
 
                                     $inviterCurrentWeek->safeSouls()->save($safeSoulI);
-                                    $inviterCurrentWeek->increment('points', ConstantValues::null_balance);
+                                    $inviterCurrentWeek->increment('claim_points', ConstantValues::null_balance);
                                 }
 
 
@@ -215,33 +199,35 @@ class InviteController extends Controller
                 }
             }else{
 
-                $safeSoul =  SafeSoul::where('query_param', $checkCode->value)
-                    ->where('account_id', $account->id)->first();
-                if(!$safeSoul){
-                    $safeSoul = new SafeSoul([
-                        'account_id' => $account->id,
+//                $safeSoul =  SafeSoul::where('query_param', $checkCode->value)
+//                    ->where('account_id', $account->id)->first();
+//                if(!$safeSoul){
+//                    $safeSoul = new SafeSoul([
+//                        'account_id' => $account->id,
+//
+//                        'points' => ConstantValues::null_balance,
+//                        'comment' => 'Инвайт человека без кошелька, рефералка '. $account->id,
+//                        'query_param' => $checkCode->value
+//                    ]);
 
-                        'points' => ConstantValues::null_balance,
-                        'comment' => 'Инвайт человека без кошелька, рефералка '. $account->id,
-                        'query_param' => $checkCode->value
-                    ]);
-
-                    $currentWeek->safeSouls()->save($safeSoul);
-                    $currentWeek->increment('points', ConstantValues::null_balance);
+//                    $currentWeek->safeSouls()->save($safeSoul);
+//                    $currentWeek->increment('points', ConstantValues::null_balance);
+                    $account->total_points += ConstantValues::null_balance;
+                    $account->save();
 
                     //inviter
 
                     $safeSoulI = new SafeSoul([
                         'account_id' => $inviter->id,
 //                                'week_id' => $currentWeek->id,
-                        'points' => ConstantValues::null_balance,
+                        'claim_points' => ConstantValues::null_balance,
                         'comment' => 'Инвайт человека, рефералка без истории кошелька',
                         'query_param' => $checkCode->value
                     ]);
 
                     $inviterCurrentWeek->safeSouls()->save($safeSoulI);
-                    $inviterCurrentWeek->increment('points', ConstantValues::null_balance);
-                }
+                    $inviterCurrentWeek->increment('claim_points', ConstantValues::null_balance);
+//                }
 
 
             }
