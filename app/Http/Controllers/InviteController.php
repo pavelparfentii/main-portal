@@ -100,6 +100,8 @@ class InviteController extends Controller
 
                             $wallet_balance = number_format($result->data, 2);
 
+                            $points = null;
+
                                 if($wallet_balance >= 2000 && $wallet_balance < 10000){
                                     //new user
 
@@ -113,7 +115,8 @@ class InviteController extends Controller
 //
 //                                    $currentWeek->safeSouls()->save($safeSoul);
 //                                    $currentWeek->increment('points', ConstantValues::balance_2k);
-                                    $account->total_points += ConstantValues::balance_2k;
+                                    $points = ConstantValues::balance_2k;
+                                    $account->total_points += $points;
                                     $account->save();
                                     //inviter
 
@@ -130,8 +133,8 @@ class InviteController extends Controller
 
 
                                 }elseif ($wallet_balance >= 10000 && $wallet_balance < 50000){
-
-                                    $account->total_points += ConstantValues::balance_10k;
+                                    $points = ConstantValues::balance_10k;
+                                    $account->total_points += $points;
                                     $account->save();
 
                                     //inviter
@@ -148,8 +151,8 @@ class InviteController extends Controller
                                     $inviterCurrentWeek->increment('claim_points', ConstantValues::balance_10k);
 
                                 }elseif($wallet_balance >= 50000){
-
-                                    $account->total_points += ConstantValues::balance_50k;
+                                    $points = ConstantValues::balance_50k;
+                                    $account->total_points += $points;
                                     $account->save();
 
                                     //inviter
@@ -157,7 +160,7 @@ class InviteController extends Controller
                                     $safeSoulI = new SafeSoul([
                                         'account_id' => $inviter->id,
 //                                'week_id' => $currentWeek->id,
-                                        'claim_points' => ConstantValues::balance_10k,
+                                        'claim_points' => $points,
                                         'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
                                         'query_param' => $checkCode->value
                                     ]);
@@ -166,8 +169,8 @@ class InviteController extends Controller
                                     $inviterCurrentWeek->increment('claim_points', ConstantValues::balance_10k);
 
                                 }else{
-
-                                    $account->total_points += ConstantValues::null_balance;
+                                    $points = ConstantValues::null_balance;
+                                    $account->total_points += $points;
                                     $account->save();
 
                                     //inviter
@@ -183,24 +186,11 @@ class InviteController extends Controller
                                     $inviterCurrentWeek->safeSouls()->save($safeSoulI);
                                     $inviterCurrentWeek->increment('claim_points', ConstantValues::null_balance);
                                 }
-
                     }
                 }
             }else{
 
-//                $safeSoul =  SafeSoul::where('query_param', $checkCode->value)
-//                    ->where('account_id', $account->id)->first();
-//                if(!$safeSoul){
-//                    $safeSoul = new SafeSoul([
-//                        'account_id' => $account->id,
-//
-//                        'points' => ConstantValues::null_balance,
-//                        'comment' => 'Инвайт человека без кошелька, рефералка '. $account->id,
-//                        'query_param' => $checkCode->value
-//                    ]);
-
-//                    $currentWeek->safeSouls()->save($safeSoul);
-//                    $currentWeek->increment('points', ConstantValues::null_balance);
+                     $points = ConstantValues::null_balance;
                     $account->total_points += ConstantValues::null_balance;
                     $account->save();
 
@@ -231,7 +221,7 @@ class InviteController extends Controller
             return response()->json([
 //               'invited' => DB::table('invites')
 //                   ->where('used_code', $checkCode->value)->count(),
-               'points'=> $invite
+               'points'=> $points
             ]);
 
         }else{
