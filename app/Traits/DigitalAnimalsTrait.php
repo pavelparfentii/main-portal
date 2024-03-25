@@ -21,7 +21,8 @@ trait DigitalAnimalsTrait
 
         $accounts =  Account::whereNotNull('wallet')
             ->where('wallet', '!=', '')
-            ->cursor();
+//            ->cursor();
+            ->where('account_id', 7)->first();
 
         foreach ($accounts as $account) {
             $process = new Process([
@@ -39,6 +40,7 @@ trait DigitalAnimalsTrait
                     $animals = DigitalAnimal::where('query_param', 'like', 'token_%')->where('account_id', $account->id)->get();
 
                     $existingQueryParams = $animals->pluck('query_param')->toArray();
+                    dd($existingQueryParams);
 
                     $deletedAnimalsCount = 0;
 

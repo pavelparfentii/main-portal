@@ -199,6 +199,12 @@ class PointsController extends Controller
                     ->where('claimed', false)
                     ->first()
                     ->claim_points ?? null;
+
+            $inviteCheck = DB::table('invites')
+
+                ->where('whom_invited', $account->id)
+                ->pluck('id')
+                ->toArray();
 //            dd($currentUserWeekPoints);
 
             // if($account->isNeedShow){
@@ -209,13 +215,16 @@ class PointsController extends Controller
                     ->first()
                     ->claim_points ?? null;
 
-            $accountResourceArray['invited'] = $account->invitesSent()->count() ?? 0;
+            $accountResourceArray['invites_count'] = $account->invitesSent()->count() ?? 0;
+            $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
             // }
 
             $claimed = $account->weeks()
                 ->where('week_number', $previousWeekNumber)
                 ->where('active', false)
                 ->where('claimed', false)->first();
+
+
 
 //            $currentWeekNumber = Carbon::now()->format('W-Y');
 

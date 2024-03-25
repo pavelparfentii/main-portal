@@ -51,13 +51,8 @@ class InviteController extends Controller
         if(!$account){
             return response()->json(['message'=>'non authorized'], 401);
         }
-        if(empty($code)){
+        if(empty($code) || $code != ''){
             return response()->json(['message'=>'no code provided'], 403);
-        }
-        $recentCreationThreshold = now()->subMinutes(5);
-        if ($account->created_at <= $recentCreationThreshold) {
-
-            return response()->json(['message' => 'Action applicable only to recently created accounts'], 403);
         }
 
         $checkCode = Code::where('value', $code)->first();
