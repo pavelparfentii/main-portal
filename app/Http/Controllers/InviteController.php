@@ -83,6 +83,10 @@ class InviteController extends Controller
 
         $inviter = Account::where('id', $checkCode->account_id)->first();
 
+        if($checkCode->account_id == $account->id){
+            return response()->json(['message'=>'inviter can`t invite himself'], 400);
+        }
+
         $currentWeek = Week::getCurrentWeekForAccount($account);
 
 
@@ -244,7 +248,7 @@ class InviteController extends Controller
             ]);
 
         }else{
-            return response()->json(['message'=>'Already invited'], 403);
+            return response()->json(['message'=>'Already invited'], 400);
         }
 
     }

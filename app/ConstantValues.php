@@ -52,6 +52,9 @@ class ConstantValues
     const animal_discord_role_points = 10.000;
     const animal_long_range_owner_points = 100.00;
     const committed_pass_points = 50.000;
+    const soulborne_pass_points = 100.000;
+    const soulreaper_pass_points = 500.000;
+    const lord_of_the_reapers = 1000.000;
 
     //Referral
     const null_balance = 1.000;

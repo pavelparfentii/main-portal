@@ -21,9 +21,8 @@ trait DigitalAnimalsTrait
 
         $accounts =  Account::whereNotNull('wallet')
             ->where('wallet', '!=', '')
-//            ->cursor();
-            ->where('account_id', 7)->first();
-
+            ->cursor();
+//            ->whereIn('id', [7, 18])->get();
         foreach ($accounts as $account) {
             $process = new Process([
                 'node',
@@ -37,10 +36,12 @@ trait DigitalAnimalsTrait
 
                 $data = json_decode($process->getOutput());
                 if (is_array($data) && (count($data) > 0)) {
-                    $animals = DigitalAnimal::where('query_param', 'like', 'token_%')->where('account_id', $account->id)->get();
+                    $animals = DigitalAnimal::where('query_param', 'like', 'token_%')
+                        ->where('query_param', 'not like', 'token_owner_year_%')
+                        ->where('account_id', $account->id)->get();
 
                     $existingQueryParams = $animals->pluck('query_param')->toArray();
-                    dd($existingQueryParams);
+
 
                     $deletedAnimalsCount = 0;
 
@@ -48,11 +49,14 @@ trait DigitalAnimalsTrait
                     foreach ($animals as $animal) {
 
                         $numericToken = substr($animal->query_param, strlen('token_'));
+
                         if (!in_array($numericToken, $data)) {
+                            var_dump('here');
                             $animal->delete();
                             $deletedAnimalsCount++;
                         }
                     }
+//                    dd($deletedAnimalsCount);
 
                     if ($deletedAnimalsCount > 0) {
                         $currentWeek = Week::getCurrentWeekForAccount($account);
@@ -250,11 +254,9 @@ trait DigitalAnimalsTrait
 
                     }elseif($data->state === 'error' && !is_null($data->data)){
                         continue;
-
                     }
                 }
             }
-
         }
     }
 
@@ -324,7 +326,7 @@ trait DigitalAnimalsTrait
                                 ]);
 
                                 $currentWeek->animals()->save($newAnimal);
-                                $currentWeek->increment('points', -$points);
+                                $currentWeek->increment('points', $points);
                                 $existingPass->update(['query_param'=>null]);
                             }
                         }
@@ -345,5 +347,270 @@ trait DigitalAnimalsTrait
             }
         }
     }
+
+    public function getSoulbornePass()
+    {
+        $accounts =  Account::whereNotNull('wallet')
+            ->where('wallet', '!=', '')
+            ->cursor();
+
+        foreach ($accounts as $account) {
+            $currentWeek = Week::getCurrentWeekForAccount($account);
+
+            $process = new Process([
+                'node',
+                base_path('node/checkSoulborneOwnershipNFT.js'),
+                $account->wallet,
+            ]);
+            $process->run();
+            if (!$process->isSuccessful()) {
+                // Handle error or continue to the next iteration
+                continue;
+            }
+
+            if ($process->isSuccessful()) {
+                $data = json_decode($process->getOutput());
+                var_dump($data->totalOwned);
+                $existingPass = DigitalAnimal::where('query_param', 'like', 'soulborne_owner_%')
+                    ->where('account_id', $account->id)->first();
+                if(isset($data->totalOwned) && ($data->totalOwned > 0) || isset($existingPass)){
+                    $this->info($account->wallet . ' '. $data->totalOwned);
+                    if($existingPass){
+                        $countPass = substr($existingPass->query_param, strlen('soulborne_owner_'));
+                        if((int)$countPass == (int)$data->totalOwned ){
+                            continue;
+                        }elseif ((int)$data->totalOwned >(int)$countPass){
+                            $points = ((int)$data->totalOwned -(int) $countPass) * ConstantValues::soulborne_pass_points;
+                            $newAnimal = new DigitalAnimal([
+                                'account_id'=>$account->id,
+                                'points' => $points,
+                                'comment' => $data->message,
+                                'query_param' => 'soulborne_owner_' . $data->totalOwned
+                            ]);
+//                            $account->animals()->save($newAnimal);
+                            $currentWeek->animals()->save($newAnimal);
+                            $currentWeek->increment('points', $points);
+                            $existingPass->update(['query_param'=>null]);
+                        }elseif ((int)$countPass > (int)$data->totalOwned){
+                            if((int)$data->totalOwned == 0){
+                                $points = $existingPass->points;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => -$points,
+                                    'comment' => $data->message,
+                                    'query_param' => null
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', -$points);
+                                $existingPass->update(['query_param'=>null]);
+                            }elseif ((int)$data->totalOwned >0){
+                                $points = ((int)$data->totalOwned - (int) $countPass) * ConstantValues::soulborne_pass_points;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => $points,
+                                    'comment' => $data->message,
+                                    'query_param' => 'soulborne_owner_' . $data->totalOwned
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', $points);
+                                $existingPass->update(['query_param'=>null]);
+                            }
+                        }
+
+                    }else{
+                        $newAnimal = new DigitalAnimal([
+                            'account_id'=>$account->id,
+                            'points' => (int)$data->totalOwned * ConstantValues::soulborne_pass_points,
+                            'comment' => $data->message,
+                            'query_param' => 'soulborne_owner_' . $data->totalOwned
+                        ]);
+//                            $account->animals()->save($newAnimal);
+                        $currentWeek->animals()->save($newAnimal);
+                        $currentWeek->increment('points', ConstantValues::soulborne_pass_points);
+                    }
+                }
+
+            }
+        }
+    }
+
+    public function getSoulReaperPass()
+    {
+        $accounts =  Account::whereNotNull('wallet')
+            ->where('wallet', '!=', '')
+            ->cursor();
+
+        foreach ($accounts as $account) {
+            $currentWeek = Week::getCurrentWeekForAccount($account);
+
+            $process = new Process([
+                'node',
+                base_path('node/checkSoulReaperOwnershipNFT.js'),
+                $account->wallet,
+            ]);
+            $process->run();
+            if (!$process->isSuccessful()) {
+                // Handle error or continue to the next iteration
+                continue;
+            }
+
+            if ($process->isSuccessful()) {
+                $data = json_decode($process->getOutput());
+                var_dump($data->totalOwned);
+                $existingPass = DigitalAnimal::where('query_param', 'like', 'soulreaper_owner_%')
+                    ->where('account_id', $account->id)->first();
+                if(isset($data->totalOwned) && ($data->totalOwned > 0) || isset($existingPass)){
+                    $this->info($account->wallet . ' '. $data->totalOwned);
+                    if($existingPass){
+                        $countPass = substr($existingPass->query_param, strlen('soulreaper_owner_'));
+                        if((int)$countPass == (int)$data->totalOwned ){
+                            continue;
+                        }elseif ((int)$data->totalOwned >(int)$countPass){
+                            $points = ((int)$data->totalOwned -(int) $countPass) * ConstantValues::soulreaper_pass_points;
+                            $newAnimal = new DigitalAnimal([
+                                'account_id'=>$account->id,
+                                'points' => $points,
+                                'comment' => $data->message,
+                                'query_param' => 'soulreaper_owner_' . $data->totalOwned
+                            ]);
+//                            $account->animals()->save($newAnimal);
+                            $currentWeek->animals()->save($newAnimal);
+                            $currentWeek->increment('points', $points);
+                            $existingPass->update(['query_param'=>null]);
+                        }elseif ((int)$countPass > (int)$data->totalOwned){
+                            if((int)$data->totalOwned == 0){
+                                $points = $existingPass->points;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => -$points,
+                                    'comment' => $data->message,
+                                    'query_param' => null
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', -$points);
+                                $existingPass->update(['query_param'=>null]);
+                            }elseif ((int)$data->totalOwned >0){
+                                $points = ((int)$data->totalOwned - (int) $countPass) * ConstantValues::soulreaper_pass_points;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => $points,
+                                    'comment' => $data->message,
+                                    'query_param' => 'soulreaper_owner_' . $data->totalOwned
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', $points);
+                                $existingPass->update(['query_param'=>null]);
+                            }
+                        }
+
+                    }else{
+                        $newAnimal = new DigitalAnimal([
+                            'account_id'=>$account->id,
+                            'points' => (int)$data->totalOwned * ConstantValues::soulreaper_pass_points,
+                            'comment' => $data->message,
+                            'query_param' => 'soulreaper_owner_' . $data->totalOwned
+                        ]);
+//                            $account->animals()->save($newAnimal);
+                        $currentWeek->animals()->save($newAnimal);
+                        $currentWeek->increment('points', ConstantValues::soulreaper_pass_points);
+                    }
+                }
+
+            }
+        }
+    }
+
+    public function getLordOfTheReapersPass()
+    {
+        $accounts =  Account::whereNotNull('wallet')
+            ->where('wallet', '!=', '')
+            ->cursor();
+
+        foreach ($accounts as $account) {
+            $currentWeek = Week::getCurrentWeekForAccount($account);
+
+            $process = new Process([
+                'node',
+                base_path('node/checkLordOfTheReapersOwnershipNFT.js'),
+                $account->wallet,
+            ]);
+            $process->run();
+            if (!$process->isSuccessful()) {
+                // Handle error or continue to the next iteration
+                continue;
+            }
+
+            if ($process->isSuccessful()) {
+                $data = json_decode($process->getOutput());
+                var_dump($data->totalOwned);
+                $existingPass = DigitalAnimal::where('query_param', 'like', 'lord_reaper_owner_%')
+                    ->where('account_id', $account->id)->first();
+                if(isset($data->totalOwned) && ($data->totalOwned > 0) || isset($existingPass)){
+                    $this->info($account->wallet . ' '. $data->totalOwned);
+                    if($existingPass){
+                        $countPass = substr($existingPass->query_param, strlen('lord_reaper_owner_'));
+                        if((int)$countPass == (int)$data->totalOwned ){
+                            continue;
+                        }elseif ((int)$data->totalOwned >(int)$countPass){
+                            $points = ((int)$data->totalOwned -(int) $countPass) * ConstantValues::lord_of_the_reapers;
+                            $newAnimal = new DigitalAnimal([
+                                'account_id'=>$account->id,
+                                'points' => $points,
+                                'comment' => $data->message,
+                                'query_param' => 'lord_reaper_owner_' . $data->totalOwned
+                            ]);
+//                            $account->animals()->save($newAnimal);
+                            $currentWeek->animals()->save($newAnimal);
+                            $currentWeek->increment('points', $points);
+                            $existingPass->update(['query_param'=>null]);
+                        }elseif ((int)$countPass > (int)$data->totalOwned){
+                            if((int)$data->totalOwned == 0){
+                                $points = $existingPass->points;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => -$points,
+                                    'comment' => $data->message,
+                                    'query_param' => null
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', -$points);
+                                $existingPass->update(['query_param'=>null]);
+                            }elseif ((int)$data->totalOwned >0){
+                                $points = ((int)$data->totalOwned - (int) $countPass) * ConstantValues::lord_of_the_reapers;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => $points,
+                                    'comment' => $data->message,
+                                    'query_param' => 'lord_reaper_owner_' . $data->totalOwned
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', $points);
+                                $existingPass->update(['query_param'=>null]);
+                            }
+                        }
+
+                    }else{
+                        $newAnimal = new DigitalAnimal([
+                            'account_id'=>$account->id,
+                            'points' => (int)$data->totalOwned * ConstantValues::lord_of_the_reapers,
+                            'comment' => $data->message,
+                            'query_param' => 'lord_reaper_owner_' . $data->totalOwned
+                        ]);
+//                            $account->animals()->save($newAnimal);
+                        $currentWeek->animals()->save($newAnimal);
+                        $currentWeek->increment('points', ConstantValues::lord_of_the_reapers);
+                    }
+                }
+
+            }
+        }
+    }
+
 
 }

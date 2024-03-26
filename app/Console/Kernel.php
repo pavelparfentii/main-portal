@@ -56,6 +56,17 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:digital-animals-long-range-owner-points-command')->weeklyOn(0, '05:30');
 
         //Digital Animal Committed Pass
+        $schedule->command('app:digital-animals-commited-pass-points-command')->dailyAt('06:30');
+
+        //Digital Animal Soulborne Pass
+        $schedule->command('app:digital-animals-soulborne-pass-points-calculation-command')->dailyAt('07:30');
+
+        //Digital Animal SoulReaper Pass
+        $schedule->command('app:digital-animals-soul-reaper-pass-points-calculation-command')->dailyAt('08:00');
+
+        //Digital Animal Lord oF The Reapers
+        $schedule->command('app:digital-animals-lord-of-the-reapers-pass-points-calculation-command')->dailyAt('09:00');
+
 
     }
 
