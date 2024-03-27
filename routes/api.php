@@ -24,8 +24,6 @@ Route::get('/points/account', [\App\Http\Controllers\PointsController::class, 'g
 
 Route::get('/portal/info', [\App\Http\Controllers\PointsController::class, 'getInfo']);
 
-Route::get('/invite/code', [\App\Http\Controllers\InviteController::class, 'activateCode']);
-
 Route::get('/generate', [\App\Http\Controllers\MessageController::class, 'generateToken']);
 
 //Broker
