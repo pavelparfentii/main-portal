@@ -205,6 +205,9 @@ class PointsController extends Controller
                 ->where('whom_invited', $account->id)
                 ->pluck('id')
                 ->toArray();
+
+            $inviteController = new InviteController();
+            $inviteCode = $inviteController->activateCode($account);
 //            dd($currentUserWeekPoints);
 
             // if($account->isNeedShow){
@@ -217,6 +220,7 @@ class PointsController extends Controller
 
             $accountResourceArray['invites_count'] = $account->invitesSent()->count() ?? 0;
             $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
+            $accountResourceArray['invite_code']=$inviteCode;
             // }
 
             $claimed = $account->weeks()

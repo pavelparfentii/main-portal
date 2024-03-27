@@ -19,9 +19,9 @@ use Symfony\Component\Process\Process;
 class InviteController extends Controller
 {
 
-    public function activateCode(Request $request)
+    public function activateCode($account)
     {
-        $account = AuthHelper::auth($request);
+//        $account = AuthHelper::auth($request);
 
         if(!$account){
             return response()->json(['message'=>'non authorized'], 401);
@@ -37,9 +37,11 @@ class InviteController extends Controller
             ]);
             $account->codes()->save($code);
         }
-        return response()->json([
-            'code'=>$code->value
-        ]);
+//        return response()->json([
+//            'code'=>$code->value
+//        ]);
+
+        return $code->value;
 
     }
 
