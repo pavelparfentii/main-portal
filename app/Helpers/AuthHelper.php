@@ -33,7 +33,7 @@ class AuthHelper
 
             $userWallet = !is_null($decodedToken['wallet_address']) ? strtolower($decodedToken['wallet_address']) : null;
             $tokenTwitterName = !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['name'] : null;
-            $tokenTwitterUsername =!is_null($decodedToken['twitter']) ? $decodedToken['twitter']['user_name'] : null;
+            $tokenTwitterUsername =!is_null($decodedToken['twitter']) ? strtolower($decodedToken['twitter']['user_name']) : null;
 //            $tokenTwitterAvatar = !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['profile_image_url'] : null;
             $discordUserName = !is_null($decodedToken['discord']) ? $decodedToken['discord']['user_name'] : null;
             $discordId = !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null;
@@ -52,7 +52,7 @@ class AuthHelper
                         'wallet' => $userWallet,
 
                         'twitter_id' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['provider_id'] : null,
-                        'twitter_username' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['user_name'] : null,
+                        'twitter_username' => !is_null($decodedToken['twitter']) ? strtolower($decodedToken['twitter']['user_name']) : null,
                         'twitter_name' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['name'] : null,
 //                        'twitter_avatar' => !is_null($decodedToken['twitter']) ? $account->downloadTwitterAvatar($decodedToken['twitter']['profile_image_url']) : null,
                         'discord_id' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null,

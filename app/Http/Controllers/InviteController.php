@@ -32,7 +32,7 @@ class InviteController extends Controller
 
         }else{
             $code = new Code([
-                'value' => Str::random(6),
+                'value' => Str::random(5),
                 'active' => true
             ]);
             $account->codes()->save($code);
@@ -65,7 +65,6 @@ class InviteController extends Controller
         $checkCode = Code::where('value', $code)->first();
 
         if(!$checkCode ){
-//            return response()->json(['message'=>'no such code in database '], 403);
 
             $account->increment('code_attempts');
 
@@ -77,7 +76,7 @@ class InviteController extends Controller
             }
 
 
-            return response()->json(['message' => 'Wrong code, please try again'], 422);
+            return response()->json(['message' => 'Wrong code'], 422);
         }
 
         $account->update(['code_attempts' => 0, 'blocked_until'=>null]);
@@ -86,7 +85,7 @@ class InviteController extends Controller
         $inviter = Account::where('id', $checkCode->account_id)->first();
 
         if($checkCode->account_id == $account->id){
-            return response()->json(['message'=>'inviter can`t invite himself'], 400);
+            return response()->json(['message'=>'Self-invite not permitted'], 400);
         }
 
         $currentWeek = Week::getCurrentWeekForAccount($account);

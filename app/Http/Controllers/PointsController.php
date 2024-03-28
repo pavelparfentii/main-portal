@@ -196,9 +196,9 @@ class PointsController extends Controller
             $currentUserWeekPoints = $account->weeks()
                     ->where('week_number', $previousWeekNumber)
                     ->where('active', false)
-                    ->where('claimed', false)
+                    ->where('claimed', true)
                     ->first()
-                    ->claim_points ?? null;
+                    ->claimed_points ?? null;
 
             $inviteCheck = DB::table('invites')
 
@@ -216,7 +216,7 @@ class PointsController extends Controller
                     ->where('active', false)
                     ->where('claimed', true)
                     ->first()
-                    ->claim_points ?? null;
+                    ->claimed_points ?? null;
 
             $accountResourceArray['invites_count'] = $account->invitesSent()->count() ?? 0;
             $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
@@ -276,7 +276,7 @@ class PointsController extends Controller
         $account = AuthHelper::auth($request);
 
         if ($account) {
-            $account->isNeedShow = !$account->isNeedShow;
+            $account->isNeedShow = false;
             $account->save();
             return response()->json([
                 'success' => true,
