@@ -612,5 +612,94 @@ trait DigitalAnimalsTrait
         }
     }
 
+    public function animalsOwnerForMetaverse()
+    {
+        $accounts =  Account::whereNotNull('wallet')
+            ->where('wallet', '!=', '')
+            ->cursor();
+
+        foreach ($accounts as $account) {
+            $currentWeek = Week::getCurrentWeekForAccount($account);
+
+            $process = new Process([
+                'node',
+                base_path('node/checkDAAirdropOwnershipNFT.js'),
+                $account->wallet,
+            ]);
+            $process->run();
+            if (!$process->isSuccessful()) {
+                // Handle error or continue to the next iteration
+                continue;
+            }
+
+            if ($process->isSuccessful()) {
+                $data = json_decode($process->getOutput());
+                var_dump($data->totalOwned);
+                $existingPass = DigitalAnimal::where('query_param', 'like', 'metaverse_owner_%')
+                                                ->where('account_id', $account->id)
+                                                ->first();
+
+                if(isset($data->totalOwned) && ($data->totalOwned > 0) || isset($existingPass)){
+                    $this->info($account->wallet . ' '. $data->totalOwned);
+                    if($existingPass){
+                        $countPass = substr($existingPass->query_param, strlen('metaverse_owner_'));
+                        if((int)$countPass == (int)$data->totalOwned ){
+                            continue;
+                        }elseif ((int)$data->totalOwned >(int)$countPass){
+                            $points = ((int)$data->totalOwned -(int) $countPass) * ConstantValues::metaverse_owner;
+                            $newAnimal = new DigitalAnimal([
+                                'account_id'=>$account->id,
+                                'points' => $points,
+                                'comment' => $data->message,
+                                'query_param' => 'metaverse_owner_' . $data->totalOwned
+                            ]);
+//                            $account->animals()->save($newAnimal);
+                            $currentWeek->animals()->save($newAnimal);
+                            $currentWeek->increment('points', $points);
+                            $existingPass->update(['query_param'=>null]);
+                        }elseif ((int)$countPass > (int)$data->totalOwned){
+                            if((int)$data->totalOwned == 0){
+                                $points = $existingPass->points;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => -$points,
+                                    'comment' => $data->message,
+                                    'query_param' => null
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', -$points);
+                                $existingPass->update(['query_param'=>null]);
+                            }elseif ((int)$data->totalOwned >0){
+                                $points = ((int)$data->totalOwned - (int) $countPass) * ConstantValues::metaverse_owner;
+                                $newAnimal = new DigitalAnimal([
+                                    'account_id'=>$account->id,
+                                    'points' => $points,
+                                    'comment' => $data->message,
+                                    'query_param' => 'metaverse_owner_' . $data->totalOwned
+                                ]);
+
+                                $currentWeek->animals()->save($newAnimal);
+                                $currentWeek->increment('points', $points);
+                                $existingPass->update(['query_param'=>null]);
+                            }
+                        }
+
+                    }else{
+                        $newAnimal = new DigitalAnimal([
+                            'account_id'=>$account->id,
+                            'points' => (int)$data->totalOwned * ConstantValues::metaverse_owner,
+                            'comment' => $data->message,
+                            'query_param' => 'metaverse_owner_' . $data->totalOwned
+                        ]);
+//                            $account->animals()->save($newAnimal);
+                        $currentWeek->animals()->save($newAnimal);
+                        $currentWeek->increment('points', ConstantValues::metaverse_owner);
+                    }
+                }
+
+            }
+        }
+    }
 
 }

@@ -17,7 +17,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:recount-points')->weeklyOn(1, '00:01');
 
         // Update accounts data
-         $schedule->command('app:update-user-data-command')->dailyAt('00:30');
+        // $schedule->command('app:update-user-data-command')->dailyAt('00:30');
 
         // Update discord data
         $schedule->command('app:get-discord-roles-for-accounts-command')->weeklyOn(1, '00:45');
@@ -66,6 +66,9 @@ class Kernel extends ConsoleKernel
 
         //Digital Animal Lord oF The Reapers
         $schedule->command('app:digital-animals-lord-of-the-reapers-pass-points-calculation-command')->dailyAt('09:00');
+
+        //Digital Animal Metaverse Animals Owner
+        $schedule->command('app:digital-animals-metaverase-owners-command')->dailyAt('09:30');
 
 
     }

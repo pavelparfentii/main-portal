@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AuthHelper;
+use App\Models\Week;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -16,8 +17,8 @@ class ClaimController extends Controller
             return response()->json(['message' => 'Non authorized'], 401);
         }
 
-        $currentWeekNumber = Carbon::now()->format('W-Y');
-//        $previousWeekNumber =
+//        $currentWeekNumber = Carbon::now()->format('W-Y');
+        $currentWeek = Week::getCurrentWeekForAccount($account);
         $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
 
@@ -35,6 +36,7 @@ class ClaimController extends Controller
 
 //                $currentUserWeek->claim_points = 0;
                 $previousUserWeek->claimed = true;
+                $currentWeek->points += $previousUserWeekPoints;
                 $previousUserWeek->claimed_points = $previousUserWeekPoints;
                 $previousUserWeek->claim_points = 0;
 

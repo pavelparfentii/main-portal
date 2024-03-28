@@ -55,6 +55,7 @@ class ConstantValues
     const soulborne_pass_points = 100.000;
     const soulreaper_pass_points = 500.000;
     const lord_of_the_reapers = 1000.000;
+    const metaverse_owner = 200.000;
 
     //Referral
     const null_balance = 1.000;
