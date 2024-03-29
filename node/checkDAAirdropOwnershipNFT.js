@@ -117,7 +117,7 @@ async function loadUserTokens() {
 
             const output = {
                 totalOwned: Number(sum),
-                message:`Wallet ${user} owns: ${tokenDetails}` // This is now a single concatenated string of messages
+                message:`Metaverse Wallet ${user} owns: ${tokenDetails}` // This is now a single concatenated string of messages
             };
             console.log(JSON.stringify(output));
             // console.log(userTokensCount);

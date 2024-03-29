@@ -70,6 +70,9 @@ class Kernel extends ConsoleKernel
         //Digital Animal Metaverse Animals Owner
         $schedule->command('app:digital-animals-metaverase-owners-command')->dailyAt('09:30');
 
+        //Digital Animals Original Minters
+        $schedule->command('app:digital-animals-original-minter-command')->weeklyOn(0, '10:00');
+
 
     }
 

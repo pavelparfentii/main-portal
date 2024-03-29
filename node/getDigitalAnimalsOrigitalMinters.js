@@ -1,6 +1,6 @@
 import web3 from "web3";
 import fetch from 'node-fetch';
-const user = process.argv[2];
+const token = process.argv[2];
 
 import contractABI from '../node/DAContractABI/contractABI.js';
 
@@ -26,33 +26,27 @@ async function getWeb3WithNextApiKey() {
     }
 }
 
-// const web3Eth = getWeb3WithNextApiKey();
-
 async function initializeContract() {
     const web3Instance = await getWeb3WithNextApiKey(); // Await the web3 instance
-    const contract = new web3Instance.eth.Contract(
+    return new web3Instance.eth.Contract(
         contractABI,
         "0x25593A50255Bfb30eA027f6966417b0BF780401d"
     );
-    return contract;
 }
 
+async function getOriginalMinter()
+{
+    try{
+        // for(let i=1; i<8889; i++){
+            let contract = await initializeContract(); // Await the contract initialization
+            let userTokensCount = await contract.methods.originalMinter(token).call();
 
-async function loadUserTokens() {
-    try {
-        let contract = await initializeContract(); // Await the contract initialization
-        let userTokensCount = await contract.methods.balanceOf(user).call();
+            console.log(JSON.stringify(userTokensCount.toLowerCase()));
+        // }
 
-        const tokensPromises = Array.from({ length: Number(userTokensCount) }, (_, index) =>
-            contract.methods.tokenOfOwnerByIndex(user, index).call()
-        );
-
-        const tokens = await Promise.all(tokensPromises);
-        const tokenNumbers = tokens.map(token => parseInt(token, 10));
-        console.log(tokenNumbers);
-    } catch (error) {
+    }catch (error){
         console.error('Failed to load user tokens:', error);
     }
 }
 
-loadUserTokens();
+getOriginalMinter();

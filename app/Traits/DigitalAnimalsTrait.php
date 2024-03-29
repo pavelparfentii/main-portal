@@ -702,4 +702,49 @@ trait DigitalAnimalsTrait
         }
     }
 
+    public function getOriginalMinter()
+    {
+
+//            $currentWeek = Week::getCurrentWeekForAccount($account);
+        for($i = 1; $i<8889; $i++){
+            $process = new Process([
+                'node',
+                base_path('node/getDigitalAnimalsOrigitalMinters.js'),
+                $i,
+            ]);
+            $process->run();
+            if (!$process->isSuccessful()) {
+
+                continue;
+            }
+
+            if ($process->isSuccessful()) {
+                $originalMinterOwner = json_decode($process->getOutput());
+
+                $existingMinterParams = DigitalAnimal::where('query_param', 'like', 'minter_%')->pluck('query_param')->toArray();
+
+                $queryParam = 'minter_' . $i;
+
+                if($originalMinterOwner !== '0x0000000000000000000000000000000000000000' && !in_array($queryParam, $existingMinterParams)){
+                    $account = Account::where('wallet', $originalMinterOwner)->first();
+                    if($account) {
+                        $currentWeek = Week::getCurrentWeekForAccount($account);
+                        $newAnimal = new DigitalAnimal([
+                            'account_id' => $account->id,
+                            'points' => ConstantValues::original_minter,
+                            'comment' => "da token $i original minter",
+                            'query_param' => 'minter_' . $i
+                        ]);
+
+                        $currentWeek->animals()->save($newAnimal);
+                        $currentWeek->increment('points', ConstantValues::original_minter);
+                    }
+
+                }else{
+                    continue;
+                }
+            }
+        }
+    }
+
 }
