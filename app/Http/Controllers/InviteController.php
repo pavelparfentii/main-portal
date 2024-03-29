@@ -57,7 +57,7 @@ class InviteController extends Controller
 
         if ($account->blocked_until && $account->blocked_until > now()) {
 
-            return response()->json(['message' => 'User is blocked for 24 hours'], 422);
+            return response()->json(['message' => 'User is blocked for 24 hours'], 429);
         }
 
         $maxAttempts = 3;
@@ -72,7 +72,7 @@ class InviteController extends Controller
             if ($account->code_attempts >= $maxAttempts) {
 
                 $account->update(['blocked_until' => $blockPeriod]);
-                return response()->json(['message' => 'User is blocked for 24 hours'], 422);
+                return response()->json(['message' => 'User is blocked for 24 hours'], 429);
             }
 
 

@@ -208,6 +208,8 @@ class PointsController extends Controller
 
             $inviteController = new InviteController();
             $inviteCode = $inviteController->activateCode($account);
+
+            $isBlocked = $account->blocked_until;
 //            dd($currentUserWeekPoints);
 
             // if($account->isNeedShow){
@@ -221,6 +223,7 @@ class PointsController extends Controller
             $accountResourceArray['invites_count'] = $account->invitesSent()->count() ?? 0;
             $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
             $accountResourceArray['invite_code']=$inviteCode;
+            $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
             // }
 
             $claimed = $account->weeks()
