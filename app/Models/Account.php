@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\ConstantValues;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class Account extends Model
 {
@@ -20,6 +22,8 @@ class Account extends Model
     protected $guarded = [];
 
     protected $hidden = ['created_at', 'updated_at', 'wallet', 'auth_id'];
+
+    protected $dates = ['blocked_until'];
 
 //    protected $appends = ['is_friend'];
 
@@ -149,6 +153,12 @@ class Account extends Model
 //            }
 //        }
 
+        });
+
+        static::retrieved(function($account){
+            if ($account->blocked_until && $account->blocked_until->isPast()) {
+                $account->update(['code_attempts' => 0, 'blocked_until' => null]);
+            }
         });
     }
 
@@ -400,6 +410,33 @@ class Account extends Model
             $this->team()->associate($team);
             $this->save();
         });
+    }
+
+    public function downloadTwitterAvatar($result): ?string
+    {
+        $TWITTER_AVATAR_PATH = 'twitter/avatars';
+
+        try {
+
+            if (isset($result)) {
+
+                $url = $result;
+
+                $contents = file_get_contents($url);
+
+                $filename = $TWITTER_AVATAR_PATH. '/'. md5($url) . '.' . pathinfo($url, PATHINFO_EXTENSION);
+
+                Storage::disk('public')->put($filename, $contents);
+
+                $fullUrl = url('storage/' .$filename);
+                return $fullUrl;
+            }
+
+        } catch (Exception $exception) {
+            Log::error('Error while loading twitter avatar: ' . $exception->getMessage());
+        }
+
+        return null;
     }
 
 

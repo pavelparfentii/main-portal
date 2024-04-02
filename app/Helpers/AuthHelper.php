@@ -5,8 +5,6 @@ namespace App\Helpers;
 use App\Exceptions\InvalidTokenException;
 use App\Models\Account;
 use Carbon\Carbon;
-
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +26,7 @@ class AuthHelper
         try {
 
             $decodedToken = JWTAuth::setToken($token)->getPayload();
-//            dd($decodedToken);
+
             $authId = !is_null($decodedToken['sub']) ? $decodedToken['sub'] : null;
 
             $userWallet = !is_null($decodedToken['wallet_address']) ? strtolower($decodedToken['wallet_address']) : null;
@@ -43,7 +41,7 @@ class AuthHelper
                 $account = Account::where('wallet', $userWallet)
                     //    ->orWhere('twitter_username', $tokenTwitterUsername)
                     //    ->orWhere('discord_id', $discordId)
-                    ->orWhere('auth_id', $authId)
+                    ->where('auth_id', $authId)
                     ->first();
 
                 if (!$account) {
@@ -54,23 +52,23 @@ class AuthHelper
                         'twitter_id' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['provider_id'] : null,
                         'twitter_username' => !is_null($decodedToken['twitter']) ? strtolower($decodedToken['twitter']['user_name']) : null,
                         'twitter_name' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['name'] : null,
-//                        'twitter_avatar' => !is_null($decodedToken['twitter']) ? $account->downloadTwitterAvatar($decodedToken['twitter']['profile_image_url']) : null,
+                        'twitter_avatar' => !is_null($decodedToken['twitter']) ? $account->downloadTwitterAvatar($decodedToken['twitter']['profile_image_url']) : null,
                         'discord_id' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null,
                         'auth_id'=>$authId,
                         'isNeedShow' => false,
 //                        'discord_name' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['user_name'] : null
 
                     ]);
+                }
+                $account->update([
+                    'wallet' => $userWallet,
+                    'twitter_id' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['provider_id'] : null,
+                    'twitter_username' => !is_null($decodedToken['twitter']) ? strtolower($decodedToken['twitter']['user_name']) : null,
+                    'twitter_name' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['name'] : null,
+                    'twitter_avatar' => !is_null($decodedToken['twitter']) ? $account->downloadTwitterAvatar($decodedToken['twitter']['profile_image_url']) : null,
+                    'discord_id' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null,
+                ]);
 
-                } else {
-
-                    if ($authId !== $account->auth_id) {
-                        $account->auth_id = $authId;
-                    }
-
-                    $account->save();
-
-                 }
                 return $account;
             }
 

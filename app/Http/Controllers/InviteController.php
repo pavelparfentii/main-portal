@@ -21,7 +21,6 @@ class InviteController extends Controller
 
     public function activateCode($account)
     {
-//        $account = AuthHelper::auth($request);
 
         if(!$account){
             return response()->json(['message'=>'non authorized'], 401);
@@ -30,6 +29,7 @@ class InviteController extends Controller
         if($account->codes()->where('active', true)->exists()){
            $code =$account->codes()->where('active', true)->latest()->first();
 
+
         }else{
             $code = new Code([
                 'value' => Str::random(5),
@@ -37,9 +37,6 @@ class InviteController extends Controller
             ]);
             $account->codes()->save($code);
         }
-//        return response()->json([
-//            'code'=>$code->value
-//        ]);
 
         return $code->value;
 
@@ -90,12 +87,10 @@ class InviteController extends Controller
 
         $currentWeek = Week::getCurrentWeekForAccount($account);
 
-
         $inviterCurrentWeek = Week::getCurrentWeekForAccount($inviter);
 
 
         $inviteCheck = DB::table('invites')
-            ->where('used_code', $code)
 
             ->where('whom_invited', $account->id)
             ->pluck('id')
@@ -142,6 +137,7 @@ class InviteController extends Controller
 //                                    $currentWeek->increment('points', ConstantValues::balance_2k);
                                     $points = ConstantValues::balance_2k;
                                     $account->total_points += $points;
+                                    $currentWeek->invite_points += $points;
                                     $account->save();
                                     //inviter
 
@@ -160,6 +156,7 @@ class InviteController extends Controller
                                 }elseif ($wallet_balance >= 10000 && $wallet_balance < 50000){
                                     $points = ConstantValues::balance_10k;
                                     $account->total_points += $points;
+                                    $currentWeek->invite_points += $points;
                                     $account->save();
 
                                     //inviter
@@ -178,6 +175,7 @@ class InviteController extends Controller
                                 }elseif($wallet_balance >= 50000){
                                     $points = ConstantValues::balance_50k;
                                     $account->total_points += $points;
+                                    $currentWeek->invite_points += $points;
                                     $account->save();
 
                                     //inviter
@@ -196,6 +194,7 @@ class InviteController extends Controller
                                 }else{
                                     $points = ConstantValues::null_balance;
                                     $account->total_points += $points;
+                                    $currentWeek->invite_points += $points;
                                     $account->save();
 
                                     //inviter
@@ -217,6 +216,7 @@ class InviteController extends Controller
 
                      $points = ConstantValues::null_balance;
                     $account->total_points += ConstantValues::null_balance;
+                    $currentWeek->invite_points += $points;
                     $account->save();
 
                     //inviter

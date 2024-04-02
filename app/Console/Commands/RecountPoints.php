@@ -61,10 +61,12 @@ class RecountPoints extends Command
 
             $previousWeek = Week::where('account_id', $account->id)
                 ->where('week_number', '=', $previousWeekNumber)
+
                 ->first();
 
             if($previousWeek){
                 $account->total_points += $previousWeek->points;
+                $account->save();
                 $previousWeek->update(['active'=>false]);
             }
 

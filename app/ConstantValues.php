@@ -57,6 +57,8 @@ class ConstantValues
     const lord_of_the_reapers = 1000.000;
     const metaverse_owner = 200.000;
     const original_minter = 200.000;
+    const bought_animal = 5.000;
+    const minter_never_sold = 2000.000;
 
     //Referral
     const null_balance = 1.000;

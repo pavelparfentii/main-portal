@@ -73,6 +73,8 @@ class Kernel extends ConsoleKernel
         //Digital Animals Original Minters
         $schedule->command('app:digital-animals-original-minter-command')->weeklyOn(0, '10:00');
 
+        $schedule->command('app:digital-animals-sale-points-command')->dailyAt('23:50');
+
 
     }
 

@@ -94,6 +94,7 @@ trait DigitalAnimalsTrait
     {
         $ids = DB::table('digital_animals')
             ->where('query_param', 'like', 'token_%')
+            ->where('query_param', 'not like', 'token_owner_year_%')
             ->distinct()
             ->pluck('account_id');
 
@@ -101,7 +102,10 @@ trait DigitalAnimalsTrait
 
         foreach ($accounts as $account){
 
-            $animalsCount = DigitalAnimal::where('query_param', 'like', 'token_%')->where('account_id', $account->id)->count();
+            $animalsCount = DigitalAnimal::where('query_param', 'like', 'token_%')
+                ->where('query_param', 'not like', 'token_owner_year_%')
+                ->where('account_id', $account->id)
+                ->count();
 //           $animalsCount = $account->animals()->where('query_param', 'like', 'token_%')->count();
 
 //           $lord = $account->animals()->where('query_param', 'lord_20')->first();
@@ -340,7 +344,7 @@ trait DigitalAnimalsTrait
                         ]);
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', ConstantValues::committed_pass_points);
+                        $currentWeek->increment('points', (int)$data->totalOwned * ConstantValues::committed_pass_points);
                     }
                 }
 
@@ -420,15 +424,16 @@ trait DigitalAnimalsTrait
                         }
 
                     }else{
+                        $points = (int)$data->totalOwned * ConstantValues::soulborne_pass_points;
                         $newAnimal = new DigitalAnimal([
                             'account_id'=>$account->id,
-                            'points' => (int)$data->totalOwned * ConstantValues::soulborne_pass_points,
+                            'points' => $points,
                             'comment' => $data->message,
                             'query_param' => 'soulborne_owner_' . $data->totalOwned
                         ]);
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', ConstantValues::soulborne_pass_points);
+                        $currentWeek->increment('points', $points);
                     }
                 }
 
@@ -516,7 +521,7 @@ trait DigitalAnimalsTrait
                         ]);
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', ConstantValues::soulreaper_pass_points);
+                        $currentWeek->increment('points', (int)$data->totalOwned * ConstantValues::soulreaper_pass_points);
                     }
                 }
 
@@ -604,7 +609,7 @@ trait DigitalAnimalsTrait
                         ]);
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', ConstantValues::lord_of_the_reapers);
+                        $currentWeek->increment('points', (int)$data->totalOwned * ConstantValues::lord_of_the_reapers);
                     }
                 }
 
@@ -694,7 +699,7 @@ trait DigitalAnimalsTrait
                         ]);
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', ConstantValues::metaverse_owner);
+                        $currentWeek->increment('points', (int)$data->totalOwned * ConstantValues::metaverse_owner);
                     }
                 }
 
@@ -745,6 +750,58 @@ trait DigitalAnimalsTrait
                 }
             }
         }
+    }
+
+    public function getSaleTransactions()
+    {
+        $process = new Process([
+            'node',
+            base_path('node/fetchSaleEvents.js'),
+
+        ]);
+
+        $process->setTimeout(3600);
+        $process->start();
+
+        foreach ($process as $type => $data) {
+            if ($process::OUT === $type) {
+                // Handle standard output
+                $outputData = json_decode($data);
+                if($outputData != null){
+//                    var_dump($outputData);
+                    $date = Carbon::parse($outputData->date);
+                    if($date->isPast()){
+                        continue;
+                    }else{
+                        $existingSaleParams = DigitalAnimal::where('query_param', 'like', 'bought_token_%')
+                            ->pluck('query_param')
+                            ->toArray();
+                        $account = Account::where('wallet', strtolower($outputData->wallet) )->first();
+                        $queryParam = 'bought_token_' . $outputData->token;
+                        if($account && !in_array($queryParam, $existingSaleParams)) {
+                            $currentWeek = Week::getCurrentWeekForAccount($account);
+                            $newAnimal = new DigitalAnimal([
+                                'account_id' => $account->id,
+                                'points' => ConstantValues::bought_animal,
+                                'comment' => $outputData->message,
+                                'query_param' => 'bought_token_' . $outputData->token
+                            ]);
+
+                            $currentWeek->animals()->save($newAnimal);
+                            $currentWeek->increment('points', ConstantValues::bought_animal);
+                        }
+                    }
+                }
+
+            } else { // $process::ERR === $type
+                Log::info('fetchSaleEvents script error :' . $data);
+            }
+        }
+    }
+
+    public function getMinterNeverSold()
+    {
+
     }
 
 }

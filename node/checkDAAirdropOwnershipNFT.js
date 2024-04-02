@@ -91,33 +91,28 @@ async function loadUserTokens() {
     let details = [];
         try {
             let contract = await initializeContract(); // Await the contract initialization
-            // let userTokensCount = await contract.methods.balanceOfBatch([user], tokens).call();
 
             const userAddresses = new Array(tokens.length).fill(user);
             // Convert token IDs to strings
             const tokenIds = tokens.map(String);
 
             let userTokensCount = await contract.methods.balanceOfBatch(userAddresses, tokenIds).call();
-            // const tokensPromises = Array.from({ length: Number(userTokensCount) }, (_, index) =>
-            //     contract.methods.balanceOf(user, index).call()
-            // );
-            //
-            // const tokens = await Promise.all(tokensPromises);
-            // const tokenNumbers = tokens.map(token => parseInt(token, 10));
 
             userTokensCount.forEach(tokenCount => {
                 sum += BigInt(tokenCount);
             });
 
-            let tokenDetails = userTokensCount.map((balance, index) => {
-                return `tokenId${tokens[index]}: ${balance}`;
-            }).join(', ');
+            let tokenDetails = userTokensCount.map((balance, index) => ({ tokenId: tokens[index], balance })) // Map to an array of objects with tokenId and balance
+                .filter(token => token.balance > 0) // Filter out tokens with a balance of 0
+                .map(token => `tokenId${token.tokenId}: ${token.balance}`) // Map to your desired string format
+                .join(', ');
 
             // console.log(`Wallet ${user} owns: ${tokenDetails}`);
 
             const output = {
                 totalOwned: Number(sum),
-                message:`Metaverse Wallet ${user} owns: ${tokenDetails}` // This is now a single concatenated string of messages
+                message:`Metaverse Wallet ${user} owns: ${tokenDetails}`
+                // This is now a single concatenated string of messages
             };
             console.log(JSON.stringify(output));
             // console.log(userTokensCount);
