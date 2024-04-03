@@ -32,7 +32,7 @@ class InviteController extends Controller
 
         }else{
             $code = new Code([
-                'value' => Str::random(5),
+                'value' => strtoupper(Str::random(5)),
                 'active' => true
             ]);
             $account->codes()->save($code);
@@ -59,7 +59,7 @@ class InviteController extends Controller
 
         $maxAttempts = 3;
         $blockPeriod = now()->addHours(24);
-        $checkCode = Code::where('value', $code)->first();
+        $checkCode = Code::where('value', strtoupper($code))->first();
 
         if(!$checkCode ){
 
@@ -111,8 +111,6 @@ class InviteController extends Controller
 
                     $result = json_decode($output, false, 512, JSON_THROW_ON_ERROR);
 
-//                    dd($result->data);
-
                     if (!$result || $result->state != 'success') {
                         Log::info('cant check wallet balance for user: '. $account->wallet);
 
@@ -125,19 +123,10 @@ class InviteController extends Controller
                                 if($wallet_balance >= 2000 && $wallet_balance < 10000){
                                     //new user
 
-//                                    $safeSoul = new SafeSoul([
-//                                        'account_id' => $account->id,
-////                                'week_id' => $currentWeek->id,
-//                                        'points' => ConstantValues::balance_2k,
-//                                        'comment' => 'Инвайт человека, рефералка wallet = '. $account->wallet . 'баланс= ' . $wallet_balance,
-//                                        'query_param' => $checkCode->value
-//                                    ]);
-//
-//                                    $currentWeek->safeSouls()->save($safeSoul);
-//                                    $currentWeek->increment('points', ConstantValues::balance_2k);
                                     $points = ConstantValues::balance_2k;
                                     $account->total_points += $points;
                                     $currentWeek->invite_points += $points;
+                                    $currentWeek->save();
                                     $account->save();
                                     //inviter
 
@@ -157,6 +146,7 @@ class InviteController extends Controller
                                     $points = ConstantValues::balance_10k;
                                     $account->total_points += $points;
                                     $currentWeek->invite_points += $points;
+                                    $currentWeek->save();
                                     $account->save();
 
                                     //inviter
@@ -176,6 +166,7 @@ class InviteController extends Controller
                                     $points = ConstantValues::balance_50k;
                                     $account->total_points += $points;
                                     $currentWeek->invite_points += $points;
+                                    $currentWeek->save();
                                     $account->save();
 
                                     //inviter
@@ -195,6 +186,7 @@ class InviteController extends Controller
                                     $points = ConstantValues::null_balance;
                                     $account->total_points += $points;
                                     $currentWeek->invite_points += $points;
+                                    $currentWeek->save();
                                     $account->save();
 
                                     //inviter
@@ -217,6 +209,7 @@ class InviteController extends Controller
                      $points = ConstantValues::null_balance;
                     $account->total_points += ConstantValues::null_balance;
                     $currentWeek->invite_points += $points;
+                    $currentWeek->save();
                     $account->save();
 
                     //inviter

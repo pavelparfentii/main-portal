@@ -75,6 +75,9 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('app:digital-animals-sale-points-command')->dailyAt('23:50');
 
+        //Digital Animals Minted Never Sold
+        $schedule->command('app:digital-animals-minted-never-sold')->dailyAt('11:00');
+
 
     }
 

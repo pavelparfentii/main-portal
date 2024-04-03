@@ -801,6 +801,81 @@ trait DigitalAnimalsTrait
 
     public function getMinterNeverSold()
     {
+        $process = new Process([
+            'node',
+            base_path('node/checkOriginalMinterAndNeverSold.js'),
+
+        ]);
+
+        $process->setTimeout(9000);
+        $process->start();
+        $accountsData = [];
+        foreach ($process as $type => $data) {
+            if ($process::OUT === $type) {
+                $outputData = json_decode($data);
+
+                if ($outputData != null && !empty($outputData)) {
+                    $wallet = $outputData->wallet;
+                    $tokenId = $outputData->tokenId;
+                    $message = $outputData->message;
+
+
+
+                    if (!array_key_exists($wallet, $accountsData)) {
+                        $accountsData[$wallet] = [
+                            'tokens' => [],
+                            'message' => ''
+                        ];
+                    }
+                    $accountsData[$wallet]['tokens'][] = $tokenId;
+                    $accountsData[$wallet]['message'] .= $message . ' ;';
+                    var_dump($tokenId);
+                }
+            }
+        }
+
+        $this->checkForAnyTokenOwnershipAndNeverSold($accountsData);
+    }
+
+    private function checkForAnyTokenOwnershipAndNeverSold($accountsData)
+    {
+        foreach ($accountsData as $wallet => $info) {
+            $account = Account::where('wallet', $wallet)->first();
+
+            if ($account) {
+                $existingParam = 'minter_never_sold';
+                $digitalAnimal = DigitalAnimal::where('account_id', $account->id)
+                    ->where('query_param', $existingParam)
+                    ->first();
+
+                if (count($info['tokens']) > 0 && !$digitalAnimal) {
+                    $currentWeek = Week::getCurrentWeekForAccount($account);
+                    $newAnimal = new DigitalAnimal([
+                        'account_id' => $account->id,
+                        'points' => ConstantValues::minter_never_sold,
+                        'comment' => $info['message'],
+                        'query_param' => $existingParam
+                    ]);
+                    $newAnimal->save();
+                    $currentWeek->animals()->save($newAnimal);
+                    $currentWeek->increment('points', ConstantValues::minter_never_sold);
+                }elseif (count($info['tokens']) === 0 && $digitalAnimal) {
+
+                    $currentWeek = Week::getCurrentWeekForAccount($account);
+                    $newAnimal = new DigitalAnimal([
+                        'account_id' => $account->id,
+                        'points' => -ConstantValues::minter_never_sold,
+                        'comment' => 'оригинал минтер продал токены и теперь их нет, отбор очков',
+                        'query_param' => null
+                    ]);
+                    $newAnimal->save();
+                    $currentWeek->animals()->save($newAnimal);
+                    $currentWeek->increment('points', -ConstantValues::minter_never_sold);
+
+                    $digitalAnimal->delete();
+                }
+            }
+        }
 
     }
 
