@@ -81,9 +81,7 @@ class TeamController extends Controller
             $isFriendWithCreator = true;
             $creatorIsFriendWithAccount = true;
         } else {
-//            // For other accounts, check if there's a friendship between the account and the creator
-//            $isFriendWithCreator = $account->friends()->where('id', $team->creator->id)->exists();
-//            $creatorIsFriendWithAccount = $team->creator->friends()->where('id', $account->id)->exists();
+
             $isFriendWithCreator = $account->friends()->where('id', $team->account_id)->exists();
 
             $creatorIsFriendWithAccount = $team->creator->friends()->where('id', $account->id)->exists();
@@ -250,67 +248,6 @@ class TeamController extends Controller
             'in_team' => $currentUser && $currentUser->team_id === $team->id
         ]);
     }
-//    public function getTeamList(Request $request)
-//    {
-//        $slug = $request->slug;
-//        $period = $request->input('period', 'total'); // Default to 'total' if not specified
-//        $currentWeekNumber = Carbon::now()->format('W-Y');
-//
-//        $team = Team::where('slug', $slug)->with(['creator', 'accounts.discordRoles'])->first();
-//
-//        if (!$team) {
-//            return response()->json(['message' => 'not found'], 403);
-//        }
-//
-//        $currentUser = AuthHelper::auth($request);
-//
-//        if ($token = $request->bearerToken() && !$currentUser) {
-//            return response()->json(['error' => 'token expired or wrong'], 403);
-//        }
-//
-//        $friendIds = $currentUser ? $currentUser->friends()->pluck('id')->toArray() : [];
-//
-//        foreach ($team->accounts as $account) {
-//            // Determine points based on the period
-////            if ($period == 'week') {
-//                $weekPoints = $account->weeks()
-//                    ->where('week_number', $currentWeekNumber)
-//                    ->where('active', true)
-//                    ->sum('points');
-////                $account->total_points = $weekPoints; // Assign week points to total_points
-////            } // If 'total', total_points remains unchanged
-//
-//            // Set additional account attributes
-//            $account->current_user = ($currentUser && $account->id === $currentUser->id);
-//            $account->friend = in_array($account->id, $friendIds);
-//            if (!empty($currentUser->discord_id)) {
-//                $account->load('discordRoles');
-//            }
-//            unset($account->wallet);
-//        }
-//
-//        // Sort accounts based on the adjusted total_points
-//        $sortedAccounts = $team->accounts->sortByDesc('total_points');
-//
-//        // Assign ranks after sorting
-//        foreach ($sortedAccounts as $index => $account) {
-//            $account->rank = $index + 1;
-//            $account->is_friend_of_creator = $currentUser && $currentUser->id !== $team->creator->id && in_array($team->creator->id, $friendIds);
-//        }
-//
-//        // Replace the team's accounts with the sorted list
-//        $team->setRelation('accounts', $sortedAccounts->values());
-//
-//        $teamTotalPoints = $sortedAccounts->sum('total_points');
-//
-//        return response()->json([
-//            'team' => $team,
-//            'total_members' => $sortedAccounts->count(),
-//            'total_points' => $teamTotalPoints, // This now reflects either total points or week points based on period
-//            'is_friend_of_creator' => $currentUser && $currentUser->id !== $team->creator->id && in_array($team->creator->id, $friendIds),
-//            'in_team' => $currentUser && $currentUser->team_id === $team->id,
-//        ]);
-//    }
 
     public function getTeamsList(Request $request)
     {

@@ -78,6 +78,9 @@ class Kernel extends ConsoleKernel
         //Digital Animals Minted Never Sold
         $schedule->command('app:digital-animals-minted-never-sold')->dailyAt('11:00');
 
+        //Update friends
+        $schedule->command('app:update-twitter-followers-followings')->weeklyOn(0, '12:00');
+
 
     }
 

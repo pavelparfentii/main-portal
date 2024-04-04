@@ -75,11 +75,12 @@ async function fetchLast100TransferEvents() {
 
                 const output = {
                     date: date.toUTCString(),
-                    message:`token ID ${event.returnValues.tokenId} received by account ${receiverAddress} in transaction ${txHash} `,
+                    message:`token ID ${event.returnValues.tokenId} bought by account ${receiverAddress} in transaction ${txHash} `,
                     wallet: receiverAddress,
-                    token: event.returnValues.tokenId
+                    token: Number(event.returnValues.tokenId)
                     // This is now a single concatenated string of messages
                 };
+                // console.log(output);
                 console.log(JSON.stringify(output));
             }
         }

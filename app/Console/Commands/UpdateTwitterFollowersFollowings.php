@@ -27,7 +27,7 @@ class UpdateTwitterFollowersFollowings extends Command
     public function handle()
     {
         $client = new \GuzzleHttp\Client();
-//        $account = Account::where('twitter_username', 'Sashacrave')->first();
+//        $accounts = Account::whereIn('twitter_username', ['sashacrave', 'boredape8692'])->get();
         $accounts = Account::whereNotNull('twitter_id')->cursor();
 
 //        $twitterId = $account->twitter_id;
@@ -38,15 +38,29 @@ class UpdateTwitterFollowersFollowings extends Command
             $this->info($i++);
             // Initialize arrays to hold rest IDs from followers and followings
 
-            $followerRestIds = $this->getTwitterUserRestIds($client, $account->twitter_id, 'followers');
+            $followerRestIds = $this->getTwitterFollowers($client, $account->twitter_username, 'followers');
             $followingRestIds = $this->getTwitterUserRestIds($client, $account->twitter_id, 'followings');
 
-            // Merge and remove duplicate rest IDs from both sets
-            $uniqueRestIds = array_unique(array_merge($followerRestIds, $followingRestIds));
-            foreach ($uniqueRestIds as $twitter_id) {
-                $friend = Account::where('twitter_id', $twitter_id)->first();
-                if($friend){
+//            // Merge and remove duplicate rest IDs from both sets
+//            $uniqueRestIds = array_unique(array_merge($followerRestIds, $followingRestIds));
+//            foreach ($uniqueRestIds as $twitter_id) {
+//                $friend = Account::where('twitter_id', $twitter_id)->first();
+//                if($friend){
+//                    $account->friends()->syncWithoutDetaching([$friend->id]);
+//                }
+//            }
+            $mutualRestIds = array_intersect($followerRestIds, $followingRestIds);
+
+
+            // Find mutual friend accounts based on Twitter IDs
+            $mutualFriends = Account::whereIn('twitter_id', $mutualRestIds)->get();
+
+            // Use syncWithoutDetaching to update mutual friend relationships
+            foreach ($mutualFriends as $friend) {
+                if ($account->id !== $friend->id) { // Prevent self-relationship
                     $account->friends()->syncWithoutDetaching([$friend->id]);
+                    // If you need to ensure the inverse relationship is also set:
+                    $friend->friends()->syncWithoutDetaching([$account->id]);
                 }
             }
         }
@@ -110,11 +124,49 @@ class UpdateTwitterFollowersFollowings extends Command
                 break;
             }
 
-            // Extract the first part of the bottom cursor to check if it's "0"
-//            list($firstPart, ) = explode('|', $bottomCursor, 2);
-
             // Exit the loop if there's no cursor or it's the end of the list
         } while (!empty($bottomCursor) && $firstPart !== "0");
+
+
+        return $restIds;
+    }
+
+    private function getTwitterFollowers($client, $twitterId, $type)
+    {
+        $restIds = [];
+        $next_cursor = null;
+
+        do {
+            try {
+                $url = "https://twitter241.p.rapidapi.com/{$type}.php?screenname=$twitterId";
+                if (!empty($next_cursor)) {
+                    $url .= "&cursor=$next_cursor";
+                }
+
+                $response = $client->request('GET', $url, [
+                    'headers' => [
+                        'X-RapidAPI-Host' => 'twitter-api45.p.rapidapi.com',
+                        'X-RapidAPI-Key' => '85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
+                    ],
+                ]);
+
+                $responseBody = json_decode($response->getBody(), true);
+                if(isset($responseBody['followers'])){
+                    foreach ($responseBody['followers'] as $follower) {
+                        if(isset($follower['user_id'])){
+                            $restIds[] = $follower['user_id'];
+                        }
+                    }
+                }
+                $more_users = $responseBody['more_users'];
+
+            }catch (\GuzzleHttp\Exception\GuzzleException $e){
+                $this->error("An error occurred while fetching data: " . $e->getMessage());
+                // Optionally, break or continue depending on how you want to handle failures
+                break;
+            }
+
+        }while (!empty($next_cursor) && $more_users);
 
         return $restIds;
     }
