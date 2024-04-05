@@ -12,8 +12,6 @@ class Invite extends Model
 
     protected $guarded = [];
 
-    protected $casts = ['stats'=>'array'];
-
     //invited_by
     public function inviter(): BelongsTo
     {

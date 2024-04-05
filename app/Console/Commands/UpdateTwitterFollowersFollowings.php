@@ -27,8 +27,8 @@ class UpdateTwitterFollowersFollowings extends Command
     public function handle()
     {
         $client = new \GuzzleHttp\Client();
-//        $accounts = Account::whereIn('twitter_username', ['sashacrave', 'boredape8692'])->get();
-        $accounts = Account::whereNotNull('twitter_id')->cursor();
+        $accounts = Account::whereIn('twitter_username', ['sashacrave', 'boredape8692'])->get();
+//        $accounts = Account::whereNotNull('twitter_id')->cursor();
 
 //        $twitterId = $account->twitter_id;
         $startTime = microtime(true);
@@ -40,6 +40,7 @@ class UpdateTwitterFollowersFollowings extends Command
 
             $followerRestIds = $this->getTwitterFollowers($client, $account->twitter_username, 'followers');
             $followingRestIds = $this->getTwitterUserRestIds($client, $account->twitter_id, 'followings');
+//            $followingRestIds = $this->getTwitterFollowings($client, $account->twitter_username, 'following');
 
 //            // Merge and remove duplicate rest IDs from both sets
 //            $uniqueRestIds = array_unique(array_merge($followerRestIds, $followingRestIds));
@@ -49,7 +50,10 @@ class UpdateTwitterFollowersFollowings extends Command
 //                    $account->friends()->syncWithoutDetaching([$friend->id]);
 //                }
 //            }
+            var_dump($followingRestIds);
+//            var_dump($followingRestIds);
             $mutualRestIds = array_intersect($followerRestIds, $followingRestIds);
+            var_dump($mutualRestIds);
 
 
             // Find mutual friend accounts based on Twitter IDs
@@ -138,8 +142,10 @@ class UpdateTwitterFollowersFollowings extends Command
 
         do {
             try {
+
                 $url = "https://twitter241.p.rapidapi.com/{$type}.php?screenname=$twitterId";
-                if (!empty($next_cursor)) {
+                if ($next_cursor !== null) {
+                    sleep(1);
                     $url .= "&cursor=$next_cursor";
                 }
 
@@ -158,7 +164,8 @@ class UpdateTwitterFollowersFollowings extends Command
                         }
                     }
                 }
-                $more_users = $responseBody['more_users'];
+                $next_cursor = $responseBody['next_cursor'] ?? null;
+                $more_users = $responseBody['more_users'] ?? false;
 
             }catch (\GuzzleHttp\Exception\GuzzleException $e){
                 $this->error("An error occurred while fetching data: " . $e->getMessage());
@@ -166,8 +173,50 @@ class UpdateTwitterFollowersFollowings extends Command
                 break;
             }
 
-        }while (!empty($next_cursor) && $more_users);
+        }while ($next_cursor && $more_users);
 
         return $restIds;
     }
+
+    private function getTwitterFollowings($client, $twitterId, $type)
+    {
+        $restIds = [];
+        $next_cursor = null;
+
+        do {
+            try {
+                $url = "https://twitter241.p.rapidapi.com/{$type}.php?screenname=$twitterId";
+                if ($next_cursor !== null) {
+                    $url .= "&cursor=$next_cursor";
+                }
+
+                $response = $client->request('GET', $url, [
+                    'headers' => [
+                        'X-RapidAPI-Host' => 'twitter-api45.p.rapidapi.com',
+                        'X-RapidAPI-Key' => '85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
+                    ],
+                ]);
+
+                $responseBody = json_decode($response->getBody(), true);
+                if(isset($responseBody['following'])){
+                    foreach ($responseBody['following'] as $following) {
+                        if(isset($following['user_id'])){
+                            $restIds[] = $following['user_id'];
+                        }
+                    }
+                }
+                $next_cursor = $responseBody['next_cursor'] ?? null;
+                $more_users = $responseBody['more_users'] ?? false;
+
+            }catch (\GuzzleHttp\Exception\GuzzleException $e){
+                $this->error("An error occurred while fetching data: " . $e->getMessage());
+                // Optionally, break or continue depending on how you want to handle failures
+                break;
+            }
+
+        }while ($next_cursor && $more_users);
+
+        return $restIds;
+    }
+
 }
