@@ -27,8 +27,8 @@ class UpdateTwitterFollowersFollowings extends Command
     public function handle()
     {
         $client = new \GuzzleHttp\Client();
-        $accounts = Account::whereIn('twitter_username', ['sashacrave', 'boredape8692'])->get();
-//        $accounts = Account::whereNotNull('twitter_id')->cursor();
+//        $accounts = Account::whereIn('twitter_username', ['sashacrave', 'boredape8692'])->get();
+        $accounts = Account::whereNotNull('twitter_id')->cursor();
 
 //        $twitterId = $account->twitter_id;
         $startTime = microtime(true);
@@ -42,18 +42,8 @@ class UpdateTwitterFollowersFollowings extends Command
             $followingRestIds = $this->getTwitterUserRestIds($client, $account->twitter_id, 'followings');
 //            $followingRestIds = $this->getTwitterFollowings($client, $account->twitter_username, 'following');
 
-//            // Merge and remove duplicate rest IDs from both sets
-//            $uniqueRestIds = array_unique(array_merge($followerRestIds, $followingRestIds));
-//            foreach ($uniqueRestIds as $twitter_id) {
-//                $friend = Account::where('twitter_id', $twitter_id)->first();
-//                if($friend){
-//                    $account->friends()->syncWithoutDetaching([$friend->id]);
-//                }
-//            }
-            var_dump($followingRestIds);
-//            var_dump($followingRestIds);
+
             $mutualRestIds = array_intersect($followerRestIds, $followingRestIds);
-            var_dump($mutualRestIds);
 
 
             // Find mutual friend accounts based on Twitter IDs

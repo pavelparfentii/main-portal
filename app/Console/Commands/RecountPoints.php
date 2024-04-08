@@ -61,7 +61,7 @@ class RecountPoints extends Command
 
             $previousWeek = Week::where('account_id', $account->id)
                 ->where('week_number', '=', $previousWeekNumber)
-
+                ->where('active', true)
                 ->first();
 
             if($previousWeek){
@@ -69,6 +69,8 @@ class RecountPoints extends Command
                 $account->save();
                 $previousWeek->update(['active'=>false]);
             }
+
+            Week::getCurrentWeekForAccount($account);
 
         }
 

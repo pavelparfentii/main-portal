@@ -56,19 +56,19 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:digital-animals-long-range-owner-points-command')->weeklyOn(0, '05:30');
 
         //Digital Animal Committed Pass
-        $schedule->command('app:digital-animals-commited-pass-points-command')->weeklyOn('06:30');
+        $schedule->command('app:digital-animals-commited-pass-points-command')->weeklyOn(0,'06:30');
 
         //Digital Animal Soulborne Pass
-        $schedule->command('app:digital-animals-soulborne-pass-points-calculation-command')->weeklyOn('07:30');
+        $schedule->command('app:digital-animals-soulborne-pass-points-calculation-command')->weeklyOn(0,'07:30');
 
         //Digital Animal SoulReaper Pass
-        $schedule->command('app:digital-animals-soul-reaper-pass-points-calculation-command')->weeklyOn('08:00');
+        $schedule->command('app:digital-animals-soul-reaper-pass-points-calculation-command')->weeklyOn(0,'08:00');
 
         //Digital Animal Lord oF The Reapers
-        $schedule->command('app:digital-animals-lord-of-the-reapers-pass-points-calculation-command')->weeklyOn('09:00');
+        $schedule->command('app:digital-animals-lord-of-the-reapers-pass-points-calculation-command')->weeklyOn(0,'09:00');
 
         //Digital Animal Metaverse Animals Owner
-        $schedule->command('app:digital-animals-metaverase-owners-command')->weeklyOn('09:30');
+        $schedule->command('app:digital-animals-metaverase-owners-command')->weeklyOn(0,'09:30');
 
         //Digital Animals Original Minters
         $schedule->command('app:digital-animals-original-minter-command')->weeklyOn(0, '10:00');
@@ -76,7 +76,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:digital-animals-sale-points-command')->dailyAt('23:50');
 
         //Digital Animals Minted Never Sold
-        $schedule->command('app:digital-animals-minted-never-sold')->weeklyOn('11:00');
+        $schedule->command('app:digital-animals-minted-never-sold')->weeklyOn(0,'11:00');
 
         //Update friends
         $schedule->command('app:update-twitter-followers-followings')->weeklyOn(5, '14:00');
