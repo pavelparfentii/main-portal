@@ -22,72 +22,87 @@ trait SafeSoulTrait{
 //    private string $safesoul = 'https://safesoul.test-dev.site/';
     private string $safesoul = 'https://api.safesoul.club/';
 
+//    public function getAccountsUpdate()
+//    {
+//
+//        try {
+//            $response = Http::withHeaders([
+//                'Authorization' => 'Bearer ux9AgzrHauOq6sF8kZSetP4eCAB7z2OoxLOQP1fpQCZflMrPBQdUVdQehCdGDrPZ',
+//            ])->timeout(45)->get( $this->safesoul .'api/airdrop/user/info');
+//
+//            if($response->status() ==200){
+//
+//                $data = $response->json();
+////                Log::info($data);
+//                if(isset($data)){
+//                    foreach ($data as $item){
+//
+//                            $account = Account::where('wallet', $item['wallet'])->first();
+//                            if($account){
+//                                Week::getCurrentWeekForAccount($account);
+//                                usleep(5000);
+//                                $role = isset($account->discord_id) || $item['discord_id'] ? $this->checkRole($account->discord_id) : null;
+//                                if(isset($account->discord_id) || $item['discord_id']){
+//                                    $account->updateRoleAndAdjustPoints($role);
+//                                }
+//                                $account->update([
+//                                    'twitter_username'=>$item['twitter_username'],
+//                                    'twitter_name'=>$item['twitter_name'],
+//                                    'twitter_avatar'=> isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
+//                                    'twitter_id'=>$item['twitter_id'],
+//                                    'role'=>$role,
+//                                    'discord_id'=>$item['discord_id'],
+//                                    'auth_id'=>$item['auth_id']
+//                                ]);
+//
+//
+//                                $account->save();
+//
+//
+//                            }else{
+//
+//                                $account = new Account([
+//                                    'wallet'=> $item['wallet'],
+//                                    'twitter_username'=>$item['twitter_username'],
+//                                    'twitter_name'=>$item['twitter_name'],
+//                                    'twitter_avatar'=>isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
+//                                    'twitter_id'=>$item['twitter_id'],
+////                                'role'=>$item['role'],
+//                                    'auth_id'=>$item['auth_id'],
+//                                    'discord_id'=>$item['discord_id']
+//                                ]);
+//                                $role = isset($account->discord_id) || $item['discord_id'] ? $this->checkRole($account->discord_id) : null;
+//                                $account->role = $role;
+//                                $account->save();
+//
+//                            }
+//
+//
+//                    }
+//                }
+//                return $response->json(['ok'=>'sdsfd'],200);
+//            }else{
+//                Log::info('getAccountsUpdate error: '. $response->status());
+//            }
+//        } catch (\Exception $e){
+//            Log::info('getAccountsUpdate error: '. $e);
+//        }
+//
+//    }
+
     public function getAccountsUpdate()
     {
+        $accounts = Account::whereNotNull('discord_id')->cursor();
 
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ux9AgzrHauOq6sF8kZSetP4eCAB7z2OoxLOQP1fpQCZflMrPBQdUVdQehCdGDrPZ',
-            ])->timeout(45)->get( $this->safesoul .'api/airdrop/user/info');
-
-            if($response->status() ==200){
-
-                $data = $response->json();
-//                Log::info($data);
-                if(isset($data)){
-                    foreach ($data as $item){
-
-                            $account = Account::where('wallet', $item['wallet'])->first();
-                            if($account){
-                                Week::getCurrentWeekForAccount($account);
-                                usleep(5000);
-                                $role = isset($account->discord_id) || $item['discord_id'] ? $this->checkRole($account->discord_id) : null;
-                                if(isset($account->discord_id) || $item['discord_id']){
-                                    $account->updateRoleAndAdjustPoints($role);
-                                }
-                                $account->update([
-                                    'twitter_username'=>$item['twitter_username'],
-                                    'twitter_name'=>$item['twitter_name'],
-                                    'twitter_avatar'=> isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
-                                    'twitter_id'=>$item['twitter_id'],
-                                    'role'=>$role,
-                                    'discord_id'=>$item['discord_id'],
-                                    'auth_id'=>$item['auth_id']
-                                ]);
-
-
-                                $account->save();
-
-
-                            }else{
-
-                                $account = new Account([
-                                    'wallet'=> $item['wallet'],
-                                    'twitter_username'=>$item['twitter_username'],
-                                    'twitter_name'=>$item['twitter_name'],
-                                    'twitter_avatar'=>isset($item['twitter_avatar']) ? $this->downloadTwitterAvatar($item['twitter_avatar']) : null,
-                                    'twitter_id'=>$item['twitter_id'],
-//                                'role'=>$item['role'],
-                                    'auth_id'=>$item['auth_id'],
-                                    'discord_id'=>$item['discord_id']
-                                ]);
-                                $role = isset($account->discord_id) || $item['discord_id'] ? $this->checkRole($account->discord_id) : null;
-                                $account->role = $role;
-                                $account->save();
-
-                            }
-
-
-                    }
-                }
-                return $response->json(['ok'=>'sdsfd'],200);
-            }else{
-                Log::info('getAccountsUpdate error: '. $response->status());
+        foreach ($accounts as $account){
+            try {
+                $role = $this->checkRole($account->discord_id);
+//                sleep(1);
+                $account->updateRoleAndAdjustPoints($role);
+            }catch (\Exception $e){
+                Log::info('getAccountsUpdate error: '. $e);
             }
-        } catch (\Exception $e){
-            Log::info('getAccountsUpdate error: '. $e);
         }
-
     }
 
     public function getDiscordRolesWithNamesForAccounts()

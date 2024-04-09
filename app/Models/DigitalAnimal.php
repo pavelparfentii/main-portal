@@ -13,10 +13,6 @@ class DigitalAnimal extends Model
 
     protected $guarded = [];
 
-//    public function account()
-//    {
-//        return $this->belongsTo(Account::class);
-//    }
 
     public function week(): BelongsTo
     {
@@ -25,9 +21,12 @@ class DigitalAnimal extends Model
 
     protected static function booted()
     {
-//        static::created(function($animal){
-//            $accountId = $animal->account_id;
-//            event(new DigitalAnimalsCreationEvent($animal, $accountId));
-//        });
+        static::created(function($animal){
+            if(is_null($animal->query_param)){
+                $weekId = $animal->week_id;
+                event(new DigitalAnimalsCreationEvent($animal, $weekId));
+            }
+
+        });
     }
 }

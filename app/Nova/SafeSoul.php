@@ -51,8 +51,8 @@ class SafeSoul extends Resource
         return [
             ID::make()->sortable(),
             Text::make('comment'),
-            \Laravel\Nova\Fields\Number::make('points')->step(0.001),
-            \Laravel\Nova\Fields\Number::make('claim_points')->min(0.001)->step(0.001)->sortable(),
+            \Laravel\Nova\Fields\Number::make('points')->step(0.000)->default(0),
+            \Laravel\Nova\Fields\Number::make('claim_points')->min(0.000)->step(0.001)->default(0)->sortable(),
             Date::make('created_at')
         ];
     }

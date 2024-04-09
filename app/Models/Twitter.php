@@ -24,9 +24,9 @@ class Twitter extends Model
 
     protected static function booted()
     {
-        static::created(function($twitter){
-            $accountId = $twitter->account_id;
-            event(new TwitterCreationEvent($accountId, $twitter));
-        });
+//        static::created(function($twitter){
+//            $accountId = $twitter->account_id;
+//            event(new TwitterCreationEvent($accountId, $twitter));
+//        });
     }
 }

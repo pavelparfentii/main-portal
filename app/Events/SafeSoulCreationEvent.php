@@ -14,24 +14,13 @@ class SafeSoulCreationEvent
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public int $accountId;
+    public int $weekId;
     public object $safe;
 
-    public function __construct($safe, $accountId)
+    public function __construct($safe, $weekId)
     {
-        $this->accountId = $accountId;
+        $this->weekId = $weekId;
         $this->safe = $safe;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-    public function broadcastOn(): array
-    {
-        return [
-            new PrivateChannel('channel-name'),
-        ];
-    }
 }

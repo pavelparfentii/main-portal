@@ -203,8 +203,7 @@ class Account extends Model
             $this->role = $newRole;
             $this->save();
 
-//            $currentWeek = Week::getCurrentWeekForAccount($this);
-            $currentWeek = Week::where('week_number', Carbon::now()->subWeek()->format('W-Y'))->Where('account_id', $this->id)->first();
+            $currentWeek = Week::getCurrentWeekForAccount($this);
 
             // Check for existing points entries related to patrol roles
             $patrolEntryExists = SafeSoul::where('query_param', ConstantValues::safesoul_patrol_role)
@@ -226,6 +225,7 @@ class Account extends Model
                         'query_param' => 'downgraded_' . ConstantValues::safesoul_patrol_role,
 
                     ]);
+                    $currentWeek->decrement('points', ConstantValues::safesoul_patrol_points);
                 }
                 $currentWeek->safeSouls()->create([
                     'account_id' => $this->id,
@@ -236,8 +236,8 @@ class Account extends Model
                 SafeSoul::where('query_param', ConstantValues::safesoul_patrol_role)
                     ->where('account_id', $this->id)
                     ->delete();
-                $currentWeek->increment('points', -ConstantValues::safesoul_patrol_points);
-                $currentWeek->increment('points', ConstantValues::safesoul_og_patrol_role);
+
+                $currentWeek->increment('points', ConstantValues::safesoul_OG_patrol_points);
 
             } // Handle the transition from og_patrol to patrol
             elseif ($originalRole === ConstantValues::safesoul_og_patrol_role && $newRole === ConstantValues::safesoul_patrol_role) {
@@ -248,6 +248,7 @@ class Account extends Model
                         'comment' => 'Downgraded from Ог патрульный, points subtracted',
                         'query_param' =>'downgraded_' .  ConstantValues::safesoul_og_patrol_role,
                     ]);
+                    $currentWeek->decrement('points', ConstantValues::safesoul_OG_patrol_points);
                 }
                 $currentWeek->safeSouls()->create([
                     'account_id' => $this->id,
@@ -260,7 +261,7 @@ class Account extends Model
                     ->where('account_id', $this->id)
                     ->delete();
                 $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
-                $currentWeek->increment('points', -ConstantValues::safesoul_og_patrol_role);
+
             }
 
         });
@@ -271,43 +272,82 @@ class Account extends Model
         $currentWeek = Week::getCurrentWeekForAccount($this);
 
         if ($type === 'likes') {
-            $twitter = new Twitter([
-                'account_id'=>$this->id,
-                'claim_points' => ConstantValues::twitter_projects_tweet_likes_points,
-                'comment' => 'лайк нашего твита tweet_id=' . $tweet_id,
-                'query_param' => '3projects_likes'
-            ]);
-            $currentWeek->twitters()->save($twitter);
-            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_likes_points);
-        } elseif ($type === 'retweets') {
-            $twitter = new Twitter([
-                'account_id'=>$this->id,
-                'claim_points' => ConstantValues::twitter_projects_tweet_retweet_points,
-                'comment' => 'ретвит нашего твита tweet_id=' . $tweet_id,
-                'query_param' => '3projects_retweets'
-            ]);
-            $currentWeek->twitters()->save($twitter);
-            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_retweet_points);
-        } elseif ($type === 'quotes') {
-            $twitter = new Twitter([
-                'account_id'=>$this->id,
-                'claim_points' => ConstantValues::twitter_projects_tweet_quote_points,
-                'comment' => 'Ретвит нашего твита с комментарием  tweet_id=' . $tweet_id . ' quote_id=' . $comment_id,
-                'query_param' => '3projects_quotes'
-            ]);
 
-            $currentWeek->twitters()->save($twitter);
-            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_quote_points);
+            $queryParam = '3projects_likes_tweet_id_'. $tweet_id;
+            $existingTwitter = Twitter::where('query_param', $queryParam)
+                ->where('account_id', $this->id)
+                ->first();
+
+            if(!$existingTwitter){
+                $twitter = new Twitter([
+                    'account_id'=>$this->id,
+                    'claim_points' => ConstantValues::twitter_projects_tweet_likes_points,
+                    'comment' => 'лайк нашего твита tweet_id=' . $tweet_id,
+                    'query_param' => $queryParam
+                ]);
+                $currentWeek->twitters()->save($twitter);
+                $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_likes_points);
+            }
+
+        } elseif ($type === 'retweets') {
+
+            $queryParam = '3projects_retweets_tweet_id_'. $tweet_id;
+
+            $existingTwitter = Twitter::where('query_param', $queryParam)
+                ->where('account_id', $this->id)
+                ->first();
+
+            if(!$existingTwitter){
+                $twitter = new Twitter([
+                    'account_id'=>$this->id,
+                    'claim_points' => ConstantValues::twitter_projects_tweet_retweet_points,
+                    'comment' => 'ретвит нашего твита tweet_id=' . $tweet_id,
+                    'query_param' => $queryParam
+                ]);
+                $currentWeek->twitters()->save($twitter);
+                $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_retweet_points);
+            }
+
+
+        } elseif ($type === 'quotes') {
+
+            $queryParam = '3projects_quotes_tweet_id_'. $tweet_id;
+
+            $existingTwitter = Twitter::where('query_param', $queryParam)
+                ->where('account_id', $this->id)
+                ->first();
+
+            if(!$existingTwitter){
+                $twitter = new Twitter([
+                    'account_id'=>$this->id,
+                    'claim_points' => ConstantValues::twitter_projects_tweet_quote_points,
+                    'comment' => 'Ретвит нашего твита с комментарием  tweet_id=' . $tweet_id . ' quote_id=' . $comment_id,
+                    'query_param' => $queryParam
+                ]);
+
+                $currentWeek->twitters()->save($twitter);
+                $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_quote_points);
+            }
+
+
         } elseif ($type === 'comments') {
-            $twitter = new Twitter([
-                'account_id'=>$this->id,
-                'claim_points' => ConstantValues::twitter_projects_tweet_comment_points,
-                'comment' => 'Коммента нашего твита с комментарием tweet_id=' . $tweet_id . ' comment_id=' . $comment_id,
-                'query_param' => '3projects_comments'
-            ]);
-            $currentWeek->twitters()->save($twitter);
-            $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_comment_points);
-//            $this->twitters()->save($twitter);
+
+            $queryParam = '3projects_comments_tweet_id_'. $tweet_id;
+
+            $existingTwitter = Twitter::where('query_param', $queryParam)
+                ->where('account_id', $this->id)
+                ->first();
+
+            if(!$existingTwitter){
+                $twitter = new Twitter([
+                    'account_id'=>$this->id,
+                    'claim_points' => ConstantValues::twitter_projects_tweet_comment_points,
+                    'comment' => 'Коммента нашего твита с комментарием tweet_id=' . $tweet_id . ' comment_id=' . $comment_id,
+                    'query_param' => '3projects_comments'
+                ]);
+                $currentWeek->twitters()->save($twitter);
+                $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_comment_points);
+            }
         }
 
     }
@@ -316,41 +356,6 @@ class Account extends Model
     {
         return $this->hasMany(Week::class);
     }
-
-//    public function animals()
-//    {
-//        return $this->hasMany(DigitalAnimal::class);
-//    }
-//
-//    public function games()
-//    {
-//        return $this->hasMany(DigitalGame::class);
-//    }
-//
-//    public function digitalSouls()
-//    {
-//        return $this->hasMany(DigitalSoul::class);
-//    }
-//
-//    public function safeSouls()
-//    {
-//        return $this->hasMany(SafeSoul::class);
-//    }
-//
-//    public function stores()
-//    {
-//        return $this->hasMany(Store::class);
-//    }
-//
-//    public function generals()
-//    {
-//        return $this->hasMany(General::class);
-//    }
-//
-//    public function twitters()
-//    {
-//        return $this->hasMany(Twitter::class);
-//    }
 
     public function discordRoles(): BelongsToMany
     {

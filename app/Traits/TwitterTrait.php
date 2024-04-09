@@ -63,17 +63,17 @@ trait TwitterTrait
 
                     if($likesCount > 0){
 
-                        $totalLikesPoints =self::updatePointsForLikes($account, $likesCount, $totalLikesPoints);
+                        $totalLikesPoints =self::updatePointsForLikes($account, $likesCount, $totalLikesPoints, $result['id']);
 
                     }
 
                     if($impressionCount > 100){
 
-                        $totalImpressionsPoints = self::updatePointsForImpressions($account, $impressionCount, $totalImpressionsPoints);
+                        $totalImpressionsPoints = self::updatePointsForImpressions($account, $impressionCount, $totalImpressionsPoints, $result['id']);
                     }
 
                     if($retweetCount > 0){
-                        $totalRetweetPoints = self::updatePointsForRetweets($account, $retweetCount, $totalRetweetPoints);
+                        $totalRetweetPoints = self::updatePointsForRetweets($account, $retweetCount, $totalRetweetPoints, $result['id']);
                     }
 
                     $authorPosts[$authorId][$tweetDate] = ($authorPosts[$authorId][$tweetDate] ?? 0) + 1;
@@ -97,7 +97,12 @@ trait TwitterTrait
 
         foreach ($activeAuthors as $authorId) {
             $authorAccount = Account::where('twitter_id', $authorId)->first();
-            if ($authorAccount) {
+            $queryParam = 'twitter_week';
+            $existingTwitter = Twitter::where('query_param', $queryParam)
+                ->where('account_id', $account->id)
+                ->first();
+
+            if ($authorAccount && !$existingTwitter) {
 
                 $currentWeek = Week::getCurrentWeekForAccount($authorAccount);
 
@@ -105,7 +110,7 @@ trait TwitterTrait
                     'account_id'=>$authorAccount->id,
                     'claim_points' => ConstantValues::twitter_active_week_points, // Points for active posting throughout the week
                     'comment' => 'Активная неделя в Twitter с отметкой проекта или проектов ' . $authorId,
-                    'query_param' => 'twitter_week'
+                    'query_param' => $queryParam
                 ]);
                 $currentWeek->twitters()->save($twitter);
                 $currentWeek->increment('claim_points', ConstantValues::twitter_active_week_points);
@@ -158,17 +163,17 @@ trait TwitterTrait
 
                     if($likesCount > 0){
 
-                        $totalLikesPoints =self::updatePointsForLikes($account, $likesCount, $totalLikesPoints);
+                        $totalLikesPoints =self::updatePointsForLikes($account, $likesCount, $totalLikesPoints, $result['id']);
 
                     }
 
                     if($impressionCount > 100){
 
-                        $totalImpressionsPoints = self::updatePointsForImpressions($account, $impressionCount, $totalImpressionsPoints);
+                        $totalImpressionsPoints = self::updatePointsForImpressions($account, $impressionCount, $totalImpressionsPoints, $result['id']);
                     }
 
                     if($retweetCount > 0){
-                        $totalRetweetPoints = self::updatePointsForRetweets($account, $retweetCount, $totalRetweetPoints);
+                        $totalRetweetPoints = self::updatePointsForRetweets($account, $retweetCount, $totalRetweetPoints, $result['id']);
                     }
 
                     $authorPosts[$authorId][$tweetDate] = ($authorPosts[$authorId][$tweetDate] ?? 0) + 1;
@@ -507,68 +512,91 @@ trait TwitterTrait
         return [];
     }
 
-    private static function updatePointsForLikes($account, $likesCount, $totalLikesPoints)
+    private static function updatePointsForLikes($account, $likesCount, $totalLikesPoints, $tweet_id)
     {
+        $queryParam = 'twitter_post_likes_tweet_id' . $tweet_id;
         $pointsForLikes = min($likesCount * ConstantValues::twitter_project_like_point, ConstantValues::twitter_project_max_likes_points - $totalLikesPoints);
 
         $currentWeek = Week::getCurrentWeekForAccount($account);
 
-        $twitter = new Twitter([
-            'account_id'=> $account->id,
-            'claim_points' => $pointsForLikes,
-            'comment' => 'за каждый лайк под твоим постом c отметкой любой из страниц https://twitter.com/SoulsClubETH https://twitter.com/SafeSoulETH https://twitter.com/igor_3000A' . 'likes_count: ' . $likesCount,
-            'query_param' => 'twitter_post_likes'
-        ]);
+        $existingTwitter = Twitter::where('query_param', $queryParam)
+            ->where('account_id', $account->id)
+            ->first();
 
-        $currentWeek->twitters()->save($twitter);
+        if(!$existingTwitter){
+            $twitter = new Twitter([
+                'account_id'=> $account->id,
+                'claim_points' => $pointsForLikes,
+                'comment' => 'за каждый лайк под твоим постом c отметкой любой из страниц https://twitter.com/SoulsClubETH https://twitter.com/SafeSoulETH https://twitter.com/igor_3000A' . 'likes_count: ' . $likesCount,
+                'query_param' => $queryParam
+            ]);
 
-        $totalLikesPoints += $pointsForLikes;
+            $currentWeek->twitters()->save($twitter);
 
-        $currentWeek->increment('claim_points', $totalLikesPoints);
+            $totalLikesPoints += $pointsForLikes;
+
+            $currentWeek->increment('claim_points', $pointsForLikes);
+        }
+
 
         return $totalLikesPoints;
     }
 
-    private static function updatePointsForImpressions($account, $impressionCount, $totalImpressionsPoints)
+    private static function updatePointsForImpressions($account, $impressionCount, $totalImpressionsPoints, $tweet_id)
     {
+        $queryParam = 'twitter_impressions_tweet_id' . $tweet_id;
+
         $pointsForImpressions = min($impressionCount * ConstantValues::twitter_project_impression_point, ConstantValues::twitter_project_max_impression_point - $totalImpressionsPoints);
 
         $currentWeek = Week::getCurrentWeekForAccount($account);
 
-        $twitter = new Twitter([
-            'account_id'=> $account->id,
-            'claim_points' => $pointsForImpressions,
-            'comment' => 'за каждые 100 просмотров этого твита https://twitter.com/SoulsClubETH https://twitter.com/SafeSoulETH https://twitter.com/igor_3000A' . ' impressions_count ' . $impressionCount,
-            'query_param' => 'twitter_post_impressions'
-        ]);
+        $existingTwitter = Twitter::where('query_param', $queryParam)
+            ->where('account_id', $account->id)
+            ->first();
+        if(!$existingTwitter){
+            $twitter = new Twitter([
+                'account_id'=> $account->id,
+                'claim_points' => $pointsForImpressions,
+                'comment' => 'за каждые 100 просмотров этого твита https://twitter.com/SoulsClubETH https://twitter.com/SafeSoulETH https://twitter.com/igor_3000A' . ' impressions_count ' . $impressionCount,
+                'query_param' => $queryParam
+            ]);
 
-        $currentWeek->twitters()->save($twitter);
+            $currentWeek->twitters()->save($twitter);
 
-        $totalImpressionsPoints += $pointsForImpressions;
+            $totalImpressionsPoints += $pointsForImpressions;
 
-        $currentWeek->increment('claim_points', $totalImpressionsPoints);
+            $currentWeek->increment('claim_points', $pointsForImpressions);
+        }
 
         return $totalImpressionsPoints;
     }
 
-    private static function updatePointsForRetweets($account, $retweetCount, $totalRetweetsPoints)
+    private static function updatePointsForRetweets($account, $retweetCount, $totalRetweetsPoints, $tweet_id)
     {
         $pointsForRetweets = min($retweetCount * ConstantValues::twitter_project_retweet_point, ConstantValues::twitter_project_max_retweet_point - $totalRetweetsPoints);
 
+        $queryParam ='twitter_post_retweets_tweet_id' . $tweet_id;
+
         $currentWeek = Week::getCurrentWeekForAccount($account);
 
-        $twitter = new Twitter([
-            'account_id'=> $account->id,
-            'claim_points' => $pointsForRetweets,
-            'comment' => 'за каждый репост кем-либо этого твоего твита https://twitter.com/SoulsClubETH https://twitter.com/SafeSoulETH https://twitter.com/igor_3000A' . ' retweet_count ' . $retweetCount,
-            'query_param' => 'twitter_post_retweets'
-        ]);
+        $existingTwitter = Twitter::where('query_param', $queryParam)
+            ->where('account_id', $account->id)
+            ->first();
 
-        $currentWeek->twitters()->save($twitter);
+        if(!$existingTwitter){
+            $twitter = new Twitter([
+                'account_id'=> $account->id,
+                'claim_points' => $pointsForRetweets,
+                'comment' => 'за каждый репост кем-либо этого твоего твита https://twitter.com/SoulsClubETH https://twitter.com/SafeSoulETH https://twitter.com/igor_3000A' . ' retweet_count ' . $retweetCount,
+                'query_param' => 'twitter_post_retweets'
+            ]);
+            $currentWeek->twitters()->save($twitter);
 
-        $totalRetweetsPoints += $pointsForRetweets;
+            $totalRetweetsPoints += $pointsForRetweets;
 
-        $currentWeek->increment('claim_points', $totalRetweetsPoints);
+            $currentWeek->increment('claim_points', $pointsForRetweets);
+
+        }
 
         return $totalRetweetsPoints;
     }

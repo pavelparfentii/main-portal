@@ -27,9 +27,9 @@ class EventServiceProvider extends ServiceProvider
         SafeSoulCreationEvent::class =>[
             SafeSoulCreationListener::class
         ],
-        TwitterCreationEvent::class =>[
-            TwitterCreationListener::class
-        ],
+//        TwitterCreationEvent::class =>[
+//            TwitterCreationListener::class
+//        ],
         DigitalAnimalsCreationEvent::class =>[
             DigitalAnimalsListener::class
         ]

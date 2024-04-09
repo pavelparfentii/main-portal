@@ -17,7 +17,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:recount-points')->weeklyOn(1, '00:01');
 
         // Update accounts data
-        // $schedule->command('app:update-user-data-command')->dailyAt('00:30');
+         $schedule->command('app:update-user-data-command')->dailyAt('00:30');
 
         // Update discord data
         $schedule->command('app:get-discord-roles-for-accounts-command')->weeklyOn(1, '00:45');

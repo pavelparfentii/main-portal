@@ -26,8 +26,11 @@ class SafeSoul extends Model
     protected static function booted()
     {
         static::created(function($safe){
-            $accountId = $safe->account_id;
-            event(new SafeSoulCreationEvent($safe, $accountId));
+            if(is_null($safe->query_param)){
+                $weekId = $safe->week_id;
+                event(new SafeSoulCreationEvent($safe, $weekId));
+            }
+
         });
     }
 }

@@ -60,7 +60,7 @@ class PointsController extends Controller
             }
 
             if ($account) {
-
+                Week::getCurrentWeekForAccount($account);
                 $userRank = DB::table('accounts')
                         ->where('total_points', '>', $account->total_points)
                         ->count() + 1;
@@ -174,7 +174,7 @@ class PointsController extends Controller
         $account = AuthHelper::auth($request);
 
         if ($account) {
-
+            Week::getCurrentWeekForAccount($account);
             $userRank = DB::table('accounts')
                     ->where('total_points', '>', $account->total_points)
                     ->count() + 1;

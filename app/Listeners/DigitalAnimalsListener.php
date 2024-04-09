@@ -27,5 +27,19 @@ class DigitalAnimalsListener
 //        $newTotal = $currentTotal + $event->digital->points;
 //
 //        DB::table('accounts')->where('id', $event->accountId)->update(['total_points'=>$newTotal]);
+
+        $currentTotal = DB::table('weeks')->where('id', $event->weekId)->value('points');
+
+        $currentTotalClaimPoints = DB::table('weeks')->where('id', $event->weekId)->value('claim_points');
+
+        $accountId = DB::table('weeks')->where('id', $event->weekId)->value('account_id');
+//
+        $newTotal = $currentTotal + $event->digital->points;
+
+        $newTotalClaimPoints = $currentTotalClaimPoints + $event->digital->claim_points;
+
+        $event->digital->update(['query_param'=>'admin_creation_points', 'account_id'=>$accountId]);
+//
+        DB::table('weeks')->where('id', $event->weekId)->update(['points'=>$newTotal, 'claim_points'=>$newTotalClaimPoints, 'account_id'=>$accountId]);
     }
 }
