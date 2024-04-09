@@ -343,7 +343,7 @@ class Account extends Model
                     'account_id'=>$this->id,
                     'claim_points' => ConstantValues::twitter_projects_tweet_comment_points,
                     'comment' => 'Коммента нашего твита с комментарием tweet_id=' . $tweet_id . ' comment_id=' . $comment_id,
-                    'query_param' => '3projects_comments'
+                    'query_param' => $queryParam
                 ]);
                 $currentWeek->twitters()->save($twitter);
                 $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_comment_points);

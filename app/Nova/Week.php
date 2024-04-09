@@ -72,7 +72,7 @@ class Week extends Resource
 
             Number::make('claim_points')->min(0.001)->step(0.001)->sortable(),
             Number::make('invite_points')->min(0.001)->step(0.001)->sortable(),
-
+            Number::make('claimed_points')->min(0.001)->step(0.001)->sortable(),
 
 
             HasMany::make('SafeSoul', 'safeSouls')->hideFromIndex(),
