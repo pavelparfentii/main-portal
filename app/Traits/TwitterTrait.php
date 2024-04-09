@@ -52,14 +52,22 @@ trait TwitterTrait
 
                     $currentWeek = Week::getCurrentWeekForAccount($account);
 
-                    $twitter = new Twitter([
-                        'account_id'=> $account->id,
-                        'claim_points' => ConstantValues::twitter_project_tweet,
-                        'comment' => 'Пост в Twitter с отметкой проекта или проектов post_id=' . $result['id'],
-                        'query_param' => 'twitter_post'
-                    ]);
-                    $currentWeek->twitters()->save($twitter);
-                    $currentWeek->increment('claim_points', ConstantValues::twitter_project_tweet);
+                    $queryParam = 'twitter_post_twitter_id' . $result['id'];
+
+                    $existingTwitter = Twitter::where('query_param', $queryParam)
+                        ->where('account_id', $account->id)
+                        ->first();
+
+                    if(!$existingTwitter){
+                        $twitter = new Twitter([
+                            'account_id'=> $account->id,
+                            'claim_points' => ConstantValues::twitter_project_tweet,
+                            'comment' => 'Пост в Twitter с отметкой проекта или проектов post_id=' . $result['id'],
+                            'query_param' => $queryParam
+                        ]);
+                        $currentWeek->twitters()->save($twitter);
+                        $currentWeek->increment('claim_points', ConstantValues::twitter_project_tweet);
+                    }
 
                     if($likesCount > 0){
 
@@ -152,14 +160,22 @@ trait TwitterTrait
 
                     $currentWeek = Week::getCurrentWeekForAccount($account);
 
-                    $twitter = new Twitter([
-                        'account_id'=>$account->id,
-                        'claim_points' => ConstantValues::twitter_igor_tweet,
-                        'comment' => 'Пост с отметкой Игоря https://twitter.com/igor_3000A post_id=' . $result['id'],
-                        'query_param' => 'twitter_post'
-                    ]);
-                    $currentWeek->twitters()->save($twitter);
-                    $currentWeek->increment('claim_points', ConstantValues::twitter_igor_tweet);
+                    $queryParam = 'twitter_post_twitter_id' . $result['id'];
+
+                    $existingTwitter = Twitter::where('query_param', $queryParam)
+                        ->where('account_id', $account->id)
+                        ->first();
+
+                    if(!$existingTwitter){
+                        $twitter = new Twitter([
+                            'account_id'=>$account->id,
+                            'claim_points' => ConstantValues::twitter_igor_tweet,
+                            'comment' => 'Пост с отметкой Игоря https://twitter.com/igor_3000A post_id=' . $result['id'],
+                            'query_param' => $queryParam
+                        ]);
+                        $currentWeek->twitters()->save($twitter);
+                        $currentWeek->increment('claim_points', ConstantValues::twitter_igor_tweet);
+                    }
 
                     if($likesCount > 0){
 
