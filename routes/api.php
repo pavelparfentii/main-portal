@@ -50,6 +50,6 @@ Route::post('/points/claim', [\App\Http\Controllers\ClaimController::class, 'cla
 
 Route::post('/invite/account', [\App\Http\Controllers\InviteController::class, 'inviteUser']);
 
-//Route::group(['middleware' => ['api.key']], function() {
+Route::group(['middleware' => ['api.key']], function() {
     Route::get('/user/info', [\App\Http\Controllers\PointsController::class, 'getPersonalPointsForSafeSoul']);
-//});
+});
