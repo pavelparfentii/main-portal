@@ -19,6 +19,7 @@ class ApiMiddleware
 
         $apiKey = $request->header('Authorization');
 
+
         if (!$apiKey) {
             return response()->json(['Unauthorized'], 401);
         }

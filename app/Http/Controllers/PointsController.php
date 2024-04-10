@@ -12,6 +12,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class PointsController extends Controller
@@ -290,6 +292,34 @@ class PointsController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
     }
+
+    public function getPersonalPointsForSafeSoul(Request $request)
+    {
+
+        $data = $request->all(); // Convert request data to array if it's not already
+        $authId = $data['auth_id'];
+
+
+        $account = Account::where('auth_id', $authId)->first();
+
+        if($account){
+            $userRank = DB::table('accounts')
+                    ->where('total_points', '>', $account->total_points)
+                    ->count() + 1;
+
+            return response()->json([
+                'rank'=>$userRank,
+                'total_points'=>$account->total_points
+            ]);
+
+        }else{
+            return response()->json([
+                'rank'=>null,
+                'total_points'=>0.000
+            ]);
+        }
+    }
+
 
 
 

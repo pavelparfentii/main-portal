@@ -439,6 +439,7 @@ class Account extends Model
 
         } catch (Exception $exception) {
             Log::error('Error while loading twitter avatar: ' . $exception->getMessage());
+            return null;
         }
 
         return null;
