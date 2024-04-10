@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Process\Process;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -38,11 +39,51 @@ class AuthHelper
             $discordUserName = !is_null($decodedToken['discord']) ? $decodedToken['discord']['user_name'] : null;
             $discordId = !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null;
 
+            $cacheKey = 'wallet_check:' . $userWallet;
+            $isHotWallet = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($userWallet) {
 
-            if (!is_null($userWallet) || !is_null($tokenTwitterUsername) || !is_null($discordId) || isset($authId)) {
-                $account = Account::where('wallet', $userWallet)
-                    ->where('auth_id', $authId)
-                    ->first();
+                return self::checkHotWallet($userWallet);
+            });
+
+            if ($isHotWallet === false) {
+                if (!is_null($userWallet) || !is_null($tokenTwitterUsername) || !is_null($discordId) || isset($authId)) {
+                    $account = Account::where('wallet', $userWallet)
+                        ->where('auth_id', $authId)
+                        ->first();
+
+                    if (!$account) {
+                        // User doesn't exist, create a new user
+                        $account = Account::create([
+                            'wallet' => $userWallet,
+
+                            'twitter_id' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['provider_id'] : null,
+                            'twitter_username' => !is_null($decodedToken['twitter']) ? strtolower($decodedToken['twitter']['user_name']) : null,
+                            'twitter_name' => !is_null($decodedToken['twitter']) ? $decodedToken['twitter']['name'] : null,
+                            //'twitter_avatar' => !is_null($decodedToken['twitter']) ? $account->downloadTwitterAvatar($decodedToken['twitter']['profile_image_url']) : null,
+                            'twitter_avatar'=>$decodedToken['twitter']['profile_image_url'] ?? null,
+                            'discord_id' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null,
+                            'auth_id'=>$authId,
+                            'isNeedShow' => false,
+//                        'discord_name' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['user_name'] : null
+
+                        ]);
+
+                        if (!is_null($decodedToken['twitter'])) {
+                            $avatarUrl = $decodedToken['twitter']['profile_image_url'];
+                            $avatar = $account->downloadTwitterAvatar($avatarUrl);
+                            $account->update(['twitter_avatar' => $avatar]);
+
+                        }
+
+                        Week::getCurrentWeekForAccount($account);
+                    }
+
+                    return $account;
+                }
+            }else{
+                $originalWallet = strtolower($isHotWallet);
+
+                $account = Account::where('wallet', $originalWallet)->first();
 
                 if (!$account) {
                     // User doesn't exist, create a new user
@@ -71,10 +112,10 @@ class AuthHelper
                     Week::getCurrentWeekForAccount($account);
                 }
 
-
-
                 return $account;
             }
+
+
 
         } catch (JWTException $exception) {
 //            throw new InvalidTokenException('Invalid or expired token');
@@ -94,5 +135,34 @@ class AuthHelper
 
 //        return $decodedToken;
 
+    }
+
+    protected static function checkHotWallet($wallet)
+    {
+        $process = new Process([
+            'node',
+            base_path('/node/delegateCash.js'),
+            $wallet
+        ]);
+
+        $process->run();
+        $process->setTimeout(2);
+        if($process->isSuccessful()){
+
+            $result = json_decode($process->getOutput());
+
+
+            if (!$result || $result->state != 'success') {
+                Log::info('node process delegatecash broke');
+                return false;
+            } else {
+
+                if(isset($result->data) && !empty($result->data)){
+
+                    return strtolower($result->data);
+                }
+                return false;
+            }
+        }
     }
 }

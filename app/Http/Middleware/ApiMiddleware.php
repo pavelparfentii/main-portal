@@ -19,16 +19,15 @@ class ApiMiddleware
 
         $apiKey = $request->header('Authorization');
 
-
         if (!$apiKey) {
             return response()->json(['Unauthorized'], 401);
         }
 
-        $tokenValid = ApiKey::where('api_key', $request->header('Authorization'))->exists();
-
-        if(!$tokenValid){
+        $token = $request->header('Authorization');
+        if($token !== 'Bearer ux9AgzrHauOq6sF8kZSetP4eCAB7z2OoxLOQP1fpQCZflMrPBQdUVdQehCdGDrPZ'){
             return \response()->json(['Unauthorized'],401);
         }
+
 
         return $next($request);
     }
