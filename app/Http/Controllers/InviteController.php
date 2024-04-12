@@ -126,6 +126,7 @@ class InviteController extends Controller
                                     $points = ConstantValues::balance_2k;
                                     $account->total_points += $points;
                                     $currentWeek->invite_points += $points;
+                                    $currentWeek->total_points +=$points;
                                     $currentWeek->save();
                                     $account->save();
                                     //inviter
@@ -146,6 +147,7 @@ class InviteController extends Controller
                                     $points = ConstantValues::balance_10k;
                                     $account->total_points += $points;
                                     $currentWeek->invite_points += $points;
+                                    $currentWeek->total_points +=$points;
                                     $currentWeek->save();
                                     $account->save();
 

@@ -100,8 +100,8 @@ class PointsController extends Controller
                         ->where('weeks.week_number', '=', $previousWeekNumber) // Тільки записи для поточного тижня
                         ->where('weeks.active', '=', false); // Враховуємо тільки активні записи, якщо потрібно
                 })
-                ->select('accounts.id', 'accounts.wallet', 'accounts.twitter_username', 'weeks.points as total_points', 'accounts.twitter_name', 'accounts.twitter_avatar', 'accounts.team_id')
-                ->orderByDesc('weeks.points') // Сортування за очками поточного тижня
+                ->select('accounts.id', 'accounts.wallet', 'accounts.twitter_username', 'weeks.total_points', 'accounts.twitter_name', 'accounts.twitter_avatar', 'accounts.team_id')
+                ->orderByDesc('weeks.total_points') // Сортування за очками поточного тижня
                 ->take(100)
                 ->get();
 
@@ -140,7 +140,7 @@ class PointsController extends Controller
                 $userRankBasedOnWeekPoints = DB::table('accounts')
                         ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
                         ->where('weeks.week_number', '=', $previousWeekNumber)
-                        ->where('weeks.points', '>', $currentUserWeekPoints)
+                        ->where('weeks.total_points', '>', $currentUserWeekPoints)
                         ->where('weeks.active', false)
                         ->count() + 1;
 

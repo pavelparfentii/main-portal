@@ -62,6 +62,7 @@ trait DigitalAnimalsTrait
                         $currentWeek = Week::getCurrentWeekForAccount($account);
                         $pointsToDeduct = $deletedAnimalsCount * ConstantValues::animal_owner;
                         $currentWeek->decrement('points', $pointsToDeduct);
+                        $currentWeek->decrement('total_points', $pointsToDeduct);
                     }
 
                     foreach ($data as $token) {
@@ -79,6 +80,7 @@ trait DigitalAnimalsTrait
                             ]);
                             $currentWeek->animals()->save($newAnimal);
                             $currentWeek->increment('points', ConstantValues::animal_owner);
+                            $currentWeek->increment('total_points', ConstantValues::animal_owner);
                         }
                     }
                 }
@@ -122,6 +124,7 @@ trait DigitalAnimalsTrait
 //               $account->animals()->save($newLord);
                $currentWeek->animals()->save($newLord);
                $currentWeek->increment('points', ConstantValues::lord_20);
+               $currentWeek->increment('total_points', ConstantValues::lord_20);
 
            }elseif($animalsCount >= 20 && $lord){
                continue;
@@ -135,6 +138,7 @@ trait DigitalAnimalsTrait
 //               $account->animals()->save($newLord);
                $currentWeek->animals()->save($newLord);
                $currentWeek->increment('points', -ConstantValues::lord_20);
+               $currentWeek->increment('total_points', -ConstantValues::lord_20);
            }
         }
 
@@ -190,6 +194,7 @@ trait DigitalAnimalsTrait
 //                                $account->animals()->save($newAnimal);
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', ConstantValues::animal_discord_role_points);
+                                $currentWeek->increment('total_points', ConstantValues::animal_discord_role_points);
                             }
                         }
 
@@ -254,6 +259,7 @@ trait DigitalAnimalsTrait
 //                            $account->animals()->save($newAnimal);
                             $currentWeek->animals()->save($newAnimal);
                             $currentWeek->increment('points', ConstantValues::animal_long_range_owner_points);
+                            $currentWeek->increment('total_points', ConstantValues::animal_long_range_owner_points);
                         }
 
                     }elseif($data->state === 'error' && !is_null($data->data)){
@@ -306,6 +312,7 @@ trait DigitalAnimalsTrait
 //                            $account->animals()->save($newAnimal);
                             $currentWeek->animals()->save($newAnimal);
                             $currentWeek->increment('points', $points);
+                            $currentWeek->increment('total_points', $points);
                             $existingPass->update(['query_param'=>null]);
                         }elseif ((int)$countPass > (int)$data->totalOwned){
                             if((int)$data->totalOwned == 0){
@@ -319,6 +326,7 @@ trait DigitalAnimalsTrait
 
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', -$points);
+                                $currentWeek->increment('total_points', -$points);
                                 $existingPass->update(['query_param'=>null]);
                             }elseif ((int)$data->totalOwned >0){
                                 $points = ((int)$data->totalOwned - (int) $countPass) * ConstantValues::committed_pass_points;
@@ -331,6 +339,7 @@ trait DigitalAnimalsTrait
 
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', $points);
+                                $currentWeek->increment('total_points', $points);
                                 $existingPass->update(['query_param'=>null]);
                             }
                         }
@@ -345,6 +354,7 @@ trait DigitalAnimalsTrait
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
                         $currentWeek->increment('points', (int)$data->totalOwned * ConstantValues::committed_pass_points);
+                        $currentWeek->increment('total_points', (int)$data->totalOwned * ConstantValues::committed_pass_points);
                     }
                 }
 
@@ -394,6 +404,7 @@ trait DigitalAnimalsTrait
 //                            $account->animals()->save($newAnimal);
                             $currentWeek->animals()->save($newAnimal);
                             $currentWeek->increment('points', $points);
+                            $currentWeek->increment('total_points', $points);
                             $existingPass->update(['query_param'=>null]);
                         }elseif ((int)$countPass > (int)$data->totalOwned){
                             if((int)$data->totalOwned == 0){
@@ -407,6 +418,7 @@ trait DigitalAnimalsTrait
 
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', -$points);
+                                $currentWeek->increment('total_points', -$points);
                                 $existingPass->update(['query_param'=>null]);
                             }elseif ((int)$data->totalOwned >0){
                                 $points = ((int)$data->totalOwned - (int) $countPass) * ConstantValues::soulborne_pass_points;
@@ -419,6 +431,7 @@ trait DigitalAnimalsTrait
 
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', $points);
+                                $currentWeek->increment('total_points', $points);
                                 $existingPass->update(['query_param'=>null]);
                             }
                         }
@@ -434,6 +447,7 @@ trait DigitalAnimalsTrait
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
                         $currentWeek->increment('points', $points);
+                        $currentWeek->increment('total_points', $points);
                     }
                 }
 
@@ -483,6 +497,7 @@ trait DigitalAnimalsTrait
 //                            $account->animals()->save($newAnimal);
                             $currentWeek->animals()->save($newAnimal);
                             $currentWeek->increment('points', $points);
+                            $currentWeek->increment('total_points', $points);
                             $existingPass->update(['query_param'=>null]);
                         }elseif ((int)$countPass > (int)$data->totalOwned){
                             if((int)$data->totalOwned == 0){
@@ -508,23 +523,24 @@ trait DigitalAnimalsTrait
 
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', $points);
+                                $currentWeek->increment('total_points', $points);
                                 $existingPass->update(['query_param'=>null]);
                             }
                         }
 
                     }else{
+                        $points = (int)$data->totalOwned * ConstantValues::soulreaper_pass_points;
                         $newAnimal = new DigitalAnimal([
                             'account_id'=>$account->id,
-                            'points' => (int)$data->totalOwned * ConstantValues::soulreaper_pass_points,
+                            'points' => $points,
                             'comment' => $data->message,
                             'query_param' => 'soulreaper_owner_' . $data->totalOwned
                         ]);
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', (int)$data->totalOwned * ConstantValues::soulreaper_pass_points);
+                        $currentWeek->increment('points', $points);
                     }
                 }
-
             }
         }
     }
@@ -571,6 +587,7 @@ trait DigitalAnimalsTrait
 //                            $account->animals()->save($newAnimal);
                             $currentWeek->animals()->save($newAnimal);
                             $currentWeek->increment('points', $points);
+                            $currentWeek->increment('total_points', $points);
                             $existingPass->update(['query_param'=>null]);
                         }elseif ((int)$countPass > (int)$data->totalOwned){
                             if((int)$data->totalOwned == 0){
@@ -584,6 +601,7 @@ trait DigitalAnimalsTrait
 
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', -$points);
+                                $currentWeek->increment('total_points', -$points);
                                 $existingPass->update(['query_param'=>null]);
                             }elseif ((int)$data->totalOwned >0){
                                 $points = ((int)$data->totalOwned - (int) $countPass) * ConstantValues::lord_of_the_reapers;
@@ -596,20 +614,23 @@ trait DigitalAnimalsTrait
 
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', $points);
+                                $currentWeek->increment('total_points', $points);
                                 $existingPass->update(['query_param'=>null]);
                             }
                         }
 
                     }else{
+                        $points = (int)$data->totalOwned * ConstantValues::lord_of_the_reapers;
                         $newAnimal = new DigitalAnimal([
                             'account_id'=>$account->id,
-                            'points' => (int)$data->totalOwned * ConstantValues::lord_of_the_reapers,
+                            'points' => $points,
                             'comment' => $data->message,
                             'query_param' => 'lord_reaper_owner_' . $data->totalOwned
                         ]);
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', (int)$data->totalOwned * ConstantValues::lord_of_the_reapers);
+                        $currentWeek->increment('points', $points);
+                        $currentWeek->increment('total_points', $points);
                     }
                 }
 
@@ -661,6 +682,7 @@ trait DigitalAnimalsTrait
 //                            $account->animals()->save($newAnimal);
                             $currentWeek->animals()->save($newAnimal);
                             $currentWeek->increment('points', $points);
+                            $currentWeek->increment('total_points', $points);
                             $existingPass->update(['query_param'=>null]);
                         }elseif ((int)$countPass > (int)$data->totalOwned){
                             if((int)$data->totalOwned == 0){
@@ -674,6 +696,7 @@ trait DigitalAnimalsTrait
 
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', -$points);
+                                $currentWeek->increment('total_points', -$points);
                                 $existingPass->update(['query_param'=>null]);
                             }elseif ((int)$data->totalOwned >0){
                                 $points = ((int)$data->totalOwned - (int) $countPass) * ConstantValues::metaverse_owner;
@@ -686,23 +709,25 @@ trait DigitalAnimalsTrait
 
                                 $currentWeek->animals()->save($newAnimal);
                                 $currentWeek->increment('points', $points);
+                                $currentWeek->increment('total_points', $points);
                                 $existingPass->update(['query_param'=>null]);
                             }
                         }
 
                     }else{
+                        $points = (int)$data->totalOwned * ConstantValues::metaverse_owner;
                         $newAnimal = new DigitalAnimal([
                             'account_id'=>$account->id,
-                            'points' => (int)$data->totalOwned * ConstantValues::metaverse_owner,
+                            'points' => $points,
                             'comment' => $data->message,
                             'query_param' => 'metaverse_owner_' . $data->totalOwned
                         ]);
 //                            $account->animals()->save($newAnimal);
                         $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', (int)$data->totalOwned * ConstantValues::metaverse_owner);
+                        $currentWeek->increment('points', $points);
+                        $currentWeek->increment('total_points', $points);
                     }
                 }
-
             }
         }
     }
@@ -733,16 +758,18 @@ trait DigitalAnimalsTrait
                 if($originalMinterOwner !== '0x0000000000000000000000000000000000000000' && !in_array($queryParam, $existingMinterParams)){
                     $account = Account::where('wallet', $originalMinterOwner)->first();
                     if($account) {
+                        $points = ConstantValues::original_minter;
                         $currentWeek = Week::getCurrentWeekForAccount($account);
                         $newAnimal = new DigitalAnimal([
                             'account_id' => $account->id,
-                            'points' => ConstantValues::original_minter,
+                            'points' => $points,
                             'comment' => "da token $i original minter",
                             'query_param' => 'minter_' . $i
                         ]);
 
                         $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', ConstantValues::original_minter);
+                        $currentWeek->increment('points', $points);
+                        $currentWeek->increment('total_points', $points);
                     }
 
                 }else{
@@ -780,15 +807,17 @@ trait DigitalAnimalsTrait
                         $queryParam = 'bought_token_' . $outputData->token;
                         if($account && !in_array($queryParam, $existingSaleParams)) {
                             $currentWeek = Week::getCurrentWeekForAccount($account);
+                            $points = ConstantValues::bought_animal;
                             $newAnimal = new DigitalAnimal([
                                 'account_id' => $account->id,
-                                'points' => ConstantValues::bought_animal,
+                                'points' => $points,
                                 'comment' => $outputData->message,
                                 'query_param' => 'bought_token_' . $outputData->token
                             ]);
 
                             $currentWeek->animals()->save($newAnimal);
-                            $currentWeek->increment('points', ConstantValues::bought_animal);
+                            $currentWeek->increment('points', $points);
+                            $currentWeek->increment('total_points', $points);
                         }
                     }
                 }
@@ -848,30 +877,33 @@ trait DigitalAnimalsTrait
                     ->where('query_param', $existingParam)
                     ->first();
 
+                $points = ConstantValues::minter_never_sold;
+
                 if (count($info['tokens']) > 0 && !$digitalAnimal) {
                     $currentWeek = Week::getCurrentWeekForAccount($account);
                     $newAnimal = new DigitalAnimal([
                         'account_id' => $account->id,
-                        'points' => ConstantValues::minter_never_sold,
+                        'points' => $points,
                         'comment' => $info['message'],
                         'query_param' => $existingParam
                     ]);
                     $newAnimal->save();
                     $currentWeek->animals()->save($newAnimal);
-                    $currentWeek->increment('points', ConstantValues::minter_never_sold);
+                    $currentWeek->increment('points', $points);
+                    $currentWeek->increment('total_points', $points);
                 }elseif (count($info['tokens']) === 0 && $digitalAnimal) {
 
                     $currentWeek = Week::getCurrentWeekForAccount($account);
                     $newAnimal = new DigitalAnimal([
                         'account_id' => $account->id,
-                        'points' => -ConstantValues::minter_never_sold,
+                        'points' => -$points,
                         'comment' => 'оригинал минтер продал токены и теперь их нет, отбор очков',
                         'query_param' => null
                     ]);
                     $newAnimal->save();
                     $currentWeek->animals()->save($newAnimal);
-                    $currentWeek->increment('points', -ConstantValues::minter_never_sold);
-
+                    $currentWeek->increment('points', -$points);
+                    $currentWeek->increment('total_points', -$points);
                     $digitalAnimal->delete();
                 }
             }

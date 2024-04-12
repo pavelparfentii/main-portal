@@ -24,16 +24,22 @@ class SafeSoulCreationListener
     {
         $currentTotal = DB::table('weeks')->where('id', $event->weekId)->value('points');
 
+        $currentTotalTotal = DB::table('weeks')->where('id', $event->weekId)->value('total_points');
+
         $currentTotalClaimPoints = DB::table('weeks')->where('id', $event->weekId)->value('claim_points');
 
         $accountId = DB::table('weeks')->where('id', $event->weekId)->value('account_id');
 //
         $newTotal = $currentTotal + $event->safe->points;
 
+        $newTotalTotal = $currentTotalTotal + $event->safe->total_points;
+
         $newTotalClaimPoints = $currentTotalClaimPoints + $event->safe->claim_points;
 
         $event->safe->update(['query_param'=>'admin_creation_points', 'account_id'=>$accountId]);
 //
-        DB::table('weeks')->where('id', $event->weekId)->update(['points'=>$newTotal, 'claim_points'=>$newTotalClaimPoints, 'account_id'=>$accountId]);
+        DB::table('weeks')
+            ->where('id', $event->weekId)
+            ->update(['points'=>$newTotal, 'total_points'=> $newTotalTotal, 'claim_points'=>$newTotalClaimPoints, 'account_id'=>$accountId]);
     }
 }

@@ -1,4 +1,5 @@
 const wallet = process.argv[2];
+import fetch from 'node-fetch';
 
 async function main(){
 

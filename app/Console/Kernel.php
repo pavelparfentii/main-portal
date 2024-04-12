@@ -79,7 +79,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:digital-animals-minted-never-sold')->weeklyOn(0,'11:00');
 
         //Update friends
-        $schedule->command('app:update-twitter-followers-followings')->weeklyOn(5, '14:00');
+        //$schedule->command('app:update-twitter-followers-followings')->weeklyOn(5, '14:00');
 
 
     }

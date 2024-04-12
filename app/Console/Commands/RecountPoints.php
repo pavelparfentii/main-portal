@@ -65,7 +65,7 @@ class RecountPoints extends Command
                 ->first();
 
             if($previousWeek){
-                $account->total_points += $previousWeek->points;
+                $account->total_points += $previousWeek->total_points;
                 $account->save();
                 $previousWeek->update(['active'=>false]);
             }

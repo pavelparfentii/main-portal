@@ -52,6 +52,7 @@ class Account extends Model
                     'start_date' => $startOfWeek->toDateString(),
                     'end_date' => $endOfWeek->toDateString(),
                     'active' => false,
+                    'total_points'=>0.000,
                     'points' => 0.000,
                     'claim_points' => 0.000,
                     'claimed' => true
@@ -195,6 +196,7 @@ class Account extends Model
             ]);
             $currentWeek->safeSouls()->save($safeSoul);
             $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
+            $currentWeek->increment('total_points', ConstantValues::safesoul_patrol_points);
         }
 
         DB::transaction(function () use ($newRole, $originalRole) {
@@ -226,6 +228,7 @@ class Account extends Model
 
                     ]);
                     $currentWeek->decrement('points', ConstantValues::safesoul_patrol_points);
+                    $currentWeek->decrement('total_points', ConstantValues::safesoul_patrol_points);
                 }
                 $currentWeek->safeSouls()->create([
                     'account_id' => $this->id,
@@ -238,6 +241,7 @@ class Account extends Model
                     ->delete();
 
                 $currentWeek->increment('points', ConstantValues::safesoul_OG_patrol_points);
+                $currentWeek->increment('total_points', ConstantValues::safesoul_OG_patrol_points);
 
             } // Handle the transition from og_patrol to patrol
             elseif ($originalRole === ConstantValues::safesoul_og_patrol_role && $newRole === ConstantValues::safesoul_patrol_role) {
@@ -261,6 +265,7 @@ class Account extends Model
                     ->where('account_id', $this->id)
                     ->delete();
                 $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
+                $currentWeek->increment('total_points', ConstantValues::safesoul_patrol_points);
 
             }
 

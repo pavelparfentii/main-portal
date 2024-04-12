@@ -45,10 +45,10 @@ class AuthHelper
                 return self::checkHotWallet($userWallet);
             });
 
+
             if ($isHotWallet === false) {
                 if (!is_null($userWallet) || !is_null($tokenTwitterUsername) || !is_null($discordId) || isset($authId)) {
-                    $account = Account::where('wallet', $userWallet)
-                        ->where('auth_id', $authId)
+                    $account = Account::where('auth_id', $authId)
                         ->first();
 
                     if (!$account) {
@@ -77,6 +77,8 @@ class AuthHelper
 
                         Week::getCurrentWeekForAccount($account);
                     }
+
+                    $account->update(['wallet'=>$userWallet]);
 
                     return $account;
                 }

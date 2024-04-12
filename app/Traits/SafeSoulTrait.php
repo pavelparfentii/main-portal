@@ -168,6 +168,7 @@ trait SafeSoulTrait{
                             ]);
                             $currentWeek->safeSouls()->save($safeSoul);
                             $currentWeek->increment('points', ConstantValues::safesoul_activity_points);
+                            $currentWeek->increment('total_points', ConstantValues::safesoul_activity_points);
                         }else{
                             Log::info('safesoul activity update error, no such account ');
                         }
@@ -214,7 +215,7 @@ trait SafeSoulTrait{
                                     ]);
                                     $currentWeek->safeSouls()->save($safeSoul);
                                     $currentWeek->increment('points', ConstantValues::safesoul_achievement_points);
-
+                                    $currentWeek->increment('total_points', ConstantValues::safesoul_achievement_points);
                                 }
                             }
                         }
@@ -433,6 +434,7 @@ trait SafeSoulTrait{
 
         } catch (Exception $exception) {
             Log::error('Error while loading twitter avatar: ' . $exception->getMessage());
+            return null;
         }
 
         return null;

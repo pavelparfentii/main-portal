@@ -143,7 +143,7 @@ class FriendsController extends Controller
                     ->where('week_number', '=', $previousWeekNumber)
                     ->where('active', false)
                     ->first()
-                    ->points ?? 0;
+                    ->total_points ?? 0;
 
             // Розрахунок рангу для поточного користувача на основі points з таблиці weeks
             $userRank = DB::table('accounts')
@@ -169,12 +169,12 @@ class FriendsController extends Controller
                         ->where('week_number', '=', $previousWeekNumber)
                         ->where('active', false)
                         ->first()
-                        ->points ?? 0;
+                        ->total_points ?? 0;
 
                 $friendRank = DB::table('accounts')
                         ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
                         ->where('weeks.week_number', '=', $previousWeekNumber)
-                        ->where('weeks.points', '>', $friendWeekPoints)
+                        ->where('weeks.total_points', '>', $friendWeekPoints)
                         ->where('weeks.active', false)
                         ->count() + 1;
 

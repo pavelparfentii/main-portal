@@ -68,6 +68,7 @@ class Week extends Resource
 
             Text::make('Week number', 'week_number'),
 
+            Number::make('total_points')->min(0.001)->step(0.001)->sortable(),
             Number::make('points')->min(0.001)->step(0.001)->sortable(),
 
             Number::make('claim_points')->min(0.001)->step(0.001)->sortable(),

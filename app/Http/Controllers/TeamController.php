@@ -149,7 +149,7 @@ class TeamController extends Controller
                 ->where('account_id', $account->id)
                 ->where('week_number', $previousWeekNumber)
                 ->where('active', false)
-                ->sum('points'); // Using sum() directly on the query builder
+                ->sum('total_points'); // Using sum() directly on the query builder
 
             $account->week_points = $weekPoints; // Add week_points attribute to each account
         }
@@ -161,7 +161,7 @@ class TeamController extends Controller
                 $accountWeekPoints = $account->weeks
                     ->where('week_number', $previousWeekNumber)
                     ->where('active', false)
-                    ->sum('points');
+                    ->sum('total_points');
                 $totalWeekPoints += $accountWeekPoints;
             }
         } else {
@@ -216,7 +216,7 @@ class TeamController extends Controller
             $weekPoints = $teamAccount->weeks()
                     ->where('week_number', $previousWeekNumber)
                     ->where('active', false)
-                    ->sum('points');
+                    ->sum('total_points');
             $teamAccount->week_points = $weekPoints;
 
             if(!empty($currentUser->discord_id)){
@@ -345,7 +345,7 @@ class TeamController extends Controller
                 $teamTotalPoints = 0;
                 foreach ($team->accounts as $account) {
                     // Summing up points from the current week
-                    $accountWeekPoints = $account->weeks->sum('points');
+                    $accountWeekPoints = $account->weeks->sum('total_points');
                     $teamTotalPoints += $accountWeekPoints;
 
                     unset($account->wallet); // Unset wallet as before
