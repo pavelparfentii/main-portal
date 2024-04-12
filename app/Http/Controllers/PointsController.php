@@ -134,7 +134,7 @@ class PointsController extends Controller
                         ->where('week_number', $previousWeekNumber)
                         ->where('active', false) // Враховуємо активні тижні, якщо потрібно
                         ->first()
-                        ->points ?? 0;
+                        ->total_points ?? 0;
 //                dd($currentUserWeekPoints);
                 // Розраховуємо ранг користувача на основі його очок за тиждень
                 $userRankBasedOnWeekPoints = DB::table('accounts')
