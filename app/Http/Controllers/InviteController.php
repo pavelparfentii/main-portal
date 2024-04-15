@@ -52,6 +52,7 @@ class InviteController extends Controller
             return response()->json(['message'=>'non authorized'], 401);
         }
 
+        Week::getCurrentWeekForAccount($account);
         if ($account->blocked_until && $account->blocked_until > now()) {
 
             return response()->json(['message' => 'User is blocked for 24 hours'], 429);

@@ -2,6 +2,7 @@
 
 namespace App\Nova;
 
+use App\Nova\Metrics\AllDiamondsBalance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Laravel\Nova\Fields\HasMany;
@@ -77,7 +78,9 @@ class Account extends Resource
      */
     public function cards(NovaRequest $request)
     {
-        return [];
+        return [
+            new AllDiamondsBalance()
+        ];
     }
 
     /**
