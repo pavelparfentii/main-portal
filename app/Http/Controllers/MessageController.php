@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
+use App\Models\Week;
 use Exception;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -21,18 +24,31 @@ class MessageController extends Controller
 
         unset($data['auth_id']); // Remove 'auth_id' from the data to be updated
 
-        if (!empty($data['twitter_avatar'])) {
-            $downloadedAvatarUrl = $this->downloadTwitterAvatar($data['twitter_avatar']);
-            if ($downloadedAvatarUrl !== null) {
+        if (array_key_exists('user', $data)) {
+            $checkAccount = Account::where('auth_id', $authId)->first();
+            if(!$checkAccount){
+                $account = new Account();
+                $account->auth_id = $authId;
+                $account->wallet = $data['wallet'];
 
-                $data['twitter_avatar'] = $downloadedAvatarUrl;
-            } else {
-
-                unset($data['twitter_avatar']);
+                $account->save();
+                Week::getCurrentWeekForAccount($account);
             }
-        }
 
-        DB::table('accounts')->where('auth_id', $authId)->update($data);
+        }else{
+            if (!empty($data['twitter_avatar'])) {
+                $downloadedAvatarUrl = $this->downloadTwitterAvatar($data['twitter_avatar']);
+                if ($downloadedAvatarUrl !== null) {
+
+                    $data['twitter_avatar'] = $downloadedAvatarUrl;
+                } else {
+
+                    unset($data['twitter_avatar']);
+                }
+            }
+
+            DB::table('accounts')->where('auth_id', $authId)->update($data);
+        }
 
     }
 
