@@ -24,6 +24,8 @@ class ConstantValues
    const safesoul_og_patrol_role = 'og_patrol';
    const safesoul_patrol_role = 'patrol';
 
+   const safesoul_gitcoin_score = 10.000;
+
     //Twitter
 
     const twitter_project_tweet = 3.000;

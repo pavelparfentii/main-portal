@@ -81,7 +81,11 @@ class Kernel extends ConsoleKernel
         //Update friends
         //$schedule->command('app:update-twitter-followers-followings')->weeklyOn(5, '14:00');
 
+        //Update GitcoinScore
+        $schedule->command('app:update-gitcoin-score')->weeklyOn(5,'11:30');
 
+        //Update Points for Gitcoin
+        $schedule->command('app:safe-soul-gitcoin-score-command')->weeklyOn(5,'12:00');
     }
 
     /**

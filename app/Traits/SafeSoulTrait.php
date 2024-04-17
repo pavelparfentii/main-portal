@@ -353,6 +353,33 @@ trait SafeSoulTrait{
 
     }
 
+    public function updatePointsForGitcoin()
+    {
+        $accounts = Account::cursor();
+
+        foreach ($accounts as $account){
+            if($account->gitcoin_score > 0){
+                $currentWeek = Week::getCurrentWeekForAccount($account);
+
+                $value = 'gitcoin_score';
+                $safeSoul =  SafeSoul::where('query_param', $value)
+                    ->where('account_id', $account->id)
+                    ->first();
+                if(!$safeSoul){
+                    $safeSoul = new SafeSoul([
+                        'account_id' => $account->id,
+                        'points' => ConstantValues::safesoul_gitcoin_score,
+                        'comment' => $value,
+                        'query_param' => $value
+                    ]);
+                    $currentWeek->safeSouls()->save($safeSoul);
+                    $currentWeek->increment('points', ConstantValues::safesoul_gitcoin_score);
+                    $currentWeek->increment('total_points', ConstantValues::safesoul_gitcoin_score);
+                }
+            }
+        }
+    }
+
     private function getAccountIdByWallet($wallet)
     {
         $account = Account::where('wallet', $wallet)->first();

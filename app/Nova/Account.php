@@ -63,6 +63,8 @@ class Account extends Resource
                 return $claim_points;
             })->sortable(),
 
+            Number::make('gitcoin_score')->min(0.00)->step(0.01)->sortable(),
+
             HasMany::make('Invites sent', 'invitesSent', Invite::class),
 
             HasMany::make('Week', 'weeks')->hideFromIndex()
