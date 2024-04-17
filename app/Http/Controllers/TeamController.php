@@ -139,7 +139,7 @@ class TeamController extends Controller
 
 
         if(!$team){
-            return response()->json(['message'=>'not found'], 403);
+            return response()->json(['message'=>'not found'], 404);
         }
         $currentUser = AuthHelper::auth($request);
 
