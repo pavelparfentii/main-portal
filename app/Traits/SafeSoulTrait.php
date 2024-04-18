@@ -380,6 +380,35 @@ trait SafeSoulTrait{
         }
     }
 
+    public function updateGitcoinPointsForGitcoinTwitterFollowing()
+    {
+        $client = new \GuzzleHttp\Client();
+        $accounts = Account::whereIn('twitter_id', ['1496820396502433797', '545917486'])->get();
+//        $accounts = Account::whereNotNull('twitter_id')->cursor();
+
+        foreach ($accounts as $account){
+            $followingRestIds = $this->getTwitterFollowings($client, 'followings', $account->twitter_id);
+
+            $key = 'follow_gitcoin_passport';
+            $safeSoul =  SafeSoul::where('query_param', $key)
+                ->where('account_id', $account->id)
+                ->first();
+            if(in_array(ConstantValues::gitcoin_passport, $followingRestIds) && !$safeSoul){
+                $currentWeek = Week::getCurrentWeekForAccount($account);
+
+
+                $safeSoul = new SafeSoul([
+                    'account_id' => $account->id,
+                    'claim_points' => ConstantValues::follow_gitcoin_passport,
+                    'comment' => 'Follow gitcoin passport' ,
+                    'query_param' => $key
+                ]);
+                $currentWeek->safeSouls()->save($safeSoul);
+                $currentWeek->increment('claim_points', ConstantValues::follow_gitcoin_passport);
+            }
+        }
+    }
+
     private function getAccountIdByWallet($wallet)
     {
         $account = Account::where('wallet', $wallet)->first();
@@ -502,5 +531,48 @@ trait SafeSoulTrait{
             Log::info($process->getErrorOutput());
             return null;
         }
+    }
+
+    private function getTwitterFollowings($client, $type, $twitterId)
+    {
+        $restIds = [];
+        $next_cursor = null;
+
+        do {
+            try {
+
+                $url = "https://twitter288.p.rapidapi.com/user/{$type}/ids?id=$twitterId";
+                if ($next_cursor !== null) {
+                    sleep(1);
+                    $url .= "&next_cursor=$next_cursor";
+                }
+
+                $response = $client->request('GET', $url, [
+                    'headers' => [
+                        'X-RapidAPI-Host' => 'twitter288.p.rapidapi.com',
+                        'X-RapidAPI-Key' => '85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
+                    ],
+                ]);
+
+                $responseBody = json_decode($response->getBody(), true);
+                if($responseBody['ids']){
+                    foreach ($responseBody['ids'] as $follower) {
+                        $restIds[] = $follower;
+                    }
+
+                }
+                $next_cursor = isset($responseBody['next_cursor']) && ($responseBody['next_cursor'] !== '0' || $responseBody['next_cursor'] !== 0 ) ? $responseBody['next_cursor'] : null;
+                var_dump($next_cursor);
+
+
+            }catch (\GuzzleHttp\Exception\GuzzleException $e){
+                $this->error("An error occurred while fetching data: " . $e->getMessage());
+                // Optionally, break or continue depending on how you want to handle failures
+                break;
+            }
+
+        }while ($next_cursor);
+
+        return $restIds;
     }
 }

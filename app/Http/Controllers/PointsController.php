@@ -98,7 +98,8 @@ class PointsController extends Controller
                 ->join('weeks', function ($join) use ($previousWeekNumber) {
                     $join->on('accounts.id', '=', 'weeks.account_id')
                         ->where('weeks.week_number', '=', $previousWeekNumber) // Тільки записи для поточного тижня
-                        ->where('weeks.active', '=', false); // Враховуємо тільки активні записи, якщо потрібно
+                        ->where('weeks.active', '=', false) // Враховуємо тільки активні записи, якщо потрібно
+                        ->where('weeks.total_points', '>', 0);
                 })
                 ->select('accounts.id', 'accounts.wallet', 'accounts.twitter_username', 'weeks.total_points', 'accounts.twitter_name', 'accounts.twitter_avatar', 'accounts.team_id')
                 ->orderByDesc('weeks.total_points') // Сортування за очками поточного тижня

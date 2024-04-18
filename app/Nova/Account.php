@@ -5,6 +5,7 @@ namespace App\Nova;
 use App\Nova\Metrics\AllDiamondsBalance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Laravel\Nova\Fields\Date;
 use Laravel\Nova\Fields\HasMany;
 use Laravel\Nova\Fields\ID;
 use Laravel\Nova\Fields\Number;
@@ -62,6 +63,8 @@ class Account extends Resource
                     ->first();
                 return $claim_points;
             })->sortable(),
+
+            Date::make('Created at', 'created_at'),
 
             Number::make('gitcoin_score')->min(0.00)->step(0.01)->sortable(),
 

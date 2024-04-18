@@ -26,6 +26,9 @@ class ConstantValues
 
    const safesoul_gitcoin_score = 10.000;
 
+   const gitcoin_passport = '1558170347605610498';
+   const follow_gitcoin_passport = 5.000;
+
     //Twitter
 
     const twitter_project_tweet = 3.000;
