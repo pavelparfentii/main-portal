@@ -178,9 +178,14 @@ class PointsController extends Controller
 
         if ($account) {
             Week::getCurrentWeekForAccount($account);
+//            $userRank = DB::table('accounts')
+//                    ->where('total_points', '>', $account->total_points)
+//                    ->count() + 1;
             $userRank = DB::table('accounts')
-                    ->where('total_points', '>', $account->total_points)
-                    ->count() + 1;
+                ->select('id', DB::raw("DENSE_RANK() OVER (ORDER BY total_points DESC) as rank"))
+                ->where('id', '=', $account->id)
+                ->first()
+                ->rank;
 
             $account->setAttribute('rank', $userRank);
             $account->setAttribute('current_user', true);

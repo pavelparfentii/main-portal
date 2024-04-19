@@ -86,6 +86,9 @@ class Kernel extends ConsoleKernel
 
         //Update Points for Gitcoin
         $schedule->command('app:safe-soul-gitcoin-score-command')->weeklyOn(5,'12:00');
+
+        //Twitter Collab
+        $schedule->command('app:update-twitter-collab-points')->weeklyOn(5, '12:30');
     }
 
     /**

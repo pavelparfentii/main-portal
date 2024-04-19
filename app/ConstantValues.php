@@ -50,6 +50,8 @@ class ConstantValues
     const twitter_projects_tweet_comment_points = 0.100;
     const twitter_projects_tweet_likes_points = 0.001;
 
+    const twitter_collab_points = 1.000;
+
     //DA
 
     const animal_owner = 400.000;

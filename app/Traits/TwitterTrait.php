@@ -10,6 +10,7 @@ use App\Models\Twitter;
 use App\Models\Week;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -366,6 +367,32 @@ trait TwitterTrait
         }
     }
 
+    public function updatePointsForRetweet(): void
+    {
+        $tweetIds = DB::table('twitter_collabs')
+            ->pluck('tweet_id')
+            ->toArray();
+        $accountsTwitterIds = DB::table('accounts')
+            ->whereNotNull('twitter_id')
+            ->pluck('twitter_id')
+            ->toArray();
+
+        if(count($accountsTwitterIds) > 0){
+            foreach ($tweetIds as $tweetId){
+                sleep(3);
+                $retweetedIds = $this->getTweetCollabRetweets($this->apiKey, $tweetId);
+                var_dump($retweetedIds);
+                foreach ($accountsTwitterIds as $twitter_id){
+                    if(in_array($twitter_id, $retweetedIds)){
+                        var_dump($tweetId);
+                        $account = Account::where('twitter_id', $twitter_id)->first();
+                        $this->incrementPointsForTwitterCollab($tweetId, $account);
+                    }
+                }
+            }
+        }
+    }
+
     private function getProjectsTweets(string $apiKey, ?string $paginationToken = null)
     {
         $url = 'https://api.twitter.com/2/tweets/search/recent?query=(from:igor_3000A -is:retweet -is:reply) OR (from:SafeSoulETH -is:retweet -is:reply) OR (from:SoulsClubETH -is:retweet -is:reply)&tweet.fields=id,text,author_id,created_at&max_results=100';
@@ -615,6 +642,71 @@ trait TwitterTrait
         }
 
         return $totalRetweetsPoints;
+    }
+
+    private function getTweetCollabRetweets(string $apiKey, $tweetId)
+    {
+
+        $retweetedIds = [];
+        $paginationToken = null;
+        do {
+            try {
+                $url = 'https://api.twitter.com/2/tweets/'. $tweetId. '/retweeted_by';
+
+
+
+                if ($paginationToken !== null) {
+                    sleep(3);
+                    $url .= ('&pagination_token=' . $paginationToken);
+                }
+
+                $result = Http::withToken($apiKey)->get($url);
+
+                if ($result->ok()) {
+
+                    Log::info($result->json());
+                    $results = $result->json();
+                    if(isset($results['data'])){
+                        foreach ($results['data'] as $result){
+                            if(isset($result['id'])){
+                                $retweetedIds[] = $result['id'];
+                            }
+                        }
+                    }
+                    $paginationToken = $results['next_cursor'] ?? null;
+                }
+
+
+            }catch (\Exception $e){
+                Log::error('Twitter API request failed: ' . $e->getMessage());
+            }
+
+        }while($paginationToken);
+        return $retweetedIds;
+    }
+
+    private function incrementPointsForTwitterCollab(string $tweet_id, $account)
+    {
+
+        $currentWeek = Week::getCurrentWeekForAccount($account);
+
+        $queryParam = 'twitter_collab_'. $tweet_id;
+
+        $existingTwitter = Twitter::where('query_param', $queryParam)
+            ->where('account_id', $account->id)
+            ->first();
+
+
+        if(!$existingTwitter){
+            $twitter = new Twitter([
+                'account_id'=>$account->id,
+                'claim_points' => ConstantValues::twitter_collab_points,
+                'comment' => 'rt collab post tweet_id=' . $tweet_id,
+                'query_param' => $queryParam
+            ]);
+            $currentWeek->twitters()->save($twitter);
+            $currentWeek->increment('claim_points', ConstantValues::twitter_collab_points);
+        }
     }
 
 //https://api.twitter.com/2/tweets/search/recent?query=from:igor_3000A -is:retweet -is:reply&tweet.fields=id,text,author_id,created_at&max_results=100
