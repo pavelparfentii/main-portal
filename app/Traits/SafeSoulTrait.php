@@ -383,8 +383,8 @@ trait SafeSoulTrait{
     public function updateGitcoinPointsForGitcoinTwitterFollowing()
     {
         $client = new \GuzzleHttp\Client();
-        $accounts = Account::whereIn('twitter_id', ['1496820396502433797', '545917486'])->get();
-//        $accounts = Account::whereNotNull('twitter_id')->cursor();
+//        $accounts = Account::whereIn('twitter_id', ['2567044084', '820166162'])->get();
+        $accounts = Account::whereNotNull('twitter_id')->cursor();
 
         foreach ($accounts as $account){
             $followingRestIds = $this->getTwitterFollowings($client, 'followings', $account->twitter_id);
@@ -541,10 +541,10 @@ trait SafeSoulTrait{
         do {
             try {
 
-                $url = "https://twitter288.p.rapidapi.com/user/{$type}/ids?id=$twitterId";
+                $url = "https://twitter288.p.rapidapi.com/user/{$type}/ids?id=$twitterId&count=5000";
                 if ($next_cursor !== null) {
                     sleep(1);
-                    $url .= "&next_cursor=$next_cursor";
+                    $url .= "&cursor=$next_cursor";
                 }
 
                 $response = $client->request('GET', $url, [
@@ -555,14 +555,27 @@ trait SafeSoulTrait{
                 ]);
 
                 $responseBody = json_decode($response->getBody(), true);
-                if($responseBody['ids']){
+
+                if (isset($responseBody['error'])) {
+
+                    $this->error("Error from API: " . $responseBody['error']);
+                    // Check for rate limiting or other headers
+                    $retryAfter = $response->getHeader('Retry-After');
+                    if ($retryAfter) {
+                        $this->info("Retry after: " . $retryAfter[0]);
+                        sleep($retryAfter[0]);
+                    } else {
+                        break; // Exit the loop if there is an error without a retry header
+                    }
+                }
+
+                if(array_key_exists('ids', $responseBody)){
                     foreach ($responseBody['ids'] as $follower) {
                         $restIds[] = $follower;
                     }
-
                 }
-                $next_cursor = isset($responseBody['next_cursor']) && ($responseBody['next_cursor'] !== '0' || $responseBody['next_cursor'] !== 0 ) ? $responseBody['next_cursor'] : null;
-                var_dump($next_cursor);
+                $next_cursor = isset($responseBody['next_cursor_str']) && ($responseBody['next_cursor_str'] !== '0') ? $responseBody['next_cursor'] : null;
+
 
 
             }catch (\GuzzleHttp\Exception\GuzzleException $e){

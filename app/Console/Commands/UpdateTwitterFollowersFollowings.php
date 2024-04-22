@@ -27,7 +27,7 @@ class UpdateTwitterFollowersFollowings extends Command
     public function handle()
     {
         $client = new \GuzzleHttp\Client();
-//        $accounts = Account::whereIn('twitter_username', ['sashacrave', 'boredape8692'])->get();
+//        $accounts = Account::whereIn('twitter_id', ['820166162', '1360277900705099777'])->get();
         $accounts = Account::whereNotNull('twitter_id')->cursor();
 
 //        $twitterId = $account->twitter_id;
@@ -38,9 +38,11 @@ class UpdateTwitterFollowersFollowings extends Command
             $this->info($i++);
             // Initialize arrays to hold rest IDs from followers and followings
 
-            $followerRestIds = $this->getTwitterFollowers($client, $account->twitter_username, 'followers');
-            $followingRestIds = $this->getTwitterUserRestIds($client, $account->twitter_id, 'followings');
-//            $followingRestIds = $this->getTwitterFollowings($client, $account->twitter_username, 'following');
+            $followerRestIds = $this->getTwitterFollowers($client, 'followers', $account->twitter_id);
+//            $followingRestIds = $this->getTwitterUserRestIds($client, $account->twitter_id, 'followings');
+            $followingRestIds = $this->getTwitterFollowings($client,'followings', $account->twitter_id);
+
+            var_dump($account->twitter_id);
 
 
             $mutualRestIds = array_intersect($followerRestIds, $followingRestIds);
@@ -57,6 +59,7 @@ class UpdateTwitterFollowersFollowings extends Command
                     $friend->friends()->syncWithoutDetaching([$account->id]);
                 }
             }
+            usleep(20000 * $i);
         }
 
 
@@ -125,37 +128,140 @@ class UpdateTwitterFollowersFollowings extends Command
         return $restIds;
     }
 
-    private function getTwitterFollowers($client, $twitterId, $type)
+//    private function getTwitterFollowers($client, $twitterId, $type)
+//    {
+//        $restIds = [];
+//        $next_cursor = null;
+//
+//        do {
+//            try {
+//
+//                $url = "https://twitter241.p.rapidapi.com/{$type}.php?screenname=$twitterId";
+//                if ($next_cursor !== null) {
+//                    sleep(1);
+//                    $url .= "&cursor=$next_cursor";
+//                }
+//
+//                $response = $client->request('GET', $url, [
+//                    'headers' => [
+//                        'X-RapidAPI-Host' => 'twitter-api45.p.rapidapi.com',
+//                        'X-RapidAPI-Key' => '85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
+//                    ],
+//                ]);
+//
+//                $responseBody = json_decode($response->getBody(), true);
+//                if(isset($responseBody['followers'])){
+//                    foreach ($responseBody['followers'] as $follower) {
+//                        if(isset($follower['user_id'])){
+//                            $restIds[] = $follower['user_id'];
+//                        }
+//                    }
+//                }
+//                $next_cursor = $responseBody['next_cursor'] ?? null;
+//                $more_users = $responseBody['more_users'] ?? false;
+//
+//            }catch (\GuzzleHttp\Exception\GuzzleException $e){
+//                $this->error("An error occurred while fetching data: " . $e->getMessage());
+//                // Optionally, break or continue depending on how you want to handle failures
+//                break;
+//            }
+//
+//        }while ($next_cursor && $more_users);
+//
+//        return $restIds;
+//    }
+
+//    private function getTwitterFollowings($client, $twitterId, $type)
+//    {
+//        $restIds = [];
+//        $next_cursor = null;
+//
+//        do {
+//            try {
+//                $url = "https://twitter241.p.rapidapi.com/{$type}.php?screenname=$twitterId";
+//                if ($next_cursor !== null) {
+//                    $url .= "&cursor=$next_cursor";
+//                }
+//
+//                $response = $client->request('GET', $url, [
+//                    'headers' => [
+//                        'X-RapidAPI-Host' => 'twitter-api45.p.rapidapi.com',
+//                        'X-RapidAPI-Key' => '85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
+//                    ],
+//                ]);
+//
+//                $responseBody = json_decode($response->getBody(), true);
+//                if(isset($responseBody['following'])){
+//                    foreach ($responseBody['following'] as $following) {
+//                        if(isset($following['user_id'])){
+//                            $restIds[] = $following['user_id'];
+//                        }
+//                    }
+//                }
+//                $next_cursor = $responseBody['next_cursor'] ?? null;
+//                $more_users = $responseBody['more_users'] ?? false;
+//
+//            }catch (\GuzzleHttp\Exception\GuzzleException $e){
+//                $this->error("An error occurred while fetching data: " . $e->getMessage());
+//                // Optionally, break or continue depending on how you want to handle failures
+//                break;
+//            }
+//
+//        }while ($next_cursor && $more_users);
+//
+//        return $restIds;
+//    }
+
+    private function getTwitterFollowings($client, $type, $twitterId)
     {
         $restIds = [];
         $next_cursor = null;
 
         do {
             try {
-
-                $url = "https://twitter241.p.rapidapi.com/{$type}.php?screenname=$twitterId";
+                sleep(1);
+                $url = "https://twitter288.p.rapidapi.com/user/{$type}/ids?id=$twitterId&count=5000";
                 if ($next_cursor !== null) {
                     sleep(1);
                     $url .= "&cursor=$next_cursor";
                 }
 
+
                 $response = $client->request('GET', $url, [
                     'headers' => [
-                        'X-RapidAPI-Host' => 'twitter-api45.p.rapidapi.com',
+                        'X-RapidAPI-Host' => 'twitter288.p.rapidapi.com',
                         'X-RapidAPI-Key' => '85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
                     ],
                 ]);
 
                 $responseBody = json_decode($response->getBody(), true);
-                if(isset($responseBody['followers'])){
-                    foreach ($responseBody['followers'] as $follower) {
-                        if(isset($follower['user_id'])){
-                            $restIds[] = $follower['user_id'];
-                        }
+//                if($responseBody['ids']){
+//                    foreach ($responseBody['ids'] as $follower) {
+//                        $restIds[] = $follower;
+//                    }
+//
+//                }
+                if (isset($responseBody['error'])) {
+                    $this->error("Error from API: " . $responseBody['error']);
+
+                    // Check for rate limiting or other headers
+                    $retryAfter = $response->getHeader('Retry-After');
+                    if ($retryAfter) {
+                        $this->info("Retry after: " . $retryAfter[0]);
+                        sleep($retryAfter[0]);
+                    } else {
+                        break; // Exit the loop if there is an error without a retry header
                     }
                 }
-                $next_cursor = $responseBody['next_cursor'] ?? null;
-                $more_users = $responseBody['more_users'] ?? false;
+
+                if(array_key_exists('ids', $responseBody)){
+                    foreach ($responseBody['ids'] as $follower) {
+                        $restIds[] = $follower;
+                    }
+                }
+
+                $next_cursor = isset($responseBody['next_cursor_str']) && ($responseBody['next_cursor_str'] !== '0') ? $responseBody['next_cursor'] : null;
+
 
             }catch (\GuzzleHttp\Exception\GuzzleException $e){
                 $this->error("An error occurred while fetching data: " . $e->getMessage());
@@ -163,40 +269,62 @@ class UpdateTwitterFollowersFollowings extends Command
                 break;
             }
 
-        }while ($next_cursor && $more_users);
+        }while ($next_cursor);
 
         return $restIds;
     }
 
-    private function getTwitterFollowings($client, $twitterId, $type)
+    private function getTwitterFollowers($client, $type, $twitterId)
     {
         $restIds = [];
         $next_cursor = null;
 
         do {
             try {
-                $url = "https://twitter241.p.rapidapi.com/{$type}.php?screenname=$twitterId";
+
+                $url = "https://twitter288.p.rapidapi.com/user/{$type}/ids?id=$twitterId&count=5000";
+//                sleep(1);
                 if ($next_cursor !== null) {
+//                    sleep(1);
                     $url .= "&cursor=$next_cursor";
                 }
 
+
                 $response = $client->request('GET', $url, [
                     'headers' => [
-                        'X-RapidAPI-Host' => 'twitter-api45.p.rapidapi.com',
+                        'X-RapidAPI-Host' => 'twitter288.p.rapidapi.com',
                         'X-RapidAPI-Key' => '85c0d2d5d9msh8188cd5292dcd82p1e4a24jsn97b344b037a2'
                     ],
                 ]);
 
                 $responseBody = json_decode($response->getBody(), true);
-                if(isset($responseBody['following'])){
-                    foreach ($responseBody['following'] as $following) {
-                        if(isset($following['user_id'])){
-                            $restIds[] = $following['user_id'];
-                        }
+
+                if (isset($responseBody['error'])) {
+
+                    $this->error("Error from API: " . $responseBody['error']);
+                    // Check for rate limiting or other headers
+                    $retryAfter = $response->getHeader('Retry-After');
+                    if ($retryAfter) {
+                        $this->info("Retry after: " . $retryAfter[0]);
+                        sleep($retryAfter[0]);
+                    } else {
+                        break; // Exit the loop if there is an error without a retry header
                     }
                 }
-                $next_cursor = $responseBody['next_cursor'] ?? null;
-                $more_users = $responseBody['more_users'] ?? false;
+
+                if(array_key_exists('ids', $responseBody)){
+                    foreach ($responseBody['ids'] as $follower) {
+                        $restIds[] = $follower;
+                    }
+                }
+
+
+//                if($responseBody['ids']){
+//
+//
+//                }
+                $next_cursor = isset($responseBody['next_cursor_str']) && ($responseBody['next_cursor_str'] !== '0') ? $responseBody['next_cursor'] : null;
+
 
             }catch (\GuzzleHttp\Exception\GuzzleException $e){
                 $this->error("An error occurred while fetching data: " . $e->getMessage());
@@ -204,7 +332,7 @@ class UpdateTwitterFollowersFollowings extends Command
                 break;
             }
 
-        }while ($next_cursor && $more_users);
+        }while ($next_cursor);
 
         return $restIds;
     }
