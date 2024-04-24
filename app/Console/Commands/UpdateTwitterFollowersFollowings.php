@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Account;
 use Illuminate\Console\Command;
+use GuzzleHttp\Promise;
 
 class UpdateTwitterFollowersFollowings extends Command
 {
@@ -219,10 +220,10 @@ class UpdateTwitterFollowersFollowings extends Command
 
         do {
             try {
-                sleep(1);
+                sleep(5);
                 $url = "https://twitter288.p.rapidapi.com/user/{$type}/ids?id=$twitterId&count=5000";
                 if ($next_cursor !== null) {
-                    sleep(1);
+                    sleep(5);
                     $url .= "&cursor=$next_cursor";
                 }
 
@@ -274,6 +275,7 @@ class UpdateTwitterFollowersFollowings extends Command
         return $restIds;
     }
 
+
     private function getTwitterFollowers($client, $type, $twitterId)
     {
         $restIds = [];
@@ -283,9 +285,9 @@ class UpdateTwitterFollowersFollowings extends Command
             try {
 
                 $url = "https://twitter288.p.rapidapi.com/user/{$type}/ids?id=$twitterId&count=5000";
-//                sleep(1);
+                sleep(5);
                 if ($next_cursor !== null) {
-//                    sleep(1);
+                    sleep(5);
                     $url .= "&cursor=$next_cursor";
                 }
 

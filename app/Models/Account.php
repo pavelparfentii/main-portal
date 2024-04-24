@@ -292,6 +292,11 @@ class Account extends Model
                 ]);
                 $currentWeek->twitters()->save($twitter);
                 $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_likes_points);
+
+                $twitterAction = $this->getTwitterAction();
+                if ($twitterAction) {
+                    $twitterAction->increment('likes');
+                }
             }
 
         } elseif ($type === 'retweets') {
@@ -311,6 +316,11 @@ class Account extends Model
                 ]);
                 $currentWeek->twitters()->save($twitter);
                 $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_retweet_points);
+
+                $twitterAction = $this->getTwitterAction();
+                if ($twitterAction) {
+                    $twitterAction->increment('retweets');
+                }
             }
 
 
@@ -332,6 +342,11 @@ class Account extends Model
 
                 $currentWeek->twitters()->save($twitter);
                 $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_quote_points);
+
+                $twitterAction = $this->getTwitterAction();
+                if ($twitterAction) {
+                    $twitterAction->increment('quotes');
+                }
             }
 
 
@@ -352,6 +367,11 @@ class Account extends Model
                 ]);
                 $currentWeek->twitters()->save($twitter);
                 $currentWeek->increment('claim_points', ConstantValues::twitter_projects_tweet_comment_points);
+
+                $twitterAction = $this->getTwitterAction();
+                if ($twitterAction) {
+                    $twitterAction->increment('comments');
+                }
             }
         }
 
@@ -360,6 +380,11 @@ class Account extends Model
     public function weeks(): HasMany
     {
         return $this->hasMany(Week::class);
+    }
+
+    public function action(): HasOne
+    {
+        return $this->hasOne(TwitterAction::class);
     }
 
     public function discordRoles(): BelongsToMany
@@ -448,6 +473,15 @@ class Account extends Model
         }
 
         return null;
+    }
+
+    public function getTwitterAction(){
+        $twitterAction = TwitterAction::where('account_id', $this->id)->first();
+
+        if(!$twitterAction){
+            $twitterAction = $this->action()->create();
+        }
+        return $twitterAction;
     }
 
 

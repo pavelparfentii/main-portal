@@ -7,6 +7,7 @@ namespace App\Traits;
 use App\ConstantValues;
 use App\Models\Account;
 use App\Models\Twitter;
+use App\Models\TwitterAction;
 use App\Models\Week;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -68,6 +69,11 @@ trait TwitterTrait
                         ]);
                         $currentWeek->twitters()->save($twitter);
                         $currentWeek->increment('claim_points', ConstantValues::twitter_project_tweet);
+
+                        $twitterAction = $account->getTwitterAction();
+                        if ($twitterAction) {
+                            $twitterAction->increment('tagged_post');
+                        }
                     }
 
                     if($likesCount > 0){
@@ -176,6 +182,11 @@ trait TwitterTrait
                         ]);
                         $currentWeek->twitters()->save($twitter);
                         $currentWeek->increment('claim_points', ConstantValues::twitter_igor_tweet);
+
+                        $twitterAction = $account->getTwitterAction();
+                        if ($twitterAction) {
+                            $twitterAction->increment('tagged_post');
+                        }
                     }
 
                     if($likesCount > 0){
@@ -631,7 +642,7 @@ trait TwitterTrait
                 'account_id'=> $account->id,
                 'claim_points' => $pointsForRetweets,
                 'comment' => 'за каждый репост кем-либо этого твоего твита https://twitter.com/SoulsClubETH https://twitter.com/SafeSoulETH https://twitter.com/igor_3000A' . ' retweet_count ' . $retweetCount,
-                'query_param' => 'twitter_post_retweets'
+                'query_param' => $queryParam
             ]);
             $currentWeek->twitters()->save($twitter);
 

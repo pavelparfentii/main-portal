@@ -81,4 +81,5 @@ class Week extends Model
 
         return $currentWeek;
     }
+
 }

@@ -2,28 +2,26 @@
 
 namespace App\Nova;
 
-use App\Nova\Metrics\AllDiamondsBalance;
 use App\Nova\Metrics\AllTwitterComments;
-use Carbon\Carbon;
+use App\Nova\Metrics\AllTwitterLikes;
+use App\Nova\Metrics\AllTwitterQuotes;
+use App\Nova\Metrics\AllTwitterRetweets;
+use App\Nova\Metrics\TwitterActiveAccountsCount;
+use App\Nova\Metrics\TwitterTaggedPostsCount;
 use Illuminate\Http\Request;
-use Inertia\Testing\Concerns\Has;
-use Laravel\Nova\Fields\Date;
-use Laravel\Nova\Fields\DateTime;
-use Laravel\Nova\Fields\HasMany;
-use Laravel\Nova\Fields\HasOne;
+use Laravel\Nova\Fields\BelongsTo;
 use Laravel\Nova\Fields\ID;
 use Laravel\Nova\Fields\Number;
-use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Http\Requests\NovaRequest;
 
-class Account extends Resource
+class TwitterAction extends Resource
 {
     /**
      * The model the resource corresponds to.
      *
-     * @var class-string<\App\Models\Account>
+     * @var class-string<\App\Models\TwitterAction>
      */
-    public static $model = \App\Models\Account::class;
+    public static $model = \App\Models\TwitterAction::class;
 
     /**
      * The single value that should be used to represent the resource when being displayed.
@@ -38,7 +36,7 @@ class Account extends Resource
      * @var array
      */
     public static $search = [
-        'id', 'wallet', 'twitter_username'
+        'id',
     ];
 
     /**
@@ -49,35 +47,21 @@ class Account extends Resource
      */
     public function fields(NovaRequest $request)
     {
-        $previousWeek = Carbon::now()->subWeek()->format('W-Y');
-
         return [
             ID::make()->sortable(),
-            Text::make(__('Wallet'), 'wallet')->sortable(),
-            Text::make(__('Role'), 'role')->sortable(),
-            Text::make(__('Twitter_username'), 'twitter_username')->sortable(),
-            Text::make(__('Twitter_id'), 'twitter_id')->onlyOnDetail(),
-            Text::make(__('discord_id'), 'discord_id')->onlyOnDetail(),
-            Number::make('total_points')->min(0.001)->step(0.001)->sortable(),
+            BelongsTo::make('Account')->display(function ($account) {
+                if (!empty($account->twitter_username)) {
+                    return $account->twitter_username;
+                }else{
+                    return $account->wallet;
+                }
 
-            Number::make('claim_points', function () use($previousWeek){
-                $claim_points = $this->weeks()
-                    ->where('week_number', $previousWeek)
-                    ->pluck('claim_points')
-                    ->first();
-                return $claim_points;
-            })->sortable(),
-
-            DateTime::make('Created at', 'created_at'),
-
-            Number::make('gitcoin_score')->min(0.00)->step(0.01)->sortable(),
-
-            HasOne::make('Twitter actions', 'action'),
-
-            HasMany::make('Invites sent', 'invitesSent', Invite::class),
-
-            HasMany::make('Week', 'weeks')->hideFromIndex()
-
+            }),
+            Number::make('likes')->sortable(),
+            Number::make('retweets')->sortable(),
+            Number::make('comments')->sortable(),
+            Number::make('quotes')->sortable(),
+            Number::make('Tagged post','tagged_post')->sortable(),
         ];
     }
 
@@ -90,7 +74,12 @@ class Account extends Resource
     public function cards(NovaRequest $request)
     {
         return [
-            new AllDiamondsBalance(),
+            new AllTwitterComments(),
+            new AllTwitterLikes(),
+            new AllTwitterQuotes(),
+            new AllTwitterRetweets(),
+            new TwitterTaggedPostsCount(),
+            new TwitterActiveAccountsCount()
         ];
     }
 
