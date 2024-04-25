@@ -176,16 +176,13 @@ class PointsController extends Controller
     {
         $account = AuthHelper::auth($request);
 
+        $token = $request->bearerToken();
+
         if ($account) {
             Week::getCurrentWeekForAccount($account);
-//            $userRank = DB::table('accounts')
-//                    ->where('total_points', '>', $account->total_points)
-//                    ->count() + 1;
             $userRank = DB::table('accounts')
-                ->select('id', DB::raw("DENSE_RANK() OVER (ORDER BY total_points DESC) as rank"))
-                ->where('id', '=', $account->id)
-                ->first()
-                ->rank;
+                    ->where('total_points', '>', $account->total_points)
+                    ->count() + 1;
 
             $account->setAttribute('rank', $userRank);
             $account->setAttribute('current_user', true);
@@ -265,7 +262,11 @@ class PointsController extends Controller
                 ]
             ]);
 
-        }else{
+        }elseif ($token && !$account){
+
+            return response()->json(['error' => 'token expired or wrong'], 403);
+
+        } else{
             return response()->json([
                 'user' => null,
                 'global'=>[

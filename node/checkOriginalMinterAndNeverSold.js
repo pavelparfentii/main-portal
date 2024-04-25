@@ -2,6 +2,9 @@ import Web3 from "web3";
 import fetch from 'node-fetch';
 import contractABI from '../node/DAContractABI/contractABI.js';
 
+const tokenId = process.argv[2];
+const originalMinter = process.argv[3];
+
 const contractAddress = "0x25593A50255Bfb30eA027f6966417b0BF780401d";
 const totalTokens = 8888; // Assuming this is the total number of tokens
 
@@ -20,8 +23,8 @@ async function initializeContract(web3Instance) {
 }
 
 async function checkOriginalMinterAndNeverSold(web3Instance, contract) {
-    for (let tokenId = 1; tokenId <= totalTokens; tokenId++) {
-        const originalMinter = await contract.methods.originalMinter(tokenId).call();
+    // for (let tokenId = 1; tokenId <= totalTokens; tokenId++) {
+        // const originalMinter = await contract.methods.originalMinter(tokenId).call();
 
         const events = await contract.getPastEvents('Transfer', {
             filter: { tokenId: tokenId },
@@ -41,7 +44,7 @@ async function checkOriginalMinterAndNeverSold(web3Instance, contract) {
             }
             console.log(JSON.stringify(output));
         }
-    }
+    // }
 }
 
 async function main() {
