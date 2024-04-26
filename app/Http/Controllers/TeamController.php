@@ -127,6 +127,65 @@ class TeamController extends Controller
 
     }
 
+//    public function getTeamList(Request $request)
+//    {
+//        $slug = $request->slug;
+//        $team = Team::where('slug', $slug)->with(['creator', 'accounts'])->first();
+//        $period = $request->input('period', 'total');
+//        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+//
+//        if (!$team) {
+//            return response()->json(['message' => 'not found'], 404);
+//        }
+//
+//        $currentUser = AuthHelper::auth($request);
+//
+//        // Calculate total points based on period
+//        foreach ($team->accounts as $account) {
+//            if ($period === 'week') {
+//                $account->load(['weeks' => function ($query) use ($previousWeekNumber) {
+//                    $query->where('week_number', $previousWeekNumber)->where('active', false);
+//                }]);
+//                $account->total_points = $account->weeks->sum('total_points');
+//
+//            } // If 'total', total_points is already loaded
+//        }
+//
+//        // Sort accounts based on total_points in descending order
+//        $sortedAccounts = $team->accounts->sortByDesc('total_points')->values();
+//
+//
+//        if (!$currentUser) {
+//            return response()->json([
+//                'team' => $team->accounts->sortByDesc('total_points')->values(),
+//                'total_members' => $sortedAccounts->count(),
+//                'total_points' => $sortedAccounts->sum('total_points')
+//            ], 200);
+//        }
+//
+//        if ($token = $request->bearerToken() && !$currentUser) {
+//            return response()->json(['error' => 'token expired or wrong'], 403);
+//        }
+//
+//        $friendIds = $currentUser ? $currentUser->friends()->pluck('id')->toArray() : [];
+//        $isFriendOfCreator = in_array($team->creator->id, $friendIds);
+//
+//        foreach ($sortedAccounts as $account) {
+//            $account->is_friend_of_creator = $isFriendOfCreator;
+//            $account->in_team = $currentUser && $currentUser->team_id === $team->id;
+//        }
+//
+//        return response()->json([
+//            'team' => $team,
+//            'sorted_accounts' => $sortedAccounts,
+//            'total_members' => $sortedAccounts->count(),
+//            'total_points' => $sortedAccounts->sum('total_points'),
+//            'is_friend_of_creator' => $isFriendOfCreator,
+//            'in_team' => $currentUser && $currentUser->team_id === $team->id
+//        ]);
+//    }
+
+//normal
     public function getTeamList(Request $request)
     {
         $slug = $request->slug;
@@ -214,9 +273,9 @@ class TeamController extends Controller
                 $teamAccount->is_friend_of_creator = $isFriendOfCreator;
             }
             $weekPoints = $teamAccount->weeks()
-                    ->where('week_number', $previousWeekNumber)
-                    ->where('active', false)
-                    ->sum('total_points');
+                ->where('week_number', $previousWeekNumber)
+                ->where('active', false)
+                ->sum('total_points');
             $teamAccount->week_points = $weekPoints;
 
             if(!empty($currentUser->discord_id)){
@@ -248,6 +307,83 @@ class TeamController extends Controller
             'in_team' => $currentUser && $currentUser->team_id === $team->id
         ]);
     }
+
+//    public function getTeamList(Request $request)
+//    {
+//        $slug = $request->slug;
+//        $team = Team::where('slug', $slug)->with(['creator', 'accounts'])->first();
+//        $period = $request->input('period', 'total');
+//        $currentWeekNumber = Carbon::now()->format('W-Y');
+//        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+//
+//        if (!$team) {
+//            return response()->json(['message' => 'not found'], 404);
+//        }
+//
+//        $currentUser = AuthHelper::auth($request);
+//        if ($token = $request->bearerToken() && !$currentUser) {
+//            return response()->json(['error' => 'token expired or wrong'], 403);
+//        }
+//
+//        if ($team) {
+//            $totalWeekPoints = 0;
+//            foreach ($team->accounts as $account) {
+//                // Sum only points for the current week
+//                $accountWeekPoints = $account->weeks
+//                    ->where('week_number', $previousWeekNumber)
+//                    ->where('active', false)
+//                    ->sum('total_points');
+//                $totalWeekPoints += $accountWeekPoints;
+//            }
+//        } else {
+//            // Keep the totalPoints calculation for 'total' period
+//            $totalWeekPoints = null; // Null or keep as totalPoints based on your preference
+//        }
+//
+//        if (!$currentUser) {
+//            return response()->json([
+//                'team' => $team,
+//                'total_members' => $team->accounts->count(),
+//                'total_points' => $team->accounts->sum('total_points'),
+//                'week_points' => $totalWeekPoints
+//            ], 200);
+//        }
+//
+//        // Adjust point calculations based on the period
+//        foreach ($team->accounts as $account) {
+//            if ($period === 'week') {
+//                $weekPoints = $account->weeks()
+//                    ->where('week_number', $previousWeekNumber)
+//                    ->where('active', false)
+//                    ->sum('total_points');
+//                $account->week_points = $weekPoints;
+//            } else {
+//                // Calculate total points from all weeks
+//                $account->total_points = $account->weeks
+//                    ->sum('total_points');
+//            }
+//        }
+//
+//        // Sorting by week_points if period is 'week', else sort by total_points
+//        $sortedAccounts = $period === 'week'
+//            ? $team->accounts->sortByDesc('week_points')
+//            : $team->accounts->sortByDesc('total_points');
+//
+//        $sortedAccounts = $sortedAccounts->values();
+//        $team->setRelation('accounts', $sortedAccounts);
+//
+//        $totalPoints = $team->accounts->sum($period === 'week' ? 'week_points' : 'total_points');
+//
+//        // Prepare response data
+//        return response()->json([
+//            'team' => $team,
+//            'total_members' => $team->accounts->count(),
+//            'total_points' => $team->accounts->sum('total_points'),
+//            'week_points' => $totalPoints,
+//            'is_friend_of_creator' => $currentUser && in_array($team->creator->id, $currentUser->friends()->pluck('id')->toArray()),
+//            'in_team' => $currentUser && $currentUser->team_id === $team->id
+//        ]);
+//    }
 
     public function getTeamsList(Request $request)
     {

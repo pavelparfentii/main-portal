@@ -56,7 +56,7 @@ class ConstantValues
 
     const animal_owner = 400.000;
     const lord_20 = 500.000;
-    const animal_discord_role_points = 10.000;
+    const animal_discord_role_points = 5.000;
     const animal_long_range_owner_points = 100.00;
     const committed_pass_points = 50.000;
     const soulborne_pass_points = 100.000;

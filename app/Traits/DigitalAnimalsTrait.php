@@ -121,10 +121,16 @@ trait DigitalAnimalsTrait
 //           $animalsCount = $account->animals()->where('query_param', 'like', 'token_%')->count();
 
 //           $lord = $account->animals()->where('query_param', 'lord_20')->first();
-           $lord = DigitalAnimal::where('query_param', 'lord_20')->where('account_id', $account->id)->first();
+           $lord = DigitalAnimal::where('query_param', 'lord_20')
+               ->where('account_id', $account->id)
+               ->first();
+
+           $not_lord = DigitalAnimal::where('query_param', 'not_lord_20')
+               ->where('account_id', $account->id)
+               ->first();
            $currentWeek = Week::getCurrentWeekForAccount($account);
 
-           if($animalsCount >= 20 && !$lord){
+           if($animalsCount >= 20){
                $newLord = new DigitalAnimal([
                    'account_id'=>$account->id,
                    'points' => ConstantValues::lord_20,
@@ -136,9 +142,14 @@ trait DigitalAnimalsTrait
                $currentWeek->increment('points', ConstantValues::lord_20);
                $currentWeek->increment('total_points', ConstantValues::lord_20);
 
+               if($not_lord){
+                   $not_lord->update(['query_param'=>null]);
+               }
+
+
            }elseif($animalsCount >= 20 && $lord){
                continue;
-           }elseif($animalsCount < 20 && $lord){
+           }elseif($animalsCount < 20 && $lord && !$not_lord){
                $newLord = new DigitalAnimal([
                    'account_id'=>$account->id,
                    'points' => -ConstantValues::lord_20,

@@ -85,7 +85,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:safesoul-update-points-for-gitcoin-passport-following')->weeklyOn(6, '13:00');
 
         //Update GitcoinScore
-        $schedule->command('app:update-gitcoin-score')->weeklyOn(5,'11:30');
+        $schedule->command('app:update-gitcoin-score')->dailyAt('11:30');
 
         //Update Points for Gitcoin
         $schedule->command('app:safe-soul-gitcoin-score-command')->weeklyOn(5,'12:00');
