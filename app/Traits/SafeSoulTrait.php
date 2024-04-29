@@ -498,7 +498,7 @@ trait SafeSoulTrait{
 
     private function checkRole($discordId)
     {
-        $scriptPath = base_path('./node/discord/role/checkRole');
+        $scriptPath = base_path('./node/discord/role/checkRole.js');
 
 //        dd($discordId);
         $process = new Process(['node', $scriptPath, $discordId]);
@@ -507,6 +507,7 @@ trait SafeSoulTrait{
 // Check if the process was successful
         if ($process->isSuccessful()) {
             // Get the output of the script
+            sleep(1);
             $output = $process->getOutput();
 
 

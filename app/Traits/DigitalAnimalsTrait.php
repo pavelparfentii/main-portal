@@ -130,7 +130,7 @@ trait DigitalAnimalsTrait
                ->first();
            $currentWeek = Week::getCurrentWeekForAccount($account);
 
-           if($animalsCount >= 20){
+           if($animalsCount >= 20 && !$lord){
                $newLord = new DigitalAnimal([
                    'account_id'=>$account->id,
                    'points' => ConstantValues::lord_20,

@@ -167,6 +167,10 @@ class Account extends Model
     {
         $originalRole = $this->role;
 
+        $patrolEntryExists = SafeSoul::where('query_param', ConstantValues::safesoul_patrol_role)
+            ->where('account_id', $this->id)
+            ->exists();
+
         // Proceed only if the role is actually changing
         if ($originalRole == $newRole) {
             return; // No change, so no need to adjust points
@@ -180,11 +184,12 @@ class Account extends Model
 //                            'week_id' => $currentWeek->id,
                 'points' => ConstantValues::safesoul_OG_patrol_points,
                 'comment' => 'Ог патрульный',
-                'query_param' => ConstantValues::safesoul_OG_patrol_points
+                'query_param' => ConstantValues::safesoul_og_patrol_role
             ]);
 
             $currentWeek->safeSouls()->save($safeSoul);
             $currentWeek->increment('points', ConstantValues::safesoul_OG_patrol_points);
+            $currentWeek->increment('total_points', ConstantValues::safesoul_OG_patrol_points);
 
         }elseif(is_null($originalRole) && $newRole == ConstantValues::safesoul_patrol_role){
             $safeSoul = new SafeSoul([
@@ -253,6 +258,7 @@ class Account extends Model
                         'query_param' =>'downgraded_' .  ConstantValues::safesoul_og_patrol_role,
                     ]);
                     $currentWeek->decrement('points', ConstantValues::safesoul_OG_patrol_points);
+                    $currentWeek->decrement('total_points', ConstantValues::safesoul_OG_patrol_points);
                 }
                 $currentWeek->safeSouls()->create([
                     'account_id' => $this->id,
