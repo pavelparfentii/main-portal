@@ -58,6 +58,7 @@ class Account extends Resource
             Text::make(__('Twitter_username'), 'twitter_username')->sortable(),
             Text::make(__('Twitter_id'), 'twitter_id')->onlyOnDetail(),
             Text::make(__('discord_id'), 'discord_id')->onlyOnDetail(),
+            Text::make(__('email'), 'discord_id')->sortable(),
             Number::make('total_points')->min(0.001)->step(0.001)->sortable(),
 
             Number::make('claim_points', function () use($previousWeek){

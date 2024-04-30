@@ -39,14 +39,17 @@ class UpdateTwitterFollowersFollowings extends Command
             $this->info($i++);
             // Initialize arrays to hold rest IDs from followers and followings
 
-            $followerRestIds = $this->getTwitterFollowers($client, 'followers', $account->twitter_id);
+            //No followers for no only followings
+            //$followerRestIds = $this->getTwitterFollowers($client, 'followers', $account->twitter_id);
 //            $followingRestIds = $this->getTwitterUserRestIds($client, $account->twitter_id, 'followings');
             $followingRestIds = $this->getTwitterFollowings($client,'followings', $account->twitter_id);
 
             var_dump($account->twitter_id);
 
 
-            $mutualRestIds = array_intersect($followerRestIds, $followingRestIds);
+//            $mutualRestIds = array_intersect($followerRestIds, $followingRestIds);
+
+            $mutualRestIds = $followingRestIds;
 
 
             // Find mutual friend accounts based on Twitter IDs
