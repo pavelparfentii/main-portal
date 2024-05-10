@@ -32,6 +32,8 @@ class TwitterCollab extends Resource
         'id',
     ];
 
+    public static $group = 'Partners';
+
     /**
      * Get the fields displayed by the resource.
      *

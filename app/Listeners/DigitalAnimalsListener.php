@@ -38,7 +38,7 @@ class DigitalAnimalsListener
 //
         $newTotal = $currentTotal + $event->digital->points;
 
-        $newTotalTotal = $currentTotalTotal + $event->digital->total_points;
+        $newTotalTotal = $currentTotalTotal + $event->digital->points;
 
         $newTotalClaimPoints = $currentTotalClaimPoints + $event->digital->claim_points;
 

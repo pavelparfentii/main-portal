@@ -157,7 +157,7 @@ class Account extends Model
         });
 
         static::retrieved(function($account){
-            if ($account->blocked_until && $account->blocked_until->isPast()) {
+            if ($account->blocked_until && Carbon::parse($account->blocked_until)->isPast()) {
                 $account->update(['code_attempts' => 0, 'blocked_until' => null]);
             }
         });

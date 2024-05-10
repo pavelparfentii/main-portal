@@ -895,11 +895,11 @@ trait DigitalAnimalsTrait
             $this->checkForAnyTokenOwnershipAndNeverSold($accountsData);
         }
 
-        $soldArray = OriginalMinter::whereNotIn('token', $neverSoldArray)->pluck('token')->toArray();
-
-        foreach ($soldArray as $token){
-            $this->decrementPointsForSoldToken($token);
-        }
+//        $soldArray = OriginalMinter::whereNotIn('token', $neverSoldArray)->pluck('token')->toArray();
+//
+//        foreach ($soldArray as $token){
+//            $this->decrementPointsForSoldToken($token);
+//        }
 
     }
 
@@ -909,68 +909,30 @@ trait DigitalAnimalsTrait
             $account = Account::where('wallet', $wallet)->first();
 
             if ($account) {
+                $queryParam = 'minter_never_sold';
 
+                $animal = DigitalAnimal::where('query_param', 'minter_never_sold')
+                    ->where('account_id', $account->id)->first();
 
-                $animals = DigitalAnimal::where('query_param', 'like', 'minter_never_sold_%')
-                    ->where('account_id', $account->id)->get();
-
-                $existingTokens = $animals->pluck('query_param')->map(function ($queryParam) {
-                    return substr($queryParam, strrpos($queryParam, '_') + 1);
-                })->toArray();
-
-                $tokenId = $info['tokens'];
-
-                $queryParam = 'minter_never_sold_' . $tokenId;
-                if (!in_array($tokenId, $existingTokens)) {
-                    // Token was never sold and is not recorded in the database
+                if(!$animal){
                     $this->awardPointsForNeverSoldToken($account, $info['message'], $queryParam);
                 }
+
+//                $animals = DigitalAnimal::where('query_param', 'like', 'minter_never_sold_%')
+//                    ->where('account_id', $account->id)->get();
+//
+//                $existingTokens = $animals->pluck('query_param')->map(function ($queryParam) {
+//                    return substr($queryParam, strrpos($queryParam, '_') + 1);
+//                })->toArray();
+//
+//                $tokenId = $info['tokens'];
+//
+//                $queryParam = 'minter_never_sold_' . $tokenId;
+//                if (!in_array($tokenId, $existingTokens)) {
+//                    // Token was never sold and is not recorded in the database
+//                    $this->awardPointsForNeverSoldToken($account, $info['message'], $queryParam);
 //                }
 
-//                foreach ($existingTokens as $existingTokenId) {
-//                    if (!in_array($existingTokenId, $info['tokens'])) {
-//                        // Token was previously marked as never sold, but is now sold
-//                        $this->decrementPointsForSoldToken($account, $existingTokenId);
-//                    }
-//                }
-
-
-
-
-//                $existingParam = 'minter_never_sold';
-//                $digitalAnimal = DigitalAnimal::where('account_id', $account->id)
-//                    ->where('query_param', $existingParam)
-//                    ->first();
-//
-//                $points = ConstantValues::minter_never_sold;
-//
-//                if (count($info['tokens']) > 0 && !$digitalAnimal) {
-//                    $currentWeek = Week::getCurrentWeekForAccount($account);
-//                    $newAnimal = new DigitalAnimal([
-//                        'account_id' => $account->id,
-//                        'points' => $points,
-//                        'comment' => $info['message'],
-//                        'query_param' => $existingParam
-//                    ]);
-//                    $newAnimal->save();
-//                    $currentWeek->animals()->save($newAnimal);
-//                    $currentWeek->increment('points', $points);
-//                    $currentWeek->increment('total_points', $points);
-//                }elseif (count($info['tokens']) === 0 && $digitalAnimal) {
-//
-//                    $currentWeek = Week::getCurrentWeekForAccount($account);
-//                    $newAnimal = new DigitalAnimal([
-//                        'account_id' => $account->id,
-//                        'points' => -$points,
-//                        'comment' => 'оригинал минтер продал токены и теперь их нет, отбор очков',
-//                        'query_param' => null
-//                    ]);
-//                    $newAnimal->save();
-//                    $currentWeek->animals()->save($newAnimal);
-//                    $currentWeek->increment('points', -$points);
-//                    $currentWeek->increment('total_points', -$points);
-//                    $digitalAnimal->delete();
-//                }
             }
         }
 

@@ -3,19 +3,18 @@
 namespace App\Nova;
 
 use Illuminate\Http\Request;
-use Laravel\Nova\Fields\Date;
 use Laravel\Nova\Fields\ID;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Http\Requests\NovaRequest;
 
-class DigitalAnimal extends Resource
+class TwitterPartner extends Resource
 {
     /**
      * The model the resource corresponds to.
      *
-     * @var class-string<\App\Models\DigitalAnimal>
+     * @var class-string<\App\Models\TwitterPartner>
      */
-    public static $model = \App\Models\DigitalAnimal::class;
+    public static $model = \App\Models\TwitterPartner::class;
 
     /**
      * The single value that should be used to represent the resource when being displayed.
@@ -23,8 +22,6 @@ class DigitalAnimal extends Resource
      * @var string
      */
     public static $title = 'id';
-    public static $perPageViaRelationship = 25;
-
 
     /**
      * The columns that should be searched.
@@ -34,6 +31,8 @@ class DigitalAnimal extends Resource
     public static $search = [
         'id',
     ];
+
+    public static $group = 'Partners';
 
     /**
      * Get the fields displayed by the resource.
@@ -45,10 +44,9 @@ class DigitalAnimal extends Resource
     {
         return [
             ID::make()->sortable(),
-            Text::make('comment'),
-            \Laravel\Nova\Fields\Number::make('points')->step(0.001)->default(0),
-            \Laravel\Nova\Fields\Number::make('claim_points')->step(0.001)->default(0)->sortable(),
-            Date::make('created_at')
+            Text::make('Name', 'name'),
+            Text::make('Partner twitter_id','twitter_id'),
+            \Laravel\Nova\Fields\Number::make('Points to reward','points')->min(0.001)->step(0.001)->default(0)->sortable(),
         ];
     }
 

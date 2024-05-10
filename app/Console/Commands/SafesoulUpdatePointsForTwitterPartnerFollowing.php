@@ -2,18 +2,18 @@
 
 namespace App\Console\Commands;
 
-use App\Traits\SafeSoulTrait;
+use App\Traits\TwitterPartnerTrait;
 use Illuminate\Console\Command;
 
-class SafesoulUpdatePointsForGitcoinPassportFollowing extends Command
+class SafesoulUpdatePointsForTwitterPartnerFollowing extends Command
 {
-    use SafeSoulTrait;
+    use TwitterPartnerTrait;
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'app:safesoul-update-points-for-gitcoin-passport-following';
+    protected $signature = 'app:safesoul-update-points-for-twitter-partner-following';
 
     /**
      * The console command description.
@@ -27,7 +27,7 @@ class SafesoulUpdatePointsForGitcoinPassportFollowing extends Command
      */
     public function handle()
     {
-        $this->updateGitcoinPointsForGitcoinTwitterFollowing();
+        $this->updatePointsForTwitterFollowing();
         $this->info('success');
     }
 }

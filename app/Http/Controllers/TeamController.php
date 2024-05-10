@@ -132,7 +132,6 @@ class TeamController extends Controller
         $slug = $request->slug;
         $team = Team::where('slug', $slug)->with(['creator', 'accounts'])->first();
         $period = $request->input('period', 'total');
-
         $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
         if (!$team) {
@@ -141,32 +140,29 @@ class TeamController extends Controller
 
         $currentUser = AuthHelper::auth($request);
 
-        // Calculate total points based on period
         foreach ($team->accounts as $account) {
             if ($period === 'week') {
-
                 $account->load(['weeks' => function ($query) use ($previousWeekNumber) {
                     $query->where('week_number', $previousWeekNumber)->where('active', false);
                 }]);
-                $account->total_points = $account->weeks->sum('total_points');
 
-            } // If 'total', total_points is already loaded
+                $account->total_points = $account->weeks->sum('total_points');
+            } else {
+
+//                $account->display_points = $account->total_points;
+            }
         }
 
-        // Sort accounts based on total_points in descending order
+        // Sort accounts based on display_points in descending order
         $sortedAccounts = $team->accounts->sortByDesc('total_points')->values();
-
 
         if (!$currentUser) {
             return response()->json([
-                'team' => $team->accounts->sortByDesc('total_points')->values(),
+                'team' => $team,
+                'sorted_accounts' => $sortedAccounts,
                 'total_members' => $sortedAccounts->count(),
                 'total_points' => $sortedAccounts->sum('total_points')
             ], 200);
-        }
-
-        if ($token = $request->bearerToken() && !$currentUser) {
-            return response()->json(['error' => 'token expired or wrong'], 403);
         }
 
         $friendIds = $currentUser ? $currentUser->friends()->pluck('id')->toArray() : [];

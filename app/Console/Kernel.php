@@ -81,8 +81,8 @@ class Kernel extends ConsoleKernel
         //Update friends
         //$schedule->command('app:update-twitter-followers-followings')->weeklyOn(5, '14:00');
 
-        //Update Points for GitcoinFollowing
-        $schedule->command('app:safesoul-update-points-for-gitcoin-passport-following')->weeklyOn(6, '13:00');
+        //Update Points for Partners Following
+        $schedule->command('app:safesoul-update-points-for-twitter-partner-following')->weeklyOn(6, '13:00');
 
         //Update GitcoinScore
         $schedule->command('app:update-gitcoin-score')->dailyAt('11:30');
@@ -92,6 +92,9 @@ class Kernel extends ConsoleKernel
 
         //Twitter Collab
         $schedule->command('app:update-twitter-collab-points')->weeklyOn(5, '12:30');
+
+        //Partner tokens
+        $schedule->command('app:partner-n-f-t-reward-points')->weeklyOn(5, '13:00');
     }
 
     /**

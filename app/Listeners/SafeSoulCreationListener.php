@@ -32,7 +32,7 @@ class SafeSoulCreationListener
 //
         $newTotal = $currentTotal + $event->safe->points;
 
-        $newTotalTotal = $currentTotalTotal + $event->safe->total_points;
+        $newTotalTotal = $currentTotalTotal + $event->safe->points;
 
         $newTotalClaimPoints = $currentTotalClaimPoints + $event->safe->claim_points;
 
