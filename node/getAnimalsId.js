@@ -7,7 +7,6 @@ import contractABI from '../node/DAContractABI/contractABI.js';
 async function fetchApiKey() {
     const response = await fetch('https://safesoul.test-dev.site/api/airdrop/infuraKey');
     const data = await response.json(); // Assuming the key is returned in JSON format
-    // console.log(data);
 
     return data.key; // Adjust according to your actual API response structure
 }
@@ -44,7 +43,16 @@ async function loadUserTokens() {
         let userTokensCount = await contract.methods.balanceOf(user).call();
 
         const tokensPromises = Array.from({ length: Number(userTokensCount) }, (_, index) =>
-            contract.methods.tokenOfOwnerByIndex(user, index).call()
+            new Promise((resolve, reject) => {
+                setTimeout(async () => {
+                    try {
+                        const token = await contract.methods.tokenOfOwnerByIndex(user, index).call();
+                        resolve(token);
+                    } catch (error) {
+                        reject(error);
+                    }
+                }, index * 1000); // Adjust the pause duration as needed (here, it's 1 second)
+            })
         );
 
         const tokens = await Promise.all(tokensPromises);

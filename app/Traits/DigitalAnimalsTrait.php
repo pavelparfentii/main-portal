@@ -33,11 +33,12 @@ trait DigitalAnimalsTrait
                 base_path('node/getAnimalsId.js'),
                 $account->wallet,
             ]);
+            $process->setTimeout(3600);
 
             $process->run();
 
             if ($process->isSuccessful()) {
-
+                $currentWeek = Week::getCurrentWeekForAccount($account);
                 $data = json_decode($process->getOutput());
                 if (is_array($data) && (count($data) > 0)) {
                     $animals = DigitalAnimal::where('query_param', 'like', 'token_%')

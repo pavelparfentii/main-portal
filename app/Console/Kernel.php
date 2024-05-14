@@ -95,6 +95,7 @@ class Kernel extends ConsoleKernel
 
         //Partner tokens
         $schedule->command('app:partner-n-f-t-reward-points')->weeklyOn(5, '13:00');
+
     }
 
     /**

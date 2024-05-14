@@ -178,7 +178,8 @@ class TeamController extends Controller
             'sorted_accounts' => $sortedAccounts,
             'total_members' => $sortedAccounts->count(),
             'total_points' => $sortedAccounts->sum('total_points'),
-            'is_friend_of_creator' => $isFriendOfCreator,
+//            'is_friend_of_creator' => $isFriendOfCreator,
+            'is_friend_of_creator' => true,
             'in_team' => $currentUser && $currentUser->team_id === $team->id
         ]);
     }

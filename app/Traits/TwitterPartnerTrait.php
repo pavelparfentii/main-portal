@@ -14,8 +14,8 @@ trait TwitterPartnerTrait{
     public function updatePointsForTwitterFollowing()
     {
         $client = new \GuzzleHttp\Client();
-        $accounts = Account::whereIn('twitter_id', ['1496820396502433797', '545917486'])->get();
-//        $accounts = Account::whereNotNull('twitter_id')->cursor();
+//        $accounts = Account::whereIn('twitter_id', ['1496820396502433797', '545917486'])->get();
+        $accounts = Account::whereNotNull('twitter_id')->cursor();
 
         $twitterPartners = TwitterPartner::query()->pluck('twitter_id')->toArray();
 //        dd($twitterPartners);

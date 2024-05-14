@@ -137,7 +137,6 @@ class AuthHelper
             $authId = $decodedToken['sub'] ?? null;
             $userWallet = strtolower($decodedToken['wallet_address'] ?? '');
             $cacheKey = 'wallet_check:' . $userWallet;
-            Log::info($cacheKey);
 
             return DB::transaction(function () use ($decodedToken, $userWallet, $authId, $cacheKey) {
                 $isHotWallet = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($userWallet) {
