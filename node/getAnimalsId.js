@@ -14,6 +14,7 @@ async function fetchApiKey() {
 async function getWeb3WithNextApiKey() {
     try {
         const nextApiKey = await fetchApiKey();
+
         return new web3(
             new web3.providers.HttpProvider(
                 "https://mainnet.infura.io/v3/" + nextApiKey
@@ -39,19 +40,26 @@ async function initializeContract() {
 
 async function loadUserTokens() {
     try {
-        let contract = await initializeContract(); // Await the contract initialization
-        let userTokensCount = await contract.methods.balanceOf(user).call();
+        let userTokensCount = await initializeContract().then(contract => contract.methods.balanceOf(user).call());
 
         const tokensPromises = Array.from({ length: Number(userTokensCount) }, (_, index) =>
-            new Promise((resolve, reject) => {
+            new Promise(async (resolve, reject) => {
                 setTimeout(async () => {
                     try {
+                        // Fetch a new API key for each token request
+                        const web3Instance = await getWeb3WithNextApiKey();
+
+                        const contract = new web3Instance.eth.Contract(
+                            contractABI,
+                            "0x25593A50255Bfb30eA027f6966417b0BF780401d"
+                        );
                         const token = await contract.methods.tokenOfOwnerByIndex(user, index).call();
                         resolve(token);
                     } catch (error) {
+                        console.error(`Failed to load token at index ${index}:`, error);
                         reject(error);
                     }
-                }, index * 1000); // Adjust the pause duration as needed (here, it's 1 second)
+                }, index * 200); // Delay each request by index * 1 second to avoid rate limits
             })
         );
 

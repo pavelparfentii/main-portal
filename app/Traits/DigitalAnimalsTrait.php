@@ -18,6 +18,51 @@ use Symfony\Component\Process\Process;
 trait DigitalAnimalsTrait
 {
 
+//    public function getAnimals()
+//    {
+//        $accounts = Account::whereNotNull('wallet')->where('wallet', '!=', '')->cursor();
+//
+//        $processes = [];
+//        foreach ($accounts as $account) {
+//            // Prepare the command to run your Node.js script with the wallet address
+//            $command = [
+//                'node',
+//                base_path('node/getAnimalsId.js'),
+//                $account->wallet
+//            ];
+//
+//            // Create a new process
+//            $process = new Process($command);
+//            $process->setTimeout(3600); // Optional: Set a timeout for long-running processes
+//
+//            // Start the process
+//            $process->start();
+//
+//            $processes[] = $process;
+//        }
+//
+//        // Wait for all processes to finish and handle their output
+//        foreach ($processes as $process) {
+//            $process->wait(function ($type, $buffer) use ($process) {
+//                if ($type === Process::ERR) {
+//                    // Handle errors (you might want to log these)
+//                    Log::error("Process error: {$buffer}");
+//                } else {
+//                    $this->handleProcessOutput($process, $buffer);
+//                }
+//            });
+//        }
+//    }
+//
+//    protected function handleProcessOutput(Process $process, $buffer)
+//    {
+//        $data = json_decode($buffer, true);
+//        if (is_array($data) && count($data) > 0) {
+//            var_dump($data);
+//            // Here, handle the data as needed, e.g., updating the database
+////            $this->updateDatabaseWithAnimalData($data);
+//        }
+//    }
 
 
     public function getAnimals()
@@ -757,49 +802,99 @@ trait DigitalAnimalsTrait
     public function getOriginalMinter()
     {
 
-//            $currentWeek = Week::getCurrentWeekForAccount($account);
-        for($i = 1; $i<8889; $i++){
-            $process = new Process([
-                'node',
-                base_path('node/getDigitalAnimalsOrigitalMinters.js'),
-                $i,
-            ]);
-            $process->run();
-            if (!$process->isSuccessful()) {
+        $originalMinters = OriginalMinter::query()->get();
 
-                continue;
-            }
+        foreach ($originalMinters as $minter) {
+            $account = Account::where('wallet', $minter->wallet)->first();
 
-            if ($process->isSuccessful()) {
-                $originalMinterOwner = json_decode($process->getOutput());
+            if($account){
+                $existingMinterParams = DigitalAnimal::where('query_param', 'like', 'minter_%')->where('account_id', $account->id)->first();
 
-                $existingMinterParams = DigitalAnimal::where('query_param', 'like', 'minter_%')->pluck('query_param')->toArray();
+                if (!$existingMinterParams) {
+                    $points = ConstantValues::original_minter;
+                    $currentWeek = Week::getCurrentWeekForAccount($account);
+                    $newAnimal = new DigitalAnimal([
+                        'account_id' => $account->id,
+                        'points' => $points,
+                        'comment' => "da token $minter->token original minter",
+                        'query_param' => 'minter_' . $minter->token
+                    ]);
 
-                $queryParam = 'minter_' . $i;
-
-                if($originalMinterOwner !== '0x0000000000000000000000000000000000000000' && !in_array($queryParam, $existingMinterParams)){
-                    $account = Account::where('wallet', $originalMinterOwner)->first();
-                    if($account) {
-                        $points = ConstantValues::original_minter;
-                        $currentWeek = Week::getCurrentWeekForAccount($account);
-                        $newAnimal = new DigitalAnimal([
-                            'account_id' => $account->id,
-                            'points' => $points,
-                            'comment' => "da token $i original minter",
-                            'query_param' => 'minter_' . $i
-                        ]);
-
-                        $currentWeek->animals()->save($newAnimal);
-                        $currentWeek->increment('points', $points);
-                        $currentWeek->increment('total_points', $points);
-                    }
-
-                }else{
-                    continue;
+                    $currentWeek->animals()->save($newAnimal);
+                    $currentWeek->increment('points', $points);
+                    $currentWeek->increment('total_points', $points);
                 }
             }
         }
+
     }
+
+
+//        if($originalMinterOwner !== '0x0000000000000000000000000000000000000000' && ){
+//            $account = Account::where('wallet', $originalMinterOwner)->first();
+//            if($account) {
+//                $points = ConstantValues::original_minter;
+//                $currentWeek = Week::getCurrentWeekForAccount($account);
+//                $newAnimal = new DigitalAnimal([
+//                    'account_id' => $account->id,
+//                    'points' => $points,
+//                    'comment' => "da token $i original minter",
+//                    'query_param' => 'minter_' . $i
+//                ]);
+//
+//                $currentWeek->animals()->save($newAnimal);
+//                $currentWeek->increment('points', $points);
+//                $currentWeek->increment('total_points', $points);
+//            }
+//
+//        }else{
+//            continue;
+//        }
+//
+//
+////            $currentWeek = Week::getCurrentWeekForAccount($account);
+//        for($i = 1; $i<8889; $i++){
+//            $process = new Process([
+//                'node',
+//                base_path('node/getDigitalAnimalsOrigitalMinters.js'),
+//                $i,
+//            ]);
+//            $process->run();
+//            if (!$process->isSuccessful()) {
+//
+//                continue;
+//            }
+//
+//            if ($process->isSuccessful()) {
+//                $originalMinterOwner = json_decode($process->getOutput());
+//
+//                $existingMinterParams = DigitalAnimal::where('query_param', 'like', 'minter_%')->pluck('query_param')->toArray();
+//
+//                $queryParam = 'minter_' . $i;
+//
+//                if($originalMinterOwner !== '0x0000000000000000000000000000000000000000' && !in_array($queryParam, $existingMinterParams)){
+//                    $account = Account::where('wallet', $originalMinterOwner)->first();
+//                    if($account) {
+//                        $points = ConstantValues::original_minter;
+//                        $currentWeek = Week::getCurrentWeekForAccount($account);
+//                        $newAnimal = new DigitalAnimal([
+//                            'account_id' => $account->id,
+//                            'points' => $points,
+//                            'comment' => "da token $i original minter",
+//                            'query_param' => 'minter_' . $i
+//                        ]);
+//
+//                        $currentWeek->animals()->save($newAnimal);
+//                        $currentWeek->increment('points', $points);
+//                        $currentWeek->increment('total_points', $points);
+//                    }
+//
+//                }else{
+//                    continue;
+//                }
+//            }
+//        }
+//    }
 
     public function getSaleTransactions()
     {
