@@ -58,7 +58,7 @@ class PointsController extends Controller
             $token = $request->bearerToken();
 
             if($token && !$account){
-                return response()->json(['error' => 'token expired or wrong'], 403);
+                return response()->json(['error' => 'token expired or wrong'], 401);
             }
 
             if ($account) {
@@ -123,7 +123,7 @@ class PointsController extends Controller
             $token = $request->bearerToken();
 
             if($token && !$account){
-                return response()->json(['error' => 'token expired or wrong'], 403);
+                return response()->json(['error' => 'token expired or wrong'], 401);
             }
 
             if ($account) {
@@ -264,7 +264,7 @@ class PointsController extends Controller
 
         }elseif ($token && !$account){
 
-            return response()->json(['error' => 'token expired or wrong'], 403);
+            return response()->json(['error' => 'token expired or wrong'], 401);
 
         } else{
             return response()->json([

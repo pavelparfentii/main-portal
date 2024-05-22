@@ -396,7 +396,7 @@ class TeamController extends Controller
             $token = $request->bearerToken();
 
             if($token && !$currentUser){
-                return response()->json(['error' => 'token expired or wrong'], 403);
+                return response()->json(['error' => 'token expired or wrong'], 401);
             }
 
             $teams = Team::with(['creator', 'accounts'])->get();
@@ -464,7 +464,7 @@ class TeamController extends Controller
             $token = $request->bearerToken();
 
             if($token && !$currentUser){
-                return response()->json(['error' => 'token expired or wrong'], 403);
+                return response()->json(['error' => 'token expired or wrong'], 401);
             }
 //            $currentWeekNumber = Carbon::now()->format('W-Y'); // Current week number in format 'W-Y'
             $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
