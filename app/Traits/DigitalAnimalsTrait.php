@@ -18,135 +18,136 @@ use Symfony\Component\Process\Process;
 trait DigitalAnimalsTrait
 {
 
-//    public function getAnimals()
-//    {
-//        $accounts = Account::whereNotNull('wallet')->where('wallet', '!=', '')->cursor();
-//
-//        $processes = [];
-//        foreach ($accounts as $account) {
-//            // Prepare the command to run your Node.js script with the wallet address
-//            $command = [
-//                'node',
-//                base_path('node/getAnimalsId.js'),
-//                $account->wallet
-//            ];
-//
-//            // Create a new process
-//            $process = new Process($command);
-//            $process->setTimeout(3600); // Optional: Set a timeout for long-running processes
-//
-//            // Start the process
-//            $process->start();
-//
-//            $processes[] = $process;
-//        }
-//
-//        // Wait for all processes to finish and handle their output
-//        foreach ($processes as $process) {
-//            $process->wait(function ($type, $buffer) use ($process) {
-//                if ($type === Process::ERR) {
-//                    // Handle errors (you might want to log these)
-//                    Log::error("Process error: {$buffer}");
-//                } else {
-//                    $this->handleProcessOutput($process, $buffer);
-//                }
-//            });
-//        }
-//    }
-//
-//    protected function handleProcessOutput(Process $process, $buffer)
-//    {
-//        $data = json_decode($buffer, true);
-//        if (is_array($data) && count($data) > 0) {
-//            var_dump($data);
-//            // Here, handle the data as needed, e.g., updating the database
-////            $this->updateDatabaseWithAnimalData($data);
-//        }
-//    }
-
-
     public function getAnimals()
     {
+        $accounts = Account::whereNotNull('wallet')->where('wallet', '!=', '')->get(); // Change cursor() to get() if feasible for chunking
 
-        $accounts =  Account::whereNotNull('wallet')
-            ->where('wallet', '!=', '')
-            ->cursor();
-//            ->whereIn('id', [7, 18])->get();
-        foreach ($accounts as $account) {
-            $process = new Process([
-                'node',
-                base_path('node/getAnimalsId.js'),
-                $account->wallet,
-            ]);
-            $process->setTimeout(3600);
+        $chunkSize = 10; // Process in chunks of 10 accounts
+        $accounts->chunk($chunkSize)->each(function ($chunkedAccounts) {
+            $processes = [];
 
-            $process->run();
+            foreach ($chunkedAccounts as $account) {
+                // Prepare the command to run your Node.js script with the wallet address
+                $command = [
+                    'node',
+                    base_path('node/getAnimalsId.js'),
+                    $account->wallet
+                ];
 
-            if ($process->isSuccessful()) {
-                $currentWeek = Week::getCurrentWeekForAccount($account);
-                $data = json_decode($process->getOutput());
-                if (is_array($data) && (count($data) > 0)) {
-                    $animals = DigitalAnimal::where('query_param', 'like', 'token_%')
-                        ->where('query_param', 'not like', 'token_owner_year_%')
-                        ->where('account_id', $account->id)->get();
+                // Create a new process
+                $process = new Process($command);
+                $process->setTimeout(360); // Optional: Set a timeout for long-running processes
 
-                    $existingQueryParams = $animals->pluck('query_param')->toArray();
-
-
-                    $deletedAnimalsCount = 0;
-
-                    // Check and delete animals that are not in the data
-                    foreach ($animals as $animal) {
-
-                        $numericToken = substr($animal->query_param, strlen('token_'));
-
-                        if (!in_array($numericToken, $data)) {
-                            var_dump('here');
-                            $newAnimal = new DigitalAnimal([
-                                'account_id' => $account->id,
-                                'points' => ConstantValues::animal_owner,
-                                'comment' => "Token ID $numericToken token no more owned",
-                                'query_param' => null // or some indication that it's for a sold token
-                            ]);
-                            $animal->delete();
-                            $deletedAnimalsCount++;
-                        }
-                    }
-//                    dd($deletedAnimalsCount);
-
-                    if ($deletedAnimalsCount > 0) {
-                        $currentWeek = Week::getCurrentWeekForAccount($account);
-                        $pointsToDeduct = $deletedAnimalsCount * ConstantValues::animal_owner;
-                        $currentWeek->decrement('points', $pointsToDeduct);
-                        $currentWeek->decrement('total_points', $pointsToDeduct);
-                    }
-
-                    foreach ($data as $token) {
-                        $this->info($token);
-                        $queryParam = 'token_' . $token;
-                        if (!in_array($queryParam, $existingQueryParams)) {
-
-                            $currentWeek = Week::getCurrentWeekForAccount($account);
-
-                            $newAnimal = new DigitalAnimal([
-                                'account_id'=>$account->id,
-                                'points' => ConstantValues::animal_owner,
-                                'comment' => 'Владение животным: ' . $token,
-                                'query_param' => $queryParam
-                            ]);
-                            $currentWeek->animals()->save($newAnimal);
-                            $currentWeek->increment('points', ConstantValues::animal_owner);
-                            $currentWeek->increment('total_points', ConstantValues::animal_owner);
-                        }
-                    }
-                }
-            } else {
-
-                Log::info('Process error:' . $process->getErrorOutput());
-
+                // Start the process
+                $process->start();
+                $processes[] = $process;
             }
+
+            // Wait for all processes in this chunk to finish
+            foreach ($processes as $process) {
+                $process->wait(function ($type, $buffer) use ($process) {
+                    if ($type === Process::ERR) {
+                        var_dump('here');
+                        Log::error("Process error: {$buffer}");
+                    } else {
+                        $this->handleProcessOutput($process, $buffer);
+                    }
+                });
+            }
+        });
+    }
+
+    protected function handleProcessOutput(Process $process, $buffer)
+    {
+        $data = json_decode($buffer, true);
+        if (is_array($data) && count($data) > 0) {
+            var_dump($data); // or implement further data handling logic here
         }
     }
+
+
+//    public function getAnimals()
+//    {
+//
+//        $accounts =  Account::whereNotNull('wallet')
+//            ->where('wallet', '!=', '')
+//            ->cursor();
+////            ->whereIn('id', [7, 18])->get();
+//        foreach ($accounts as $account) {
+//            $process = new Process([
+//                'node',
+//                base_path('node/getAnimalsId.js'),
+//                $account->wallet,
+//            ]);
+//            $process->setTimeout(3600);
+//
+//            $process->run();
+//
+//            if ($process->isSuccessful()) {
+//                $currentWeek = Week::getCurrentWeekForAccount($account);
+//                $data = json_decode($process->getOutput());
+//                if (is_array($data) && (count($data) > 0)) {
+//                    $animals = DigitalAnimal::where('query_param', 'like', 'token_%')
+//                        ->where('query_param', 'not like', 'token_owner_year_%')
+//                        ->where('account_id', $account->id)->get();
+//
+//                    $existingQueryParams = $animals->pluck('query_param')->toArray();
+//
+//
+//                    $deletedAnimalsCount = 0;
+//
+//                    // Check and delete animals that are not in the data
+//                    foreach ($animals as $animal) {
+//
+//                        $numericToken = substr($animal->query_param, strlen('token_'));
+//
+//                        if (!in_array($numericToken, $data)) {
+//                            var_dump('here');
+//                            $newAnimal = new DigitalAnimal([
+//                                'account_id' => $account->id,
+//                                'points' => ConstantValues::animal_owner,
+//                                'comment' => "Token ID $numericToken token no more owned",
+//                                'query_param' => null // or some indication that it's for a sold token
+//                            ]);
+//                            $animal->delete();
+//                            $deletedAnimalsCount++;
+//                        }
+//                    }
+////                    dd($deletedAnimalsCount);
+//
+//                    if ($deletedAnimalsCount > 0) {
+//                        $currentWeek = Week::getCurrentWeekForAccount($account);
+//                        $pointsToDeduct = $deletedAnimalsCount * ConstantValues::animal_owner;
+//                        $currentWeek->decrement('points', $pointsToDeduct);
+//                        $currentWeek->decrement('total_points', $pointsToDeduct);
+//                    }
+//
+//                    foreach ($data as $token) {
+//                        $this->info($token);
+//                        $queryParam = 'token_' . $token;
+//                        if (!in_array($queryParam, $existingQueryParams)) {
+//
+//                            $currentWeek = Week::getCurrentWeekForAccount($account);
+//
+//                            $newAnimal = new DigitalAnimal([
+//                                'account_id'=>$account->id,
+//                                'points' => ConstantValues::animal_owner,
+//                                'comment' => 'Владение животным: ' . $token,
+//                                'query_param' => $queryParam
+//                            ]);
+//                            $currentWeek->animals()->save($newAnimal);
+//                            $currentWeek->increment('points', ConstantValues::animal_owner);
+//                            $currentWeek->increment('total_points', ConstantValues::animal_owner);
+//                        }
+//                    }
+//                }
+//            } else {
+//
+//                Log::info('Process error:' . $process->getErrorOutput());
+//
+//            }
+//        }
+//    }
 
     public function lordPoints()
     {

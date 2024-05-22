@@ -59,7 +59,7 @@ async function loadUserTokens() {
                         console.error(`Failed to load token at index ${index}:`, error);
                         reject(error);
                     }
-                }, index * 200); // Delay each request by index * 1 second to avoid rate limits
+                }, index * 250); // Delay each request by index * 1 second to avoid rate limits
             })
         );
 

@@ -55,3 +55,10 @@ Route::get('testE', [\App\Http\Controllers\TemporaryController::class, 'testEndp
 Route::group(['middleware' => ['api.key']], function() {
     Route::get('/user/info', [\App\Http\Controllers\PointsController::class, 'getPersonalPointsForSafeSoul']);
 });
+
+Route::post('/telegram/initiate', [\App\Http\Controllers\TelegramController::class, 'initiateSession']);
+
+Route::group(['middleware'=>['custom.api']], function (){
+   Route::get('/telegram/points', [\App\Http\Controllers\TelegramController::class, 'getPoints']);
+   Route::post('/telegram/points/store', [\App\Http\Controllers\TelegramController::class, 'updatePoints']);
+});
