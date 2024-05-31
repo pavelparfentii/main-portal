@@ -96,6 +96,9 @@ class Kernel extends ConsoleKernel
         //Partner tokens
         $schedule->command('app:partner-n-f-t-reward-points')->weeklyOn(5, '13:00');
 
+        //Daily Farm Poins
+        $schedule->command('app:temporary-add-farm-points-daily')->dailyAt('23:30');
+
     }
 
     /**

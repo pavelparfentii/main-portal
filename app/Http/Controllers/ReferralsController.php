@@ -29,7 +29,6 @@ class ReferralsController extends Controller
                 if(!empty($account->twitter_id)){
                     return [
                         'id'=>$account->id,
-                        'twitter_id' => $account->twitter_id,
                         'twitter_name' => $account->twitter_name,
                         'twitter_avatar'=>$account->twitter_avatar,
                         'twitter_username'=>$account->twitter_username,
