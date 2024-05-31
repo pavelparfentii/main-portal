@@ -13,13 +13,14 @@ async function fetchApiKey() {
 
 const web3 = new Web3(`https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`);
 
-const contractAddress = '0x7f36182dee28c45de6072a34d29855bae76dbe2f';
+// const contractAddress = '0x7f36182dee28c45de6072a34d29855bae76dbe2f';
+const contractAddress = '0x797a48c46be32aafcedcfd3d8992493d8a1f256b';
 const contract = new web3.eth.Contract(contractABI, contractAddress);
 
 async function fetchEventsLastHour() {
     try {
         const latestBlockNumber = await web3.eth.getBlockNumber();
-        const blocksPerHour = BigInt(300); // Approximate blocks per hour, adjust based on actual block time
+        const blocksPerHour = BigInt(5000); // Approximate blocks per hour, adjust based on actual block time
         const fromBlock = BigInt(latestBlockNumber) - blocksPerHour;
         const toBlock = 'latest';
 

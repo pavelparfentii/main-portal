@@ -27,7 +27,7 @@ class DigitalAnimalsOwnersPointsCommand extends Command
      */
     public function handle()
     {
-        $this->getAnimals();
+        $this->getOwners();
         $this->info('success');
     }
 }

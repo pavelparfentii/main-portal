@@ -50,6 +50,8 @@ Route::post('/points/claim', [\App\Http\Controllers\ClaimController::class, 'cla
 
 Route::post('/invite/account', [\App\Http\Controllers\InviteController::class, 'inviteUser']);
 
+Route::get('/referrals/list', [\App\Http\Controllers\ReferralsController::class, 'getReferralsData']);
+
 Route::get('testE', [\App\Http\Controllers\TemporaryController::class, 'testEndp']);
 
 Route::group(['middleware' => ['api.key']], function() {

@@ -50,7 +50,7 @@ class TelegramController extends Controller
         if(isset($telegram)){
             return response()->json($telegram);
         }else{
-            return response()->json(['message' => 'not found'], 404);
+            return response()->json(['message' => 'not found'], 204);
         }
 
 

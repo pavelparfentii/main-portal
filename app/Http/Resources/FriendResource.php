@@ -19,6 +19,7 @@ class FriendResource extends JsonResource
 //            'wallet' => $this->wallet,
             'twitter_username' => $this->twitter_username,
             'total_points' => $this->total_points,
+            'week_points' => $this->week_points,
             'twitter_name' => $this->twitter_name,
             'twitter_avatar' => $this->twitter_avatar,
             'rank'=>$this->rank,

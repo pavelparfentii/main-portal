@@ -149,6 +149,130 @@ trait DigitalAnimalsTrait
 //        }
 //    }
 
+    public function getOwners()
+    {
+        $client = new \GuzzleHttp\Client();
+
+        $next_cursor = null;
+
+        $alchemyApi = env('ALCHEMY_API_KEY');
+
+        $contractAddress = '0x25593A50255Bfb30eA027f6966417b0BF780401d';
+
+        do{
+            try {
+                $url = "https://eth-mainnet.g.alchemy.com/nft/v3/$alchemyApi/getOwnersForContract?contractAddress=$contractAddress&withTokenBalances=true";
+//                sleep(5);
+                if ($next_cursor !== null) {
+//                    sleep(5);
+                    $url .= "&pageKey=$next_cursor";
+                }
+
+                $response = $client->request('GET', $url , [
+                    'headers' => [
+                        'accept' => 'application/json',
+                    ],
+                ]);
+
+                $responseBody = json_decode($response->getBody(), true);
+
+                if (isset($responseBody['owners'])) {
+                    $owners = $responseBody['owners'];
+                    foreach ($owners as $owner){
+                        if(isset($owner['ownerAddress'])){
+                            $wallet = strtolower($owner['ownerAddress']);
+
+                            $account =  Account::whereNotNull('wallet')
+                                        ->where('wallet', $wallet)
+                                        ->first();
+//                            $currentWeek = Week::getCurrentWeekForAccount($account);
+
+
+                            if($account){
+                                if(isset($owner['tokenBalances']) && count($owner['tokenBalances']) > 0){
+                                    $tokenBalances = $owner['tokenBalances'];
+                                    $data = [];
+
+
+                                    foreach ($tokenBalances as $token){
+                                        $data[] = $token['tokenId'];
+                                    }
+                                    //
+                                    if (is_array($data) && (count($data) > 0)) {
+                                        $animals = DigitalAnimal::where('query_param', 'like', 'token_%')
+                                            ->where('query_param', 'not like', 'token_owner_year_%')
+                                            ->where('account_id', $account->id)->get();
+
+                                        $existingQueryParams = $animals->pluck('query_param')->toArray();
+
+                                        var_dump('here');
+                                        $deletedAnimalsCount = 0;
+
+                                        // Check and delete animals that are not in the data
+                                        foreach ($animals as $animal) {
+
+                                            $numericToken = substr($animal->query_param, strlen('token_'));
+
+                                            if (!in_array($numericToken, $data)) {
+                                                var_dump('here');
+                                                $newAnimal = new DigitalAnimal([
+                                                    'account_id' => $account->id,
+                                                    'points' => ConstantValues::animal_owner,
+                                                    'comment' => "Token ID $numericToken token no more owned",
+                                                    'query_param' => null // or some indication that it's for a sold token
+                                                ]);
+                                                $animal->delete();
+                                                $deletedAnimalsCount++;
+                                            }
+                                        }
+//                    dd($deletedAnimalsCount);
+
+                                        if ($deletedAnimalsCount > 0) {
+                                            $currentWeek = Week::getCurrentWeekForAccount($account);
+                                            $pointsToDeduct = $deletedAnimalsCount * ConstantValues::animal_owner;
+                                            $currentWeek->decrement('points', $pointsToDeduct);
+                                            $currentWeek->decrement('total_points', $pointsToDeduct);
+                                        }
+
+                                        foreach ($data as $token) {
+                                            $this->info($token);
+                                            $queryParam = 'token_' . $token;
+                                            if (!in_array($queryParam, $existingQueryParams)) {
+
+                                                $currentWeek = Week::getCurrentWeekForAccount($account);
+
+                                                $newAnimal = new DigitalAnimal([
+                                                    'account_id'=>$account->id,
+                                                    'points' => ConstantValues::animal_owner,
+                                                    'comment' => 'Владение животным: ' . $token,
+                                                    'query_param' => $queryParam
+                                                ]);
+                                                $currentWeek->animals()->save($newAnimal);
+                                                $currentWeek->increment('points', ConstantValues::animal_owner);
+                                                $currentWeek->increment('total_points', ConstantValues::animal_owner);
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+
+                        }
+                    }
+                }
+
+
+                $next_cursor = isset($responseBody['pageKey']) && ($responseBody['pageKey'] !== '0') ? $responseBody['pageKey'] : null;
+            }catch (\GuzzleHttp\Exception\GuzzleException $e){
+                $this->error("An error occurred while fetching data: " . $e->getMessage());
+                // Optionally, break or continue depending on how you want to handle failures
+                break;
+            }
+
+        }while($next_cursor);
+
+    }
+
     public function lordPoints()
     {
         $ids = DB::table('digital_animals')

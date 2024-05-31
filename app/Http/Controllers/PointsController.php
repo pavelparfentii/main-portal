@@ -32,11 +32,14 @@ class PointsController extends Controller
             $loadRelations = ['discordRoles', 'friends', 'team.accounts'];
             // If the current user does not have a twitter_username, adjust the relations to be loaded
 
-//            $friendIds = $account->friends->pluck('account_friend.friend_id')->toArray();
-
             $topAccounts = Account::with($loadRelations)
-                ->select('id', 'wallet', 'twitter_username', 'total_points', 'twitter_name', 'twitter_avatar', 'team_id')
-                ->orderByDesc('total_points')
+                ->leftJoin('weeks', function ($join) {
+                    $join->on('accounts.id', '=', 'weeks.account_id')
+                        ->where('weeks.week_number', '=', Carbon::now()->subWeek()->format('W-Y'))
+                        ->where('weeks.active', '=', false);
+                })
+                ->select('accounts.id', 'accounts.wallet', 'accounts.twitter_username', 'accounts.total_points', 'weeks.total_points as week_points', 'accounts.twitter_name', 'accounts.twitter_avatar', 'accounts.team_id')
+                ->orderByDesc('accounts.total_points')
                 ->take(100)
                 ->get();
 
@@ -63,6 +66,14 @@ class PointsController extends Controller
 
             if ($account) {
                 Week::getCurrentWeekForAccount($account);
+
+                $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+                $currentUserWeekPoints = $account->weeks()
+                        ->where('week_number', $previousWeekNumber)
+                        ->where('active', false)
+                        ->first()
+                        ->total_points ?? 0;
+
                 $userRank = DB::table('accounts')
                         ->where('total_points', '>', $account->total_points)
                         ->count() + 1;
@@ -71,11 +82,9 @@ class PointsController extends Controller
                     $currentUserForTop = clone $account;
                     $currentUserForTop->rank = $userRank;
                     $currentUserForTop->current_user = true;
+                    $currentUserForTop->week_points = $currentUserWeekPoints;
                     $currentUserForTop->friend = false; // The user is not a friend to themselves
-                    // if (empty($account->twitter_username)) {
-                    //     $loadRelations = []; // Adjust this based on what you still want to load, if anything
 
-                    // }
                     $currentUserForTop->load($loadRelations);
 
                     $topAccounts->prepend($currentUserForTop);
@@ -95,14 +104,20 @@ class PointsController extends Controller
             $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
             $topAccounts = Account::with($loadRelations)
-                ->join('weeks', function ($join) use ($previousWeekNumber) {
+                ->leftJoin('weeks', function ($join) use ($previousWeekNumber) {
                     $join->on('accounts.id', '=', 'weeks.account_id')
-                        ->where('weeks.week_number', '=', $previousWeekNumber) // Тільки записи для поточного тижня
-                        ->where('weeks.active', '=', false) // Враховуємо тільки активні записи, якщо потрібно
-                        ->where('weeks.total_points', '>', 0);
+                        ->where('weeks.week_number', '=', $previousWeekNumber)
+                        ->where('weeks.active', '=', false);
                 })
-                ->select('accounts.id', 'accounts.wallet', 'accounts.twitter_username', 'weeks.total_points', 'accounts.twitter_name', 'accounts.twitter_avatar', 'accounts.team_id')
-                ->orderByDesc('weeks.total_points') // Сортування за очками поточного тижня
+                ->select('accounts.id', 'accounts.wallet',
+                    'accounts.twitter_username',
+                    'accounts.total_points',
+                    'weeks.total_points as week_points',
+                    'accounts.twitter_name',
+                    'accounts.twitter_avatar',
+                    'accounts.team_id')
+                ->where('weeks.total_points', '>', 0)
+                ->orderByDesc('week_points')
                 ->take(100)
                 ->get();
 
@@ -127,8 +142,7 @@ class PointsController extends Controller
             }
 
             if ($account) {
-                // Визначаємо номер поточного тижня
-//                $currentWeekNumber = Carbon::now()->format('W-Y');
+
                 $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
                 // Отримуємо очки користувача за поточний тиждень
                 $currentUserWeekPoints = $account->weeks()
@@ -149,7 +163,8 @@ class PointsController extends Controller
 //                dd($userRankBasedOnWeekPoints);
                 if ($userRankBasedOnWeekPoints > 1) {
                     $currentUserForTop = clone $account;
-                    $currentUserForTop->total_points = $currentUserWeekPoints; // Використовуємо очки за тиждень
+                    $currentUserForTop->total_points = $account->total_points; // Використовуємо очки за тиждень
+                    $currentUserForTop->week_points = $currentUserWeekPoints;
                     $currentUserForTop->rank = $userRankBasedOnWeekPoints;
                     $currentUserForTop->current_user = true;
                     $currentUserForTop->friend = false;

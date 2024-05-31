@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Events\DigitalAnimalsCreationEvent;
+use App\Events\FarmingNFTUpdated;
 use App\Events\SafeSoulCreationEvent;
 use App\Events\TwitterCreationEvent;
 use App\Listeners\DigitalAnimalsListener;
 use App\Listeners\SafeSoulCreationListener;
 use App\Listeners\TwitterCreationListener;
+use App\Listeners\UpdateAccountFarmingPoints;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -32,7 +34,11 @@ class EventServiceProvider extends ServiceProvider
 //        ],
         DigitalAnimalsCreationEvent::class =>[
             DigitalAnimalsListener::class
+        ],
+        FarmingNFTUpdated::class => [
+            UpdateAccountFarmingPoints::class
         ]
+
     ];
 
     /**

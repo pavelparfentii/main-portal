@@ -413,6 +413,11 @@ class Account extends Model
         return $this->hasMany(Invite::class, 'whom_invited');
     }
 
+    public function invitedMe()
+    {
+        return $this->invitesReceived()->with('invitedBy');
+    }
+
     public function friends()
     {
         return $this->belongsToMany(Account::class, 'account_friend', 'account_id', 'friend_id')->withTimestamps();

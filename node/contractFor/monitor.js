@@ -1,10 +1,11 @@
 import Web3 from 'web3';
 
-const contractAddress = process.argv[2]; // The third element in process.argv is the contract address
+const contractAddress = process.argv[3]; // The third element in process.argv is the contract address
+const infura = process.argv[2]; // The third element in process.argv is the contract address
 
-console.log(`Started monitoring contract: ${contractAddress}`);
+//console.log(`Started monitoring contract: ${contractAddress}`);
 
-const web3 = new Web3(new Web3.providers.WebsocketProvider("wss://mainnet.infura.io/ws/v3/fc9b486410e24f248a364a5c37818ef3"));
+const web3 = new Web3(new Web3.providers.WebsocketProvider(`wss://mainnet.infura.io/ws/v3/${infura}`));
 
 // ABI for the ERC-721 Transfer event
 const erc721TransferABI = [
@@ -36,21 +37,31 @@ const contract = new web3.eth.Contract(erc721TransferABI, contractAddress);
 
 web3.eth.net.isListening()
     .then(() => {
-        console.log('Successfully connected to WebSocket provider');
+        //console.log('Successfully connected to WebSocket provider');
 
         // Subscribe to Transfer events for the NFT contract
         contract.events.Transfer({
             fromBlock: 'latest'
         })
             .on('data', event => {
-                console.log('Transfer event:', event.returnValues);
+                // console.log(contractAddress);
+                // console.log('Transfer event:', event.returnValues);
                 // Accessing specific event return values
-                const { from, to, tokenId } = event.returnValues;
-                console.log(`NFT Transfer from ${from} to ${to} with tokenId ${tokenId}`);
+                const { from, to, tokenId} = event.returnValues;
+
+                const output = {
+                    contractAddress: contractAddress,
+                    from: from,
+                    to: to,
+                    token: Number(tokenId),
+
+                    // This is now a single concatenated string of messages
+                };
+                // console.log(output);
+                console.log(JSON.stringify(output));
+
+                // console.log(`NFT Transfer from ${from} to ${to} with tokenId ${tokenId}`);
                 // You can add additional processing here
-            })
-            .on('error', err => {
-                console.error('Error:', err);
             });
     })
     .catch(e => {

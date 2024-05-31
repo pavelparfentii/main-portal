@@ -19,6 +19,7 @@ class AccountResource extends JsonResource
         return [
             'id' => $this->id,
 //            'wallet' => $this->wallet,
+            'daily_farm'=>$this->daily_farm,
             'twitter_username' => $this->twitter_username,
             'total_points' => $this->total_points,
             'week_points' =>$this->week_points,

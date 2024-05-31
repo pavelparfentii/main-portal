@@ -23,6 +23,11 @@ class Invite extends Model
         return $this->belongsTo(Account::class, 'whom_invited');
     }
 
+    public function invitedBy()
+    {
+        return $this->belongsTo(Account::class, 'invited_by');
+    }
+
     public function code(): BelongsTo
     {
         return $this->belongsTo(Code::class, 'code_id');
