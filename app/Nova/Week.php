@@ -71,6 +71,8 @@ class Week extends Resource
             Number::make('total_points')->min(0.001)->step(0.001)->sortable(),
             Number::make('points')->min(0.001)->step(0.001)->sortable(),
 
+            Number::make('farm_points')->min(0.001)->step(0.001)->default(0),
+
             Number::make('claim_points')->min(0.001)->step(0.001)->sortable(),
             Number::make('invite_points')->min(0.001)->step(0.001)->sortable(),
             Number::make('claimed_points')->min(0.001)->step(0.001)->sortable(),

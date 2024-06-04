@@ -32,6 +32,7 @@ class TemporaryAddFarmPointsDaily extends Command
 
        foreach ($accounts as $account){
            $currentWeek = Week::getCurrentWeekForAccount($account);
+           $currentWeek->increment('farm_points', $account->daily_farm);
            $currentWeek->increment('total_points', $account->daily_farm);
        }
     }

@@ -58,11 +58,9 @@ class ReferralsController extends Controller
         }
 
         return response()->json([
-            'data' => [
                 'referrals' => $collectReferral,
                 'invited_me' => $invitedMe,
                 'invited'=>$invitedCount
-            ]
         ]);
 
     }

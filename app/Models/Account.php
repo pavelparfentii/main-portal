@@ -495,6 +495,11 @@ class Account extends Model
         return $twitterAction;
     }
 
+    public function dailyFarm()
+    {
+        return $this->hasOne(AccountFarm::class);
+    }
+
 
 
 //    public function getIsFriendAttribute()

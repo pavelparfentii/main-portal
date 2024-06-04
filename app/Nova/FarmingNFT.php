@@ -31,8 +31,10 @@ class FarmingNFT extends Resource
      * @var array
      */
     public static $search = [
-        'id',
+        'id', 'holder'
     ];
+
+    public static $group = 'Farming';
 
     /**
      * Get the fields displayed by the resource.

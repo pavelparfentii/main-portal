@@ -194,6 +194,9 @@ class PointsController extends Controller
         $token = $request->bearerToken();
 
         if ($account) {
+
+            $this->updateFarmPoints($account);
+
             Week::getCurrentWeekForAccount($account);
             $userRank = DB::table('accounts')
                     ->where('total_points', '>', $account->total_points)
@@ -244,6 +247,7 @@ class PointsController extends Controller
             $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
             $accountResourceArray['invite_code']=$inviteCode;
             $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
+            $accountResourceArray['total_points']=$account->dailyFarm->total_points;
             // }
 
             $claimed = $account->weeks()
@@ -340,6 +344,34 @@ class PointsController extends Controller
                 'total_points'=>0.000
             ]);
         }
+    }
+
+    private function updateFarmPoints($account)
+    {
+        $accountDailyFarm = DB::table('account_farms')
+            ->where('account_id', $account->id)
+            ->select('daily_farm', 'daily_farm_last_update')
+            ->first();
+        $dailyFarmRate = $accountDailyFarm->daily_farm;
+        $lastUpdated = $accountDailyFarm->daily_farm_last_update;
+
+
+        $now = Carbon::now();
+        $lastUpdatedTime = Carbon::parse($lastUpdated);
+
+        $timeDifferenceInSeconds = $now->diffInSeconds($lastUpdatedTime);
+
+        $pointsPerSecond = $dailyFarmRate / (24 * 60 * 60);
+
+        $earnedPoints = $pointsPerSecond * $timeDifferenceInSeconds;
+
+        DB::table('account_farms')
+            ->where('account_id', $account->id)
+            ->update(['daily_farm_last_update' => now()]);
+        DB::table('account_farms')
+            ->where('account_id', $account->id)
+            ->increment('total_points', $earnedPoints);
+
     }
 
 

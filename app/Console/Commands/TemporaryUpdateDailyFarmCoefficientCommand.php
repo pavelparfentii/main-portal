@@ -38,9 +38,23 @@ class TemporaryUpdateDailyFarmCoefficientCommand extends Command
                     ->where('holder', $account->wallet)
                     ->sum('farm_points_daily_total');
 
-                DB::table('accounts')
-                    ->where('wallet', $account->wallet)
-                    ->update(['daily_farm' => $farmPoints]);
+                DB::table('account_farms')->insert([
+                    'account_id'=>$account->id,
+                    'daily_farm'=>$farmPoints,
+                    'daily_farm_last_update'=>now(),
+                    'total_points'=>$account->total_points,
+                ]);
+
+//                DB::table('accounts')
+//                    ->where('wallet', $account->wallet)
+//                    ->update(['daily_farm' => $farmPoints]);
+            }else{
+                DB::table('account_farms')->insert([
+                    'account_id'=>$account->id,
+                    'daily_farm'=>0.0,
+                    'daily_farm_last_update'=>now(),
+                    'total_points'=>$account->total_points,
+                ]);
             }
         }
         $this->info('success');

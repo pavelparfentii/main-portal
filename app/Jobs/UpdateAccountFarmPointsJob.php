@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -34,21 +35,43 @@ class UpdateAccountFarmPointsJob implements ShouldQueue
             ->where('holder', $this->holder)
             ->sum('farm_points_daily_total');
 
-
-        $accountExists = DB::table('accounts')
+        $account = DB::table('accounts')
             ->where('wallet', $this->holder)
-            ->exists();
+            ->first(['id']);
 
-        if ($accountExists) {
-            DB::table('accounts')
-                ->where('wallet', $this->holder)
-                ->update(['daily_farm' => $farmPoints]);
+        if($account){
+            $this->updateFarmPoints($account, $farmPoints);
         }
 
-//        $totalPoints = FarmingNFT::where('holder', $this->holder)->sum('farm_points_daily_total');
-//        $account = Account::where('wallet', $this->holder)->first();
-//        if ($account) {
-//            $account->update(['farm_points_daily_total' => $totalPoints]);
-//        }
+    }
+
+    private function updateFarmPoints($account, $farmPoints)
+    {
+        $accountDailyFarm = DB::table('account_farms')
+            ->where('account_id', $account->id)
+            ->select('daily_farm', 'daily_farm_last_update')
+            ->first();
+        $dailyFarmRate = $accountDailyFarm->daily_farm;
+        $lastUpdated = $accountDailyFarm->daily_farm_last_update;
+
+
+        $now = Carbon::now();
+        $lastUpdatedTime = Carbon::parse($lastUpdated);
+
+        $timeDifferenceInSeconds = $now->diffInSeconds($lastUpdatedTime);
+
+        $pointsPerSecond = $dailyFarmRate / (24 * 60 * 60);
+
+        $earnedPoints = $pointsPerSecond * $timeDifferenceInSeconds;
+
+
+        DB::table('account_farms')
+            ->where('account_id', $account->id)
+            ->increment('total_points', $earnedPoints);
+
+        DB::table('account_farms')
+            ->where('account_id', $account->id)
+            ->update(['daily_farm_last_update' => now(), 'daily_farm' => $farmPoints]);
+
     }
 }
