@@ -163,7 +163,7 @@ class MonitorContracts extends Command
             ->where('id', $loser->id)
             ->decrement('token_balance', 1);
 
-        FarmingNFTUpdated::dispatch($loser->id);
+        FarmingNFTUpdated::dispatch($loser->id, null);
 
 //        $accountExists = DB::table('accounts')
 //            ->where('wallet', $loser->holder)
@@ -226,7 +226,7 @@ class MonitorContracts extends Command
                 'item_points_daily' => $itemPointsDaily,
                 'farm_points_daily_total' => $itemPointsDaily,
             ]);
-            FarmingNFTUpdated::dispatch($winnerId);
+            FarmingNFTUpdated::dispatch($winnerId, null);
 
 //            Log::debug(json_encode($winner));
 //            if($winner){
@@ -250,7 +250,7 @@ class MonitorContracts extends Command
                     'farm_points_daily_total' => round($winner->token_balance * $itemPointsDaily, 3),
                 ]);
 
-            FarmingNFTUpdated::dispatch($winner->id);
+            FarmingNFTUpdated::dispatch($winner->id, null);
 
 //            Log::debug(json_encode($winner));
 //            if($winner && $winner->id){

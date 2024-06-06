@@ -23,7 +23,7 @@ return new class extends Migration
             $table->foreignId('account_id')->nullable()->constrained('accounts')->onDelete('cascade');
             $table->decimal('daily_farm', 10, 3)->default(0);
             $table->dateTime('daily_farm_last_update')->nullable();
-            $table->decimal('total_points', 10, 3)->default(0);
+            $table->decimal('total_points', 13, 6)->default(0);
 
             $table->timestamps();
         });

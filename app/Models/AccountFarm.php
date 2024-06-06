@@ -11,7 +11,7 @@ class AccountFarm extends Model
 
     protected $guarded = false;
 
-    protected $casts = ['token_balance_last_update'=> 'datetime'];
+    protected $casts = ['token_balance_last_update'=> 'datetime', 'lord_points_applied'=>'boolean'];
 
     public function account()
     {

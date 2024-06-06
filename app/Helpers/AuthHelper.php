@@ -162,6 +162,7 @@ class AuthHelper
                         'discord_id' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null,
                         'auth_id'=>$authId,
                         'isNeedShow' => false,
+                        'email'=>$decodedToken['email'] ?? null
 //                        'discord_name' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['user_name'] : null
 
                     ]);
@@ -173,8 +174,14 @@ class AuthHelper
 
                     }
 
+
                     Week::getCurrentWeekForAccount($account);
                 }
+                if(!is_null($decodedToken['email'])){
+                    $email = $decodedToken['email'] ?? null;
+                    $account->update(['twitter_avatar' => $email]);
+                }
+
                 $account->update(['wallet'=>$userWallet]);
 
                 return $account;

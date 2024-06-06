@@ -8,6 +8,7 @@ use App\Models\FarmingNFT;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UpdateAccountFarmingPoints
 {
@@ -24,7 +25,15 @@ class UpdateAccountFarmingPoints
      */
     public function handle(FarmingNFTUpdated $event): void
     {
-        $farmingNFT = FarmingNFT::where('id', $event->farmingNFTId)->first();
+        Log::info('Handling FarmingNFTUpdated event');
+        Log::info('farmingNFTId: ' . $event->farmingNFTId);
+        Log::info('accountId: ' . $event->accountId);
+        if(isset($event->farmingNFTId)){
+            $farmingNFT = FarmingNFT::where('id', $event->farmingNFTId)->first();
+        }else{
+            $farmingNFT = null;
+        }
+
 
         if($farmingNFT){
             $accountExists = DB::table('accounts')
@@ -55,7 +64,9 @@ class UpdateAccountFarmingPoints
                     ]);
             }
 
-            UpdateAccountFarmPointsJob::dispatch($farmingNFT->holder)->onQueue('farm');
+            UpdateAccountFarmPointsJob::dispatch($farmingNFT->holder, null)->onQueue('farm');
+        }else{
+            UpdateAccountFarmPointsJob::dispatch(null, $event->accountId)->onQueue('farm');
         }
 
     }

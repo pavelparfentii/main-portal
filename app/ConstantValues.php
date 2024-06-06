@@ -73,6 +73,10 @@ class ConstantValues
     const balance_10k = 20.000;
     const balance_50k = 50.000;
 
+    //Farm
+
+    const lord_farm = 20.00;
+
 
 
 }

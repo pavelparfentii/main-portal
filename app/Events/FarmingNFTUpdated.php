@@ -16,10 +16,12 @@ class FarmingNFTUpdated
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $farmingNFTId;
+    public $accountId;
 
-    public function __construct($farmingNFTId)
+    public function __construct($farmingNFTId =null, $accountId = null)
     {
         $this->farmingNFTId = $farmingNFTId;
+        $this->accountId = $accountId;
     }
 
 }

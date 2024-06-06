@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\ConstantValues;
 use App\Models\Account;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -27,36 +28,65 @@ class TemporaryUpdateDailyFarmCoefficientCommand extends Command
      */
     public function handle()
     {
-        $accounts = Account::whereNotNull('wallet')->cursor();
+        $accounts = Account::cursor();
 
-        foreach ($accounts as $account){
-            $accountExists = DB::table('farming_n_f_t_s')
+        DB::table('account_farms')->truncate();
+
+        foreach ($accounts as $account) {
+
+            $accountExistsNFT = DB::table('farming_n_f_t_s')
                 ->where('holder', $account->wallet)
                 ->exists();
-            if($accountExists){
-                $farmPoints = DB::table('farming_n_f_t_s')
+
+            $lordPoints = DB::table('farming_n_f_t_s')
+                ->where('holder', $account->wallet)
+                ->whereNull('token_id')
+                ->where('token_balance', '>=', 20)
+                ->exists();
+
+
+            $accountExistsDiscord = DB::table('farming_discords')
+                ->where('discord_id', $account->discord_id)
+                ->exists();
+
+
+            $farmPoints = 0;
+
+
+            if ($accountExistsNFT) {
+                $farmPointsNFT = DB::table('farming_n_f_t_s')
                     ->where('holder', $account->wallet)
                     ->sum('farm_points_daily_total');
-
-                DB::table('account_farms')->insert([
-                    'account_id'=>$account->id,
-                    'daily_farm'=>$farmPoints,
-                    'daily_farm_last_update'=>now(),
-                    'total_points'=>$account->total_points,
-                ]);
-
-//                DB::table('accounts')
-//                    ->where('wallet', $account->wallet)
-//                    ->update(['daily_farm' => $farmPoints]);
-            }else{
-                DB::table('account_farms')->insert([
-                    'account_id'=>$account->id,
-                    'daily_farm'=>0.0,
-                    'daily_farm_last_update'=>now(),
-                    'total_points'=>$account->total_points,
-                ]);
+                $farmPoints += $farmPointsNFT;
             }
+
+
+            if ($accountExistsDiscord) {
+                $farmPointsDiscord = DB::table('farming_discords')
+                    ->where('discord_id', $account->discord_id)
+                    ->sum('item_points_daily');
+                $farmPoints += $farmPointsDiscord;
+            }
+
+            if($lordPoints){
+                $farmPointsLord = DB::table('farming_roles')
+                    ->where('name', 'Lord')
+                    ->value('daily_farm');
+                $farmPoints += $farmPointsLord;
+
+            }
+
+
+            DB::table('account_farms')->insert([
+                'account_id' => $account->id,
+                'daily_farm' => $farmPoints,
+                'daily_farm_last_update' => now(),
+                'total_points' => $account->total_points,
+                'lord_points_applied'=> (bool)$lordPoints
+            ]);
+
         }
         $this->info('success');
+
     }
 }

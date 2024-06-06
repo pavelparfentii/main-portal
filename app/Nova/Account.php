@@ -61,7 +61,11 @@ class Account extends Resource
             Text::make(__('email'), 'email')->sortable(),
             Number::make('total_points')->min(0.001)->step(0.001)->sortable(),
 
-            Number::make('daily_farm')->min(0.001)->step(0.001)->sortable(),
+//            Number::make('daily_farm')->min(0.001)->step(0.001)->sortable(),
+
+            Number::make('Daily Farm', function () {
+                return $this->dailyFarm->daily_farm ?? 0;  // Display 0 if accountFarm or daily_farm is null
+            })->min(0.001)->step(0.001)->sortable(),
 
             Number::make('claim_points', function () use($previousWeek){
                 $claim_points = $this->weeks()

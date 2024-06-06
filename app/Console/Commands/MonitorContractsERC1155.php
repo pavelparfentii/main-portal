@@ -152,7 +152,7 @@ class MonitorContractsERC1155 extends Command
                     ->where('token_id', $tokenId)
                     ->decrement('token_balance', $tokenAmount);
 
-                FarmingNFTUpdated::dispatch($loser->id);
+                FarmingNFTUpdated::dispatch($loser->id, null);
 
 //                $loser = DB::table('farming_n_f_t_s')
 //                    ->where('id', $loser->id)
@@ -211,7 +211,7 @@ class MonitorContractsERC1155 extends Command
                         'farm_points_daily_total' => $itemPointsDaily,
                         'token_id'=>$tokenId
                     ]);
-                    FarmingNFTUpdated::dispatch($winnerId);
+                    FarmingNFTUpdated::dispatch($winnerId, null);
 
                 } else {
                     DB::table('farming_n_f_t_s')
@@ -230,7 +230,7 @@ class MonitorContractsERC1155 extends Command
                             'item_points_daily' => $itemPointsDaily,
                             'farm_points_daily_total' => round($winner->token_balance * $itemPointsDaily, 3),
                         ]);
-                    FarmingNFTUpdated::dispatch($winner->id);
+                    FarmingNFTUpdated::dispatch($winner->id, null);
                 }
 
             }
