@@ -33,6 +33,8 @@ class FarmingDiscord extends Resource
         'id',
     ];
 
+    public static $group = 'Farming';
+
     /**
      * Get the fields displayed by the resource.
      *
