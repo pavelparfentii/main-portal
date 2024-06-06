@@ -248,6 +248,7 @@ class PointsController extends Controller
             $accountResourceArray['invite_code']=$inviteCode;
             $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
             $accountResourceArray['total_points']=$account->dailyFarm->total_points;
+            $accountResourceArray['daily_farm']=$account->dailyFarm->daily_farm;
             // }
 
             $claimed = $account->weeks()

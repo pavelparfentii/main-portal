@@ -17,11 +17,13 @@ class FarmingNFTUpdated
 
     public $farmingNFTId;
     public $accountId;
+    public $roleAction;
 
-    public function __construct($farmingNFTId =null, $accountId = null)
+    public function __construct($farmingNFTId =null, $accountId = null, $roleAction = null)
     {
         $this->farmingNFTId = $farmingNFTId;
         $this->accountId = $accountId;
+        $this->roleAction = $roleAction;
     }
 
 }

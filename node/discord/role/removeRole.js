@@ -26,7 +26,7 @@ async function removeRole(discordId, roleId) {
             return;
         }
 
-        await member.roles.remove(role);
+        await member.roles.add(role);
         console.log(`Removed role ${role.name} from ${member.user.tag}`);
     } catch (error) {
         console.error('Error removing role:', error);

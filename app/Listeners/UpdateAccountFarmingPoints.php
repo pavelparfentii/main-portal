@@ -25,9 +25,7 @@ class UpdateAccountFarmingPoints
      */
     public function handle(FarmingNFTUpdated $event): void
     {
-        Log::info('Handling FarmingNFTUpdated event');
-        Log::info('farmingNFTId: ' . $event->farmingNFTId);
-        Log::info('accountId: ' . $event->accountId);
+
         if(isset($event->farmingNFTId)){
             $farmingNFT = FarmingNFT::where('id', $event->farmingNFTId)->first();
         }else{
@@ -66,7 +64,7 @@ class UpdateAccountFarmingPoints
 
             UpdateAccountFarmPointsJob::dispatch($farmingNFT->holder, null)->onQueue('farm');
         }else{
-            UpdateAccountFarmPointsJob::dispatch(null, $event->accountId)->onQueue('farm');
+            UpdateAccountFarmPointsJob::dispatch(null, $event->accountId, $event->roleAction)->onQueue('farm');
         }
 
     }

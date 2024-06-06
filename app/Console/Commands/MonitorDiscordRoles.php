@@ -100,7 +100,7 @@ class MonitorDiscordRoles extends Command
 
                             ]);
 
-                            FarmingNFTUpdated::dispatch(null, $account->id);
+                            FarmingNFTUpdated::dispatch(null, $account->id, $role);
                         }
                     } elseif ($role === 'removeRole') {
                         $account = Account::where('discord_id', $discordId)->first();
@@ -108,7 +108,7 @@ class MonitorDiscordRoles extends Command
                         if($account && $farmingDiscord){
                             $farmingDiscord->delete();
 
-                            FarmingNFTUpdated::dispatch(null, $account->id);
+                            FarmingNFTUpdated::dispatch(null, $account->id, $role);
                         }
 
                     }

@@ -19,11 +19,13 @@ class UpdateAccountFarmPointsJob implements ShouldQueue
 
     protected $holder;
     protected $id;
+    protected $roleAction;
 
-    public function __construct($holder = null, $id = null)
+    public function __construct($holder = null, $id = null, $roleAction= null)
     {
         $this->holder=$holder;
         $this->id = $id;
+        $this->roleAction = $roleAction;
     }
 
     /**
@@ -46,16 +48,21 @@ class UpdateAccountFarmPointsJob implements ShouldQueue
                 $this->updateFarmPoints($account, $farmPoints);
             }
         }elseif(isset($this->id)){
-            Log::info('account id'. $this->id);
             $account = DB::table('accounts')
                 ->where('id', $this->id)
                 ->first(['id', 'discord_id']);
-            $queries = DB::getQueryLog();
-            Log::debug('Query Log:', $queries);
 
-            Log::debug('Account:', (array) $account);
+            $accountDailyFarm = DB::table('account_farms')
+                ->where('account_id', $account->id)
+                ->select('daily_farm')
+                ->first();
 
-//            Log::debug($account);
+            if(isset($this->roleAction) && $this->roleAction === 'addRole'){
+                $farmPoints = $accountDailyFarm->daily_farm += 0.143;
+            }else{
+                $farmPoints = $accountDailyFarm->daily_farm -= 0.143;
+            }
+
             if($account){
                 $this->updateFarmPoints($account, $farmPoints);
             }
@@ -129,12 +136,12 @@ class UpdateAccountFarmPointsJob implements ShouldQueue
 
         }
 
-        // Include Discord role points and handle reduction
+        // Calculate the difference
         $discordFarmPoints = DB::table('farming_discords')
             ->where('discord_id', $account->discord_id)
             ->sum('item_points_daily');
 
-                Log::info($farmPoints);
+        Log::info($farmPoints);
         Log::info($additionalFarmPoints);
         Log::info($discordFarmPoints);
 
