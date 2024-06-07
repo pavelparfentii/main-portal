@@ -23,6 +23,10 @@ class ReferralsController extends Controller
 
         $referralsList = $account->invitesSent()->get();
 
+        //how much invited second level
+        // total income 1-й + 2-й левел
+        // boolean пройшов  тиждень чи ні referrals_claimed
+
         $collectReferral = $referralsList->map(function ($referral) {
             $account = Account::where('id', $referral->whom_invited)->first();
             if ($account) {
@@ -47,6 +51,7 @@ class ReferralsController extends Controller
 
         $inviteReceived = $account->invitedMe()->first();
         $invitedMe = null;
+
         if ($inviteReceived) {
             $invitedMe = [
                 'id' => $inviteReceived->invitedBy->id,
@@ -54,6 +59,7 @@ class ReferralsController extends Controller
                 'twitter_avatar' => $inviteReceived->invitedBy->twitter_avatar,
                 'twitter_username'=>$account->twitter_username,
                 'total_points' => $inviteReceived->invitedBy->total_points,
+
             ];
         }
 

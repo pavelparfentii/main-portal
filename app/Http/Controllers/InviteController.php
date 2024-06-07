@@ -44,6 +44,7 @@ class InviteController extends Controller
 
     public function inviteUser(Request $request)
     {
+        // Чий код, дані приглашающего twitter,
         $account = AuthHelper::auth($request);
 
         $code = $request->code;

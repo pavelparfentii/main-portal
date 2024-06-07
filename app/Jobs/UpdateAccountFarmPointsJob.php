@@ -137,15 +137,15 @@ class UpdateAccountFarmPointsJob implements ShouldQueue
         }
 
         // Calculate the difference
-        $discordFarmPoints = DB::table('farming_discords')
-            ->where('discord_id', $account->discord_id)
-            ->sum('item_points_daily');
+//        $discordFarmPoints = DB::table('farming_discords')
+//            ->where('discord_id', $account->discord_id)
+//            ->sum('item_points_daily');
 
-        Log::info($farmPoints);
-        Log::info($additionalFarmPoints);
-        Log::info($discordFarmPoints);
+//        Log::info($farmPoints);
+//        Log::info($additionalFarmPoints);
+//        Log::info($discordFarmPoints);
 
-        $currentDailyFarm = $farmPoints + $additionalFarmPoints + $discordFarmPoints;
+        $currentDailyFarm = $farmPoints + $additionalFarmPoints;
 
 
         DB::table('account_farms')
