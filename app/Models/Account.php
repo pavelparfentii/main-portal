@@ -23,7 +23,7 @@ class Account extends Model
 
     protected $hidden = ['created_at', 'updated_at', 'wallet', 'auth_id'];
 
-    protected $dates = ['blocked_until'];
+    protected $dates = ['blocked_until', 'next_referrals_claim'];
 
 //    protected $appends = ['is_friend'];
 

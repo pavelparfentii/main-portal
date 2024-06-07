@@ -12,6 +12,8 @@ class Invite extends Model
 
     protected $guarded = [];
 
+    protected $dates = ['next_update_date'];
+
     //invited_by
     public function inviter(): BelongsTo
     {
