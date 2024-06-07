@@ -29,6 +29,7 @@ class AccountResource extends JsonResource
             'rank'=>$this->rank,
             'current_user'=>$this->current_user,
             'isNeedShow'=>$this->isNeedShow,
+            'referrals_claimed'=> $this->referrals_claimed,
 
 //            'discord_roles' => $this->whenLoaded('discordRoles', function () {
 //                return $this->discordRoles->map(function ($role) {
