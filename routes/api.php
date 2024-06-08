@@ -52,7 +52,7 @@ Route::post('/invite/account', [\App\Http\Controllers\InviteController::class, '
 
 Route::get('/referrals/list', [\App\Http\Controllers\ReferralsController::class, 'getReferralsData']);
 
-Route::get('/referrals/claim', [\App\Http\Controllers\ReferralsController::class, 'claimIncome']);
+Route::post('/referrals/claim', [\App\Http\Controllers\ReferralsController::class, 'claimIncome']);
 
 Route::get('testE', [\App\Http\Controllers\TemporaryController::class, 'testEndp']);
 

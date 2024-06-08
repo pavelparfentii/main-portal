@@ -92,10 +92,11 @@ class ReferralsController extends Controller
         }
 
         return response()->json([
-                'referrals' => $collectReferral,
-                'invited_me' => $invitedMe,
-                'invited'=>$invitedCount,
-                'total_referrals_income'=>$totalSecondLevelIncome
+            'referrals' => $collectReferral,
+            'invited_me' => $invitedMe,
+            'invited'=>$invitedCount,
+            'referrals_claimed'=> $account->referrals_claimed,
+            'total_referrals_income'=>$totalSecondLevelIncome
         ]);
 
     }
@@ -126,13 +127,13 @@ class ReferralsController extends Controller
 
         $account->referrals_claimed = true;
         $account->next_referrals_claim = now()->addDays(7);
-        $account->total_points = $totalIncome;
+        // $account->total_points = $totalIncome;
 
         $currentWeek = Week::getCurrentWeekForAccount($account);
         $currentWeek->increment('referrals_income', $totalIncome);
         $currentWeek->increment('total_points', $totalIncome);
 
-        $account->last_claim_date = $currentDate;
+        // $account->last_claim_date = $currentDate;
         $account->save();
 
         Invite::where('invited_by', $account->id)

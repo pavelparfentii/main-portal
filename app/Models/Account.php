@@ -160,6 +160,10 @@ class Account extends Model
             if ($account->blocked_until && Carbon::parse($account->blocked_until)->isPast()) {
                 $account->update(['code_attempts' => 0, 'blocked_until' => null]);
             }
+
+            if ($account->next_referral_claim && Carbon::parse($account->blocked_until)->isPast()) {
+                $account->update(['code_attempts' => 0, 'blocked_until' => null]);
+            }
         });
     }
 

@@ -297,13 +297,10 @@ class InviteController extends Controller
             return response()->json(['message'=>'Self-invite not permitted'], 400);
         }
 
-        $inviteCheck = DB::table('invites')
+        $inviteCheck = Invite::where('whom_invited', $account->id)
+            ->first();
 
-            ->where('whom_invited', $account->id)
-            ->pluck('id')
-            ->toArray();
-
-        if(empty($inviteCheck)){
+        if(!$inviteCheck){
             $invite = Invite::create([
                 'invited_by'=>$checkCode->account->id,
                 'inviter_wallet'=>$checkCode->account->wallet ?? 'empty',
@@ -314,7 +311,7 @@ class InviteController extends Controller
             ]);
 
             return response()->json([
-                    'invited_by'=>$checkCode->account->id,
+                    'id'=>$checkCode->account->id,
                     'twitter_id'=>$checkCode->account->twitter_id,
                     'twitter_avatar'=>$checkCode->account->twitter_avatar,
                     'twitter_name'=>$checkCode->account->twitter_name,

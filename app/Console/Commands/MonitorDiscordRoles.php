@@ -90,27 +90,32 @@ class MonitorDiscordRoles extends Command
                     // Process the role action
                     if ($role === 'addRole' && in_array($roleId, $farming_roles)) {
                         $account = Account::where('discord_id', $discordId)->first();
-                        $farmingDiscord = FarmingDiscord::where('role_id', $roleId)->where('discord_id', $account->discord_id)->first();
-                        if($account && !$farmingDiscord){
-                            DB::table('farming_discords')->insert([
-                                'discord_id' => $discordId,
-                                'role_id' => $roleId,
-                                'created_at'=>now(),
-                                'item_points_daily' => 0.143,
+                        if($account){
+                            $farmingDiscord = FarmingDiscord::where('role_id', $roleId)->where('discord_id', $account->discord_id)->first();
+                            if(!$farmingDiscord){
+                                DB::table('farming_discords')->insert([
+                                    'discord_id' => $discordId,
+                                    'role_id' => $roleId,
+                                    'created_at'=>now(),
+                                    'item_points_daily' => 0.143,
 
-                            ]);
+                                ]);
 
-                            FarmingNFTUpdated::dispatch(null, $account->id, $role);
+                                FarmingNFTUpdated::dispatch(null, $account->id, $role);
+                            }
                         }
+
                     } elseif ($role === 'removeRole') {
                         $account = Account::where('discord_id', $discordId)->first();
-                        $farmingDiscord = FarmingDiscord::where('role_id', $roleId)->where('discord_id', $account->discord_id)->first();
-                        if($account && $farmingDiscord){
-                            $farmingDiscord->delete();
+                        if($account){
+                            $farmingDiscord = FarmingDiscord::where('role_id', $roleId)->where('discord_id', $account->discord_id)->first();
+                            if($farmingDiscord){
+                                $farmingDiscord->delete();
 
-                            FarmingNFTUpdated::dispatch(null, $account->id, $role);
+                                FarmingNFTUpdated::dispatch(null, $account->id, $role);
+                            }
+
                         }
-
                     }
                 }
             }

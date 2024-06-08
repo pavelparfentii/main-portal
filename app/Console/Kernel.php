@@ -99,6 +99,8 @@ class Kernel extends ConsoleKernel
         //Daily Farm Poins
         $schedule->command('app:temporary-add-farm-points-daily')->dailyAt('23:30');
 
+        $schedule->command('app:update-invitees-with-income')->dailyAt('13:30');
+
     }
 
     /**

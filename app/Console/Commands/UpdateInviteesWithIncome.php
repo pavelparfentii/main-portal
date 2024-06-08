@@ -31,6 +31,10 @@ class UpdateInviteesWithIncome extends Command
         $accounts = Account::cursor();
 
         foreach ($accounts as $account) {
+
+            $nextReferralsClaim = $account->next_referrals_claim ?? now()->addDays(7);
+            $account->next_referrals_claim = $nextReferralsClaim;
+            $account->save();
             $totalFirstLevelIncome = 0;
             $totalSecondLevelIncome = 0;
 
@@ -38,7 +42,12 @@ class UpdateInviteesWithIncome extends Command
 
             foreach ($invitesSent as $referral) {
                 $firstLevelAccount = Account::where('id', $referral->whom_invited)->first();
-                if ($firstLevelAccount) {
+//                $update = $firstLevelAccount->next_update_date;
+                $update = $referral->next_update_date;
+                var_dump($update);
+
+                if ($firstLevelAccount && ($nextReferralsClaim >$update)) {
+                    var_dump('here');
                     $dailyIncome = AccountFarm::where('account_id', $firstLevelAccount->id)->value('daily_farm');
                     $firstLevelIncome = $dailyIncome * 0.10;
                     $totalFirstLevelIncome += $firstLevelIncome;
@@ -76,7 +85,7 @@ class UpdateInviteesWithIncome extends Command
         $lastUpdate = $invite->next_update_date ? now() : null;
         $today = now()->toDateString();
 
-        if ($lastUpdate && now()->diffInDays($invite->last_update_date) >= 7) {
+        if ($lastUpdate && now()->diffInDays($invite->next_update_date) >= 7) {
             $invite->accumulated_income = 0;
         }
 
