@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\ConstantValues;
 use App\Models\Account;
+use App\Models\AccountFarm;
 use App\Models\Week;
 use Illuminate\Console\Command;
 
@@ -28,12 +29,15 @@ class TemporaryAddFarmPointsDaily extends Command
      */
     public function handle()
     {
-       $accounts = Account::where('daily_farm', '>', 0)->cursor();
+       $accountsFarm = AccountFarm::where('daily_farm', '>', 0)->pluck('account_id')->toArray();
+
+       $accounts = Account::whereIn('id', $accountsFarm)->cursor();
 
        foreach ($accounts as $account){
            $currentWeek = Week::getCurrentWeekForAccount($account);
-           $currentWeek->increment('farm_points', $account->daily_farm);
-           $currentWeek->increment('total_points', $account->daily_farm);
+
+           $currentWeek->increment('farm_points', $account->dailyFarm->daily_farm);
+           $currentWeek->increment('total_points', $account->dailyFarm->daily_farm);
        }
     }
 }

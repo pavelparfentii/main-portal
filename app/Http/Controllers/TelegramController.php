@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Telegram;
 use Carbon\Carbon;
+use DateTime;
+use DateTimeZone;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,80 +17,148 @@ class TelegramController extends Controller
     public function initiateSession(Request $request)
     {
 
-        $hash = $request->get('hash');
-        $id = $request->get('id');
+//        $botToken = '7107960895:AAGGcZrH0Vein6bWR-_IgG2xVxZU6foBQ3U';
+
+        $botToken = env('TELEGRAM_BOT');
+        $WebAppData = $request->get('WebAppInitData');
 
         $validator = Validator::make($request->all(), [
-            'hash' => 'required|string|max:255',
-            'id' => 'required|string|max:255',
+            'WebAppInitData' => 'required|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        Cache::put('Bearer ' . $hash.$id, 'Bearer ' . $hash.$id, now()->addMinutes(30));;
+        parse_str($WebAppData, $queryParams);
+
+        $hash = '';
+
+        $dataCheckString = '';
+        ksort($queryParams);
+        foreach ($queryParams as $key => $value) {
+            if ($key !== 'hash') {
+
+                $dataCheckString .= "$key=$value\n";
+            } else {
+                $hash = $value;
+            }
+        }
+
+        $dataCheckString = rtrim($dataCheckString, "\n");
+
+        $secretKey = hash_hmac('sha256', $botToken, 'WebAppData', true);
+
+        $computedHash = bin2hex(hash_hmac('sha256', $dataCheckString, $secretKey, true));
+
+        $authDate = $queryParams['auth_date'] ?? null;
+
+        $authDateTime = new DateTime("@$authDate");
+        $authDateTime->setTimezone(new DateTimeZone('Europe/Moscow')); // Assuming the auth_date is in UTC
+        $currentDateTime = new DateTime('now', new DateTimeZone('Europe/Moscow'));
+        $interval = $currentDateTime->diff($authDateTime);
+
+        // Convert the interval to seconds
+
+        $intervalInSeconds = ($interval->days * 24 * 60 * 60) +
+            ($interval->h * 60 * 60) +
+            ($interval->i * 60) +
+            $interval->s;
+
+        $environment = App::environment(['local', 'staging']);
+        if (!$environment && $intervalInSeconds > 60) {
+            return response()->json(['status' => 'error', 'message' => 'Timestamp is too old'], 403);
+        }
 
 
-        return response()->json(['message' => 'Session initiated', 'key' => 'Bearer '. $hash.$id]);
+        if ($computedHash == $hash) {
+            //отправить на аус сервис запрос с user_id, чего получим токен, + решреш , передавать в респонсе токен + рефреш
+            $id = json_decode($queryParams['user'])->id;
+
+            Cache::put('Bearer ' . $hash . '.' . $id, 'Bearer ' . $hash . '.' . $id, now()->addMinutes(30));
+
+            return response()->json(['message' => 'Session initiated', 'key' => 'Bearer ' . $hash . '.' . $id]);
+        };
+
+        return response()->json(['errors' => 'Authentification failed'], 401);
+
+
     }
 
     public function getPoints(Request $request)
     {
-        $telegram_id = $request->id;
+        $bearer = $request->bearerToken();
 
-
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|string|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        if (!$bearer) {
+            return response()->json(['errors' => 'No authentification token'], 401);
         }
 
-        $telegram = Telegram::where('telegram_id', $telegram_id)->first();
+        $parts = explode('.', $bearer);
+        if (count($parts) === 2) {
+            $id = $parts[1];
+        }
 
-        if(isset($telegram)){
+        $cacheKey = 'telegram_' . $id;
+
+        $telegram = Cache::get($cacheKey);
+
+        if ($telegram) {
             return response()->json($telegram);
-        }else{
-            return response()->json(['message' => 'not found'], 204);
+        } else {
+            $telegram = Telegram::where('telegram_id', $id)->first();
+
+            if ($telegram) {
+
+                Cache::put($cacheKey, $telegram, now()->addHours(3));
+
+                return response()->json($telegram);
+            } else {
+                return response()->json(['message' => 'not found'], 204);
+            }
         }
-
-
     }
 
     public function updatePoints(Request $request)
     {
-        $telegram_id = $request->get('id');
 
-        $points = 0.5;
+        $points = 1.0;
 
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|string|max:255',
-        ]);
+        $bearer = $request->bearerToken();
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        if (!$bearer) {
+            return response()->json(['errors' => 'No authentification token'], 401);
         }
 
-        $telegram = Telegram::where('telegram_id', $telegram_id)->first();
+        $parts = explode('.', $bearer);
+        if (count($parts) === 2) {
+            $id = $parts[1];
+        }
+        $cacheKey = 'telegram_' . $id;
 
-        if(!$telegram){
+
+        $telegram = Telegram::where('telegram_id', $id)->first();
+
+        if (!$telegram) {
+
             $telegram = Telegram::create([
-                'telegram_id'=>$telegram_id,
-                'points'=>$points,
-                'next_update_at'=>now()->addHours(8),
+                'telegram_id' => $id,
+                'points' => $points,
+                'next_update_at' => now()->addHours(8),
             ]);
 
-            return response()->json($telegram);
-        }else{
+            Cache::forget($cacheKey);
 
-            if(Carbon::parse($telegram->next_update_at)->isPast()){
+            return response()->json($telegram);
+        } else {
+
+            if($telegram->next_update_at < now()){
                 $telegram->increment('points', $points);
-                $telegram->update(['next_update_at'=>now()->addHours(8)]);
+                $telegram->update(['next_update_at' => now()->addHours(8)]);
+
+                Cache::forget($cacheKey);
 
                 return response()->json($telegram);
-            }else{
+            } else {
                 return response()->json(['message' => 'not allowed to update'], 423);
             }
         }

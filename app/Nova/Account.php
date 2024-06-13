@@ -38,7 +38,7 @@ class Account extends Resource
      * @var array
      */
     public static $search = [
-        'id', 'wallet', 'twitter_username'
+        'id', 'wallet', 'twitter_username', 'email'
     ];
 
     /**

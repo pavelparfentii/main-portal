@@ -96,6 +96,7 @@ class ReferralsController extends Controller
             'invited_me' => $invitedMe,
             'invited'=>$invitedCount,
             'referrals_claimed'=> $account->referrals_claimed,
+            'next_referrals_claim'=> $account->next_referrals_claim,
             'total_referrals_income'=>$totalSecondLevelIncome
         ]);
 
@@ -126,7 +127,8 @@ class ReferralsController extends Controller
             ->sum('accumulated_income');
 
         $account->referrals_claimed = true;
-        $account->next_referrals_claim = now()->addDays(7);
+//        $account->next_referrals_claim = now()->addDays(7);
+        $account->next_referrals_claim = now()->addDays(1);
         // $account->total_points = $totalIncome;
 
         $currentWeek = Week::getCurrentWeekForAccount($account);

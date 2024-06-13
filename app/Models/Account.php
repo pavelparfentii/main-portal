@@ -25,6 +25,10 @@ class Account extends Model
 
     protected $dates = ['blocked_until', 'next_referrals_claim'];
 
+    protected $casts = [
+        'next_referrals_claim' => 'datetime',
+    ];
+
 //    protected $appends = ['is_friend'];
 
     protected static function booted()
@@ -161,8 +165,8 @@ class Account extends Model
                 $account->update(['code_attempts' => 0, 'blocked_until' => null]);
             }
 
-            if ($account->next_referral_claim && Carbon::parse($account->blocked_until)->isPast()) {
-                $account->update(['code_attempts' => 0, 'blocked_until' => null]);
+            if ($account->next_referrals_claim && Carbon::parse($account->blocked_until)->isPast()) {
+                $account->update(['referrals_claimed' => 0, 'next_referrals_claim' => null]);
             }
         });
     }
@@ -384,6 +388,7 @@ class Account extends Model
                 }
             }
         }
+
 
     }
 

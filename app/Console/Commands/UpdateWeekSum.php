@@ -4,7 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\Account;
 use App\Models\Week;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class UpdateWeekSum extends Command
 {
@@ -27,60 +29,75 @@ class UpdateWeekSum extends Command
      */
     public function handle()
     {
-        $week11 = '11-2024';
-        $week12 = '12-2024';
-        $week13 = '13-2024';
 
-        $week14 = '14-2024';
-        $week15 = '15-2024';
+        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
-        $accounts = Account::cursor();
+        $accountsWeekAgo = DB::table('accounts')
+            ->leftJoin('weeks', function ($join) use ($previousWeekNumber) {
+                $join->on('accounts.id', '=', 'weeks.account_id')
+                    ->where('weeks.week_number', '=', $previousWeekNumber)
+                    ->where('weeks.active', '=', false);
+            })
+            ->select('accounts.id',
+                DB::raw('accounts.total_points - COALESCE(weeks.total_points, 0) as deducted_points'))
+            ->orderByDesc('deducted_points')
+            ->get();
 
-        foreach ($accounts as $account){
+        $accountsWithZeroPoints = $accountsWeekAgo->filter(function ($account) {
+            return $account->deducted_points == 0;
+        });
 
-//            $Week11 = Week::where('account_id', $account->id)
-//                ->where('week_number', '=', $week11)
-//                ->first();
-//            $Week12 = Week::where('account_id', $account->id)
-//                ->where('week_number', '=', $week12)
-//                ->first();
-//            $Week13 = Week::where('account_id', $account->id)
-//                ->where('week_number', '=', $week13)
-//                ->first();
-//
-//            if($Week11){
-//                $da11 = $Week11->animals()->sum('points');
-//                $ss11 = $Week11->safeSouls()->sum('points');
-//
-//                $Week11->update(['points'=>$da11 + $ss11]);
-//
-//
-//            }if($Week12){
-//                $da12= $Week12->animals()->sum('points');
-//                $ss12= $Week12->safeSouls()->sum('points');
-//
-//                $Week12->update(['points'=>$da12 + $ss12]);
-//            }
 
-            $Week14 = Week::where('account_id', $account->id)
-                ->where('week_number', '=', $week14)
-                ->first();
-            if($Week14){
-                $Week14->total_points = $Week14->points + $Week14->claimed_points + $Week14->invite_points;
-                $Week14->save();
+        $rank = 1;
+
+        $lastPlaceRank = $accountsWithZeroPoints->count() + 1;
+
+        foreach ($accountsWeekAgo as $account) {
+            // Determine rank based on points
+//            $weeks_ago_position = $account->week_points !== null ? $rank : $lastPlaceRank;
+            $weeks_ago_position = $account->deducted_points !== null ? $rank : $lastPlaceRank;
+
+//            var_dump($account->two_weeks_ago_position);
+
+            // Update the previous week's position based on the two weeks ago position
+            DB::table('accounts')
+                ->where('id', $account->id)
+//                ->where('week_number', $previousWeekNumber)
+                ->update([
+                    'previous_rank' => $weeks_ago_position,
+                ]);
+
+            if ($account->deducted_points !== null && $account->deducted_points != 0) {
+                $rank++;
             }
+        }
 
+        $accounts = DB::table('accounts')
+            ->select('accounts.id', 'accounts.total_points')
+            ->orderByDesc('accounts.total_points')
+            ->get();
 
-            $Week15 = Week::where('account_id', $account->id)
-                ->where('week_number', '=', $week15)
-                ->first();
-            if($Week15){
-                $Week15->total_points = $Week15->points + $Week15->claimed_points + $Week15->invite_points;
-                $Week15->save();
+        $accountsWithZeroPoints = $accounts->filter(function ($account) {
+            return $account->total_points == 0;
+        });
+
+        $rank = 1;
+
+        $lastPlaceRank = $accountsWithZeroPoints->count() + 1;
+
+        foreach ($accounts as $account) {
+            $position = $account->total_points !== 0 ? $rank : $lastPlaceRank;
+
+            DB::table('accounts')
+                ->where('id', $account->id)
+//                ->where('week_number', $previousWeekNumber)
+                ->update([
+                    'current_rank' => $position,
+                ]);
+
+            if ($account->total_points !== null && $account->total_points != 0) {
+                $rank++;
             }
-
-
-
         }
     }
 }

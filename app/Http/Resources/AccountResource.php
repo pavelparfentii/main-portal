@@ -26,10 +26,12 @@ class AccountResource extends JsonResource
             'week_points' =>$this->week_points,
             'twitter_name' => $this->twitter_name,
             'twitter_avatar' => $this->twitter_avatar,
-            'rank'=>$this->rank,
+//            'rank'=>$this->rank,
             'current_user'=>$this->current_user,
             'isNeedShow'=>$this->isNeedShow,
             'referrals_claimed'=> $this->referrals_claimed,
+            'current_rank'=>$this->current_rank,
+            'previous_rank'=>$this->previous_rank,
 
 //            'discord_roles' => $this->whenLoaded('discordRoles', function () {
 //                return $this->discordRoles->map(function ($role) {

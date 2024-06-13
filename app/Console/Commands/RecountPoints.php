@@ -53,7 +53,7 @@ class RecountPoints extends Command
         $endOfWeek = $currentDate->copy()->subWeek()->endOfWeek();
 //        $startOfWeek = Carbon::now()->subWeek();
         $currentWeekNumber = Carbon::now()->format('W-Y');
-        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+        $previousWeekNumber = Carbon::now()->subWeeks(2)->format('W-Y');
 
 
 

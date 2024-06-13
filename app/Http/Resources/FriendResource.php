@@ -22,7 +22,8 @@ class FriendResource extends JsonResource
             'week_points' => $this->week_points,
             'twitter_name' => $this->twitter_name,
             'twitter_avatar' => $this->twitter_avatar,
-            'rank'=>$this->rank,
+//            'rank'=>$this->rank,
+            'current_rank'=>$this->current_rank,
             'current_user'=>$this->current_user,
             'discord_roles'=>DiscordRoleResource::collection($this->whenLoaded('discordRoles')),
             'team' => new TeamResource($this->whenLoaded('team'))

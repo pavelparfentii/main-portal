@@ -30,6 +30,7 @@ class MessageController extends Controller
                 $account = new Account();
                 $account->auth_id = $authId;
                 $account->wallet = $data['wallet'];
+                $account->email = $data['email'];
 
                 $account->save();
                 Week::getCurrentWeekForAccount($account);

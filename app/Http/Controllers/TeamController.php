@@ -247,139 +247,64 @@ class TeamController extends Controller
 
 //    public function getTeamsList(Request $request)
 //    {
-//
 //        $currentUser = AuthHelper::auth($request);
-//
 //        $period = $request->input('period');
+//        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+//        $loadRelations = ['creator', 'accounts'];
+//
+//        // if ($token = $request->bearerToken() && !$currentUser) {
+//        //     return response()->json(['error' => 'token expired or wrong'], 401);
+//        // }
+//
+//        $teams = Team::with($loadRelations)->get();
+//
+//        foreach ($teams as $team) {
+//            $teamTotalPoints = 0;
+//            $teamWeekPoints = 0;
+//            foreach ($team->accounts as $account) {
+//                $accountWeekPoints = $account->weeks()
+//                    ->where('week_number', $previousWeekNumber)
+//                    ->where('active', false)
+//                    ->sum('total_points');
+//
+//                $teamTotalPoints += $account->total_points;
+//                $teamWeekPoints += $accountWeekPoints;
+//
+//                unset($account->wallet);
+//
+//                if ($currentUser) {
+//                    $friendIds = $currentUser->friends()->pluck('id')->toArray();
+//                    $account->friend = !empty($account->twitter_username) && in_array($account->id, $friendIds);
+//                }
+//            }
+//            $team->team_total_points = $teamTotalPoints;
+//            $team->team_week_points = $teamWeekPoints;
+//        }
 //
 //        if ($period === 'total') {
-//
-//            $token = $request->bearerToken();
-//
-//            if($token && !$currentUser){
-//                return response()->json(['error' => 'token expired or wrong'], 401);
-//            }
-//
-//            $teams = Team::with(['creator', 'accounts'])->get();
-//
-//            // Calculate total points for each team
-//            foreach ($teams as $team) {
-//                $team->team_total_points = $team->accounts->sum('total_points');
-//                foreach ($team->accounts as $account) {
-//                    unset($account->wallet);
-//                }
-//            }
-//
-//
 //            $teams = $teams->sortByDesc('team_total_points')->values();
+//        } else {
+//            $teams = $teams->sortByDesc('team_week_points')->values();
+//        }
 //
-//            foreach ($teams as $index => $team) {
+//        foreach ($teams as $index => $team) {
+//            $team->rank = $index + 1;
+//            unset($team->creator->wallet);
 //
-//                $team->rank = $index + 1;
-//                unset($team->creator->wallet);
-//
-//            }
-//
-//            if($currentUser){
+//            if ($currentUser) {
 //                $friendIds = $currentUser->friends()->pluck('id')->toArray();
-//
-//                // Calculate total points for each team
-//                foreach ($teams as $team) {
-//                    $team->team_total_points = $team->accounts->sum('total_points');
-//                    foreach ($team->accounts as $account) {
-//
-//
-////                        $account->friend = in_array($account->id, $friendIds);
-//
-//                        if(empty($account->twitter_username)){
-//                            $account->friend = false;
-//                        }else{
-//                            $account->friend = in_array($account->id, $friendIds);
-//                        }
-//                    }
-//                }
-//
 //                $isFriendOfCreator = $currentUser->id !== $team->creator->id && in_array($team->creator->id, $friendIds);
 //
-////                dd($currentUser);
-//                if(empty($currentUser->twitter_username)){
-//
+//                if (empty($currentUser->twitter_username)) {
 //                    $isFriendOfCreator = false;
 //                }
 //
-//                foreach ($teams as $index => $team) {
-//                    // Simply use the sorted position as a proxy for rank
-//                    $team->in_team = $currentUser && $currentUser->team_id === $team->id;
-//
-//                    $team->is_friend = $isFriendOfCreator;
-//
-//
-//                }
-//
-//                return response()->json(['list' => $teams]);
+//                $team->in_team = $currentUser->team_id === $team->id;
+//                $team->is_friend = $isFriendOfCreator;
 //            }
-//
-//            return response()->json(['list' => $teams]);
-//        }elseif ($period === 'week'){
-//
-//            $token = $request->bearerToken();
-//
-//            if($token && !$currentUser){
-//                return response()->json(['error' => 'token expired or wrong'], 401);
-//            }
-////            $currentWeekNumber = Carbon::now()->format('W-Y'); // Current week number in format 'W-Y'
-//            $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
-//
-//            $teams = Team::with(['creator', 'accounts.weeks' => function ($query) use ($previousWeekNumber) {
-//                // Filter the weeks related to the current week
-//                $query->where('week_number', '=', $previousWeekNumber)->where('active', false);
-//            }])->get();
-//
-//// Calculate total points for each team for the current week
-////            dd($currentUser);
-//            foreach ($teams as $team) {
-//                $teamTotalPoints = 0;
-//                foreach ($team->accounts as $account) {
-//                    // Summing up points from the current week
-//                    $accountWeekPoints = $account->weeks->sum('total_points');
-//                    $teamTotalPoints += $accountWeekPoints;
-//
-//                    unset($account->wallet); // Unset wallet as before
-//
-//                    // Determine if the account is a friend (assuming $currentUser is defined correctly)
-//                    if ($currentUser) {
-//                        $friendIds = $currentUser->friends()->pluck('id')->toArray();
-//                        $account->friend = !empty($account->twitter_username) && in_array($account->id, $friendIds);
-//                    }
-//                }
-//                $team->team_total_points = $teamTotalPoints; // Assign the calculated total points
-//            }
-//
-//// Sort teams by their total points in descending order
-//            $teams = $teams->sortByDesc('team_total_points')->values();
-//
-//            foreach ($teams as $index => $team) {
-//
-//                $team->rank = $index + 1;
-//                unset($team->creator->wallet);
-//
-//            }
-//
-////            return response()->json(['list' => $teams]);
-//
-//            foreach ($teams as $index => $team) {
-//                $team->rank = $index + 1;
-//                unset($team->creator->wallet); // Unset creator's wallet as before
-//
-//                // Assuming $currentUser is defined and checking if current user is in the team
-//                $team->in_team = $currentUser && $currentUser->team_id === $team->id;
-//            }
-//
-//            return response()->json(['list' => $teams]);
-//        } else {
-//            return response()->json(['list' => []]);
 //        }
 //
+//        return response()->json(['list' => $teams]);
 //    }
 
     public function getTeamsList(Request $request)
@@ -388,10 +313,6 @@ class TeamController extends Controller
         $period = $request->input('period');
         $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
         $loadRelations = ['creator', 'accounts'];
-
-        // if ($token = $request->bearerToken() && !$currentUser) {
-        //     return response()->json(['error' => 'token expired or wrong'], 401);
-        // }
 
         $teams = Team::with($loadRelations)->get();
 
@@ -418,15 +339,37 @@ class TeamController extends Controller
             $team->team_week_points = $teamWeekPoints;
         }
 
+        // Calculate ranks for the current period
+        $teamsSortedByCurrentPoints = $teams->sortByDesc('team_total_points')->values();
+        foreach ($teamsSortedByCurrentPoints as $index => $team) {
+            $team->current_rank = $index + 1;
+        }
+
+        // Calculate deducted points and ranks for the previous period
+        foreach ($teams as $team) {
+            $team->deducted_points = $team->team_total_points - $team->team_week_points;
+        }
+
+        $teamsSortedByDeductedPoints = $teams->sortByDesc('deducted_points')->values();
+        foreach ($teamsSortedByDeductedPoints as $index => $team) {
+            $team->previous_rank = $index + 1;
+        }
+
+        // Save the ranks to the database
+        // foreach ($teams as $team) {
+        //     $team->save();
+        // }
+
         if ($period === 'total') {
-            $teams = $teams->sortByDesc('team_total_points')->values();
+            $teams = $teamsSortedByCurrentPoints;
         } else {
-            $teams = $teams->sortByDesc('team_week_points')->values();
+            $teams = $teamsSortedByDeductedPoints;
         }
 
         foreach ($teams as $index => $team) {
-            $team->rank = $index + 1;
+            // $team->rank = $index + 1;
             unset($team->creator->wallet);
+            unset($team->deducted_points);
 
             if ($currentUser) {
                 $friendIds = $currentUser->friends()->pluck('id')->toArray();

@@ -228,20 +228,20 @@ class FriendsController extends Controller
 
         // Calculate rank based on the selected period
         if ($period == 'total') {
-            $userRank = DB::table('accounts')
-                    ->where('total_points', '>', $account->total_points)
-                    ->count() + 1;
-            $account->rank = $userRank;
+//            $userRank = DB::table('accounts')
+//                    ->where('total_points', '>', $account->total_points)
+//                    ->count() + 1;
+//            $account->current_rank = $userRank;
             $account->week_points = $currentUserWeekPoints;
         } else {
-            $userRank = DB::table('accounts')
-                    ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
-                    ->where('weeks.week_number', '=', $previousWeekNumber)
-                    ->where('weeks.total_points', '>', $currentUserWeekPoints)
-                    ->where('weeks.active', false)
-                    ->count()+1;
-
-            $account->rank = $userRank;
+//            $userRank = DB::table('accounts')
+//                    ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
+//                    ->where('weeks.week_number', '=', $previousWeekNumber)
+//                    ->where('weeks.total_points', '>', $currentUserWeekPoints)
+//                    ->where('weeks.active', false)
+//                    ->count()+1;
+//
+//            $account->current_rank = $userRank;
             $account->week_points = $currentUserWeekPoints;
         }
 
@@ -250,6 +250,7 @@ class FriendsController extends Controller
         // Clone the current user data for inclusion in the response
         $currentUserData = clone $account;
         $currentUserData->current_user = true;
+//        $currentUserData->current_rank =$userRank;
 
         $allAccounts = collect([$currentUserData]);
 

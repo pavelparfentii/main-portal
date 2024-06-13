@@ -276,12 +276,13 @@ trait TwitterTrait
 
                 while (isset($likesResult['data'])) {
                     foreach ($likesResult['data'] as $likedUser) {
+
                         $twitterId = $likedUser['id'];
 
                         if (isset($allAccounts[$twitterId]) && (!isset($likesCountPerAccount[$twitterId]) || $likesCountPerAccount[$twitterId] < 604)) {
                             $account = $allAccounts[$twitterId];
                             // model method
-                            $account->incrementPoints('likes', $twitterId);
+                            $account->incrementPoints('likes', $id);
 
                             if (!isset($likesCountPerAccount[$twitterId])) {
                                 $likesCountPerAccount[$twitterId] = 1;
@@ -306,7 +307,7 @@ trait TwitterTrait
                         if (isset($allAccounts[$twitterId]) && (!isset($retweetsCountPerAccount[$twitterId]) || $retweetsCountPerAccount[$twitterId] < 7)) {
                             $account = $allAccounts[$twitterId];
                             // model method
-                            $account->incrementPoints('retweets', $twitterId);
+                            $account->incrementPoints('retweets', $id);
 
                             if (!isset($retweetsCountPerAccount[$twitterId])) {
                                 $retweetsCountPerAccount[$twitterId] = 1;
@@ -333,7 +334,7 @@ trait TwitterTrait
                         if (isset($allAccounts[$twitterId]) && (!isset($quotesCountPerAccount[$twitterId]) || $quotesCountPerAccount[$twitterId] < 7)) {
                             $account = $allAccounts[$twitterId];
                             // model method
-                            $account->incrementPoints('quotes', $twitterId, $quoteId);
+                            $account->incrementPoints('quotes', $id, $quoteId);
 
                             if (!isset($quotesCountPerAccount[$twitterId])) {
                                 $quotesCountPerAccount[$twitterId] = 1;
@@ -359,7 +360,7 @@ trait TwitterTrait
                         if (isset($allAccounts[$twitterId]) && (!isset($commentsCountPerAccount[$twitterId]) || $commentsCountPerAccount[$twitterId] < 21)) {
                             $account = $allAccounts[$twitterId];
                             // model method
-                            $account->incrementPoints('comments', $twitterId, $commentId);
+                            $account->incrementPoints('comments', $id, $commentId);
 
                             if (!isset($commentsCountPerAccount[$twitterId])) {
                                 $commentsCountPerAccount[$twitterId] = 1;

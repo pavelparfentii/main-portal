@@ -38,7 +38,16 @@ class PointsController extends Controller
                         ->where('weeks.week_number', '=', Carbon::now()->subWeek()->format('W-Y'))
                         ->where('weeks.active', '=', false);
                 })
-                ->select('accounts.id', 'accounts.wallet', 'accounts.twitter_username', 'accounts.total_points', 'weeks.total_points as week_points', 'accounts.twitter_name', 'accounts.twitter_avatar', 'accounts.team_id')
+                ->select('accounts.id',
+                    'accounts.wallet',
+                    'accounts.twitter_username',
+                    'accounts.total_points',
+                    'weeks.total_points as week_points',
+                    'accounts.twitter_name',
+                    'accounts.twitter_avatar',
+                    'accounts.team_id',
+                    'accounts.current_rank',
+                    'accounts.previous_rank')
                 ->orderByDesc('accounts.total_points')
                 ->take(100)
                 ->get();
@@ -115,14 +124,19 @@ class PointsController extends Controller
                     'weeks.total_points as week_points',
                     'accounts.twitter_name',
                     'accounts.twitter_avatar',
-                    'accounts.team_id')
+                    'accounts.team_id',
+                    'accounts.current_rank',
+                    'accounts.previous_rank'
+                )
                 ->where('weeks.total_points', '>', 0)
                 ->orderByDesc('week_points')
                 ->take(100)
                 ->get();
 
             $topAccounts->transform(function ($item, $key) use ($account, $friendIds) {
-                $item->rank = $key + 1;
+//                $item->current_rank = $key + 1;
+                unset($item->current_rank);
+                $item->current_rank = $key + 1;
                 $item->current_user = $account && $account->id == $item->id;
                 if(!empty($account->twitter_username)){
                     $item->friend = in_array($item->id, $friendIds);
@@ -165,7 +179,8 @@ class PointsController extends Controller
                     $currentUserForTop = clone $account;
                     $currentUserForTop->total_points = $account->total_points; // Використовуємо очки за тиждень
                     $currentUserForTop->week_points = $currentUserWeekPoints;
-                    $currentUserForTop->rank = $userRankBasedOnWeekPoints;
+//                    $currentUserForTop->rank = $userRankBasedOnWeekPoints;
+                    $currentUserForTop->current_rank = $userRankBasedOnWeekPoints;
                     $currentUserForTop->current_user = true;
                     $currentUserForTop->friend = false;
 
