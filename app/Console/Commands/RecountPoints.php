@@ -9,6 +9,7 @@ use App\Models\Twitter;
 use App\Models\Week;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class RecountPoints extends Command
 {
@@ -31,20 +32,6 @@ class RecountPoints extends Command
      */
     public function handle()
     {
-//        Account::query()->update(['total_points' => 0]);
-//
-//        $accounts = Account::cursor();
-//
-//        foreach ($accounts as $account) {
-//            // Calculate the sum of points from digital animals
-//            $totalDigitalAnimalPoints = $account->weeks()->where('week_number', Carbon::now()->subWeek()->format('W-Y'))->value('points');
-////            dd($totalDigitalAnimalPoints);
-//
-//            // Update the account's total_points
-//            $account->total_points = $totalDigitalAnimalPoints;
-//            $account->save();
-//
-//        }
 
         $accounts = Account::cursor();
 
@@ -53,7 +40,7 @@ class RecountPoints extends Command
         $endOfWeek = $currentDate->copy()->subWeek()->endOfWeek();
 //        $startOfWeek = Carbon::now()->subWeek();
         $currentWeekNumber = Carbon::now()->format('W-Y');
-        $previousWeekNumber = Carbon::now()->subWeeks(2)->format('W-Y');
+        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
 
 
@@ -68,6 +55,10 @@ class RecountPoints extends Command
                 $account->total_points += $previousWeek->total_points;
                 $account->save();
                 $previousWeek->update(['active'=>false]);
+
+                DB::table('account_farms')
+                    ->where('account_id', $account->id)
+                    ->update(['total_points' => $account->total_points]);
             }
 
             Week::getCurrentWeekForAccount($account);

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Account;
 use App\Models\AccountFarm;
 use App\Models\Invite;
+use App\Models\Week;
 use Illuminate\Console\Command;
 
 class UpdateInviteesWithIncome extends Command
@@ -48,13 +49,17 @@ class UpdateInviteesWithIncome extends Command
                 var_dump($update);
 
                 if ($firstLevelAccount && ($nextReferralsClaim >$update)) {
-                    var_dump('here');
+//                    var_dump('here');
+                    $currentWeek = Week::getCurrentWeekForAccount($firstLevelAccount);
+                    $currentWeekIncome = $currentWeek->value('points') + $currentWeek->value('claimed_points');
+//                    $currentWeekIncome = 0;
+                    var_dump($currentWeekIncome);
                     $dailyIncome = AccountFarm::where('account_id', $firstLevelAccount->id)->value('daily_farm');
-                    $firstLevelIncome = $dailyIncome * 0.10;
+                    $firstLevelIncome = ($dailyIncome + $currentWeekIncome) * 0.10;
                     $totalFirstLevelIncome += $firstLevelIncome;
                     var_dump($firstLevelIncome);
 
-                    $this->accumulateIncomeForInvite($referral, $firstLevelIncome);
+//                    $this->accumulateIncomeForInvite($referral, $firstLevelIncome);
 
                     // Calculate second level income (2%)
                     $secondLevelInvites = Invite::where('invited_by', $firstLevelAccount->id)->get();
@@ -62,19 +67,26 @@ class UpdateInviteesWithIncome extends Command
                         $secondLevelAccount = Account::where('id', $secondLevelInvite->whom_invited)->first();
                         if ($secondLevelAccount) {
                             $secondLevelDailyIncome = AccountFarm::where('account_id', $secondLevelAccount->id)->value('daily_farm');
-                            $secondLevelIncome = $secondLevelDailyIncome * 0.02;
+                            $currentWeek = Week::getCurrentWeekForAccount($secondLevelAccount);
+                            $currentWeekIncome = $currentWeek->value('points') + $currentWeek->value('claimed_points');
+//                            $currentWeekIncome = 0;
+
+                            $secondLevelIncome = ($secondLevelDailyIncome + $currentWeekIncome) * 0.02;
                             var_dump($secondLevelIncome);
                             $totalSecondLevelIncome += $secondLevelIncome;
 
-                            //$this->accumulateIncomeForInvite($secondLevelInvite, $secondLevelIncome);
+//                            $this->accumulateIncomeForInvite($secondLevelInvite, $secondLevelIncome);
                         }
                     }
                 }
+                $accumulatedIncome = $totalFirstLevelIncome + $totalSecondLevelIncome;
+
+                $this->accumulateIncomeForInvite($referral, $accumulatedIncome);
             }
 
 //            // Optionally update account's total accumulated income if needed
-//            $account->accumulated_income = $totalFirstLevelIncome + $totalSecondLevelIncome;
-//            $account->save();
+
+;
         }
 
 

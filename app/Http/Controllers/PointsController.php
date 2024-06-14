@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,12 @@ class PointsController extends Controller
         $account = AuthHelper::auth($request);
 
         $period = $request->input('period');
+
+        $cacheKey = $this->getCacheKey($period, $account);
+
+        if (Cache::has($cacheKey)) {
+            return response()->json(Cache::get($cacheKey));
+        }
 
         if($period === 'total'){
             $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
@@ -100,10 +107,20 @@ class PointsController extends Controller
                 }
             }
 
+//
+//            return response()->json([
+//                'list' => AccountResource::collection($topAccounts),
+//            ]);
 
-            return response()->json([
+            $response = [
                 'list' => AccountResource::collection($topAccounts),
-            ]);
+            ];
+
+            Cache::put($cacheKey, $response, now()->addHours(10));
+
+            return response()->json($response);
+
+
         }elseif($period === 'week') {
 
             $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
@@ -134,9 +151,9 @@ class PointsController extends Controller
                 ->get();
 
             $topAccounts->transform(function ($item, $key) use ($account, $friendIds) {
-//                $item->current_rank = $key + 1;
-                unset($item->current_rank);
-                $item->current_rank = $key + 1;
+
+                unset($item->previous_rank);
+                $item->previous_rank = null;
                 $item->current_user = $account && $account->id == $item->id;
                 if(!empty($account->twitter_username)){
                     $item->friend = in_array($item->id, $friendIds);
@@ -180,7 +197,8 @@ class PointsController extends Controller
                     $currentUserForTop->total_points = $account->total_points; // Використовуємо очки за тиждень
                     $currentUserForTop->week_points = $currentUserWeekPoints;
 //                    $currentUserForTop->rank = $userRankBasedOnWeekPoints;
-                    $currentUserForTop->current_rank = $userRankBasedOnWeekPoints;
+//                    $currentUserForTop->current_rank = $userRankBasedOnWeekPoints;
+                    $currentUserForTop->previous_rank = null;
                     $currentUserForTop->current_user = true;
                     $currentUserForTop->friend = false;
 
@@ -191,9 +209,17 @@ class PointsController extends Controller
                 }
             }
 
-            return response()->json([
+            $response = [
                 'list' => AccountResource::collection($topAccounts),
-            ]);
+            ];
+
+            Cache::put($cacheKey, $response, now()->addHours(36));
+
+            return response()->json($response);
+
+//            return response()->json([
+//                'list' => AccountResource::collection($topAccounts),
+//            ]);
 
         } else {
             return response()->json([
@@ -388,6 +414,12 @@ class PointsController extends Controller
             ->where('account_id', $account->id)
             ->increment('total_points', $earnedPoints);
 
+    }
+
+    private function getCacheKey($period, $account)
+    {
+        $accountId = $account ? $account->id : 'guest';
+        return "points_data_{$period}_{$accountId}";
     }
 
 

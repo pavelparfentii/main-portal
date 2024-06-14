@@ -18,7 +18,7 @@ class ClaimController extends Controller
         }
 
 //        $currentWeekNumber = Carbon::now()->format('W-Y');
-        $currentWeek = Week::getCurrentWeekForAccount($account);
+        //$currentWeek = Week::getCurrentWeekForAccount($account);
         $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
 

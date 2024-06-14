@@ -9,6 +9,7 @@ use App\Models\Team;
 use Carbon\Carbon;
 use Dotenv\Util\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -316,6 +317,12 @@ class TeamController extends Controller
 
         $teams = Team::with($loadRelations)->get();
 
+        $cacheKey = $this->generateCacheKey($currentUser, $period);
+
+        if (Cache::has($cacheKey)) {
+            return response()->json(Cache::get($cacheKey));
+        }
+
         foreach ($teams as $team) {
             $teamTotalPoints = 0;
             $teamWeekPoints = 0;
@@ -384,7 +391,12 @@ class TeamController extends Controller
             }
         }
 
-        return response()->json(['list' => $teams]);
+        $result = ['list' => $teams];
+//        return response()->json(['list' => $teams]);
+
+        Cache::put($cacheKey, $result, now()->addHours(36));
+
+        return response()->json($result);
     }
 
     public function leaveTeam(Request $request)
@@ -432,5 +444,11 @@ class TeamController extends Controller
             return response()->json(['message' => 'The name has already been taken and cannot be used.'], 422) ;
         }
 
+    }
+
+    private function generateCacheKey($currentUser, $period): string
+    {
+        $userId = $currentUser ? $currentUser->id : 'guest';
+        return "teams_list_{$period}_{$userId}";
     }
 }

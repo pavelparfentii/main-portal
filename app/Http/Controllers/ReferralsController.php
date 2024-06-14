@@ -85,8 +85,9 @@ class ReferralsController extends Controller
                 'id' => $inviteReceived->invitedBy->id,
                 'twitter_name' => $inviteReceived->invitedBy->twitter_name,
                 'twitter_avatar' => $inviteReceived->invitedBy->twitter_avatar,
-                'twitter_username'=>$account->twitter_username,
+                'twitter_username'=>$inviteReceived->invitedBy->twitter_username,
                 'total_points' => $inviteReceived->invitedBy->total_points,
+                'code'=>$inviteReceived->used_code
 
             ];
         }
@@ -97,7 +98,8 @@ class ReferralsController extends Controller
             'invited'=>$invitedCount,
             'referrals_claimed'=> $account->referrals_claimed,
             'next_referrals_claim'=> $account->next_referrals_claim,
-            'total_referrals_income'=>$totalSecondLevelIncome
+            'total_referrals_income'=>$totalSecondLevelIncome,
+
         ]);
 
     }

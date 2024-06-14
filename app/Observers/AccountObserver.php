@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Account;
 use App\Models\AccountFarm;
+use Illuminate\Support\Facades\Cache;
 
 class AccountObserver
 {
@@ -25,7 +26,18 @@ class AccountObserver
      */
     public function updated(Account $account): void
     {
-        //
+        $cacheKeys = [
+            "points_data_total_{$account->id}",
+            "points_data_week_{$account->id}",
+            "teams_list_total_{$account->id}",
+            "teams_list_week_{$account->id}"
+        ];
+
+//        \Log::info('logged here');
+
+        foreach ($cacheKeys as $cacheKey) {
+            Cache::forget($cacheKey);
+        }
     }
 
     /**
