@@ -231,7 +231,7 @@ class TeamController extends Controller
         $isFriendOfCreator = in_array($team->creator->id, $friendIds);
 
         foreach ($sortedAccounts as $account) {
-            $account->is_friend = !empty($account->twitter_username) && in_array($account->id, $friendIds);
+            $account->friend = !empty($account->twitter_username) && in_array($account->id, $friendIds);
             $account->in_team = $currentUser && $currentUser->team_id === $team->id;
         }
 
@@ -387,7 +387,7 @@ class TeamController extends Controller
                 }
 
                 $team->in_team = $currentUser->team_id === $team->id;
-                $team->is_friend = $isFriendOfCreator;
+                $team->friend = $isFriendOfCreator;
             }
         }
 

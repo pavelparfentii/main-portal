@@ -151,7 +151,7 @@ class PointsController extends Controller
                 ->get();
 
             $topAccounts->transform(function ($item, $key) use ($account, $friendIds) {
-
+                $item->current_rank = $key + 1;
                 unset($item->previous_rank);
                 $item->previous_rank = null;
                 $item->current_user = $account && $account->id == $item->id;
@@ -198,6 +198,7 @@ class PointsController extends Controller
                     $currentUserForTop->week_points = $currentUserWeekPoints;
 //                    $currentUserForTop->rank = $userRankBasedOnWeekPoints;
 //                    $currentUserForTop->current_rank = $userRankBasedOnWeekPoints;
+                    $currentUserForTop->current_rank = $userRankBasedOnWeekPoints;
                     $currentUserForTop->previous_rank = null;
                     $currentUserForTop->current_user = true;
                     $currentUserForTop->friend = false;

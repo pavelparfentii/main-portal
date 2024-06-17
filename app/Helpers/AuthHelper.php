@@ -162,7 +162,7 @@ class AuthHelper
                         'discord_id' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['provider_id'] : null,
                         'auth_id'=>$authId,
                         'isNeedShow' => false,
-                        'email'=>$decodedToken['email'] ?? null
+                        'email'=>$decodedToken['email'] ?? null,
 //                        'discord_name' => !is_null($decodedToken['discord']) ? $decodedToken['discord']['user_name'] : null
 
                     ]);

@@ -37,8 +37,6 @@ class UpdateInviteesWithIncome extends Command
 //            $nextReferralsClaim = now()->addDays(1);
             $account->next_referrals_claim = $nextReferralsClaim;
             $account->save();
-            $totalFirstLevelIncome = 0;
-            $totalSecondLevelIncome = 0;
 
             $invitesSent = $account->invitesSent()->get();
 
@@ -46,18 +44,24 @@ class UpdateInviteesWithIncome extends Command
                 $firstLevelAccount = Account::where('id', $referral->whom_invited)->first();
 //                $update = $firstLevelAccount->next_update_date;
                 $update = $referral->next_update_date;
-                var_dump($update);
+
+                $totalFirstLevelIncome = 0;
+                $totalSecondLevelIncome = 0;
+                // var_dump($update);
 
                 if ($firstLevelAccount && ($nextReferralsClaim >$update)) {
 //                    var_dump('here');
                     $currentWeek = Week::getCurrentWeekForAccount($firstLevelAccount);
-                    $currentWeekIncome = $currentWeek->value('points') + $currentWeek->value('claimed_points');
+
+                    $currentWeekIncome = $currentWeek->points + $currentWeek->claimed_points;
+
 //                    $currentWeekIncome = 0;
-                    var_dump($currentWeekIncome);
+                    var_dump($firstLevelAccount->id);
                     $dailyIncome = AccountFarm::where('account_id', $firstLevelAccount->id)->value('daily_farm');
+                    // var_dump($dailyIncome);
                     $firstLevelIncome = ($dailyIncome + $currentWeekIncome) * 0.10;
                     $totalFirstLevelIncome += $firstLevelIncome;
-                    var_dump($firstLevelIncome);
+                    var_dump($totalFirstLevelIncome);
 
 //                    $this->accumulateIncomeForInvite($referral, $firstLevelIncome);
 
@@ -68,7 +72,7 @@ class UpdateInviteesWithIncome extends Command
                         if ($secondLevelAccount) {
                             $secondLevelDailyIncome = AccountFarm::where('account_id', $secondLevelAccount->id)->value('daily_farm');
                             $currentWeek = Week::getCurrentWeekForAccount($secondLevelAccount);
-                            $currentWeekIncome = $currentWeek->value('points') + $currentWeek->value('claimed_points');
+                            $currentWeekIncome = $currentWeek->points + $currentWeek->claimed_points;
 //                            $currentWeekIncome = 0;
 
                             $secondLevelIncome = ($secondLevelDailyIncome + $currentWeekIncome) * 0.02;
@@ -86,7 +90,7 @@ class UpdateInviteesWithIncome extends Command
 
 //            // Optionally update account's total accumulated income if needed
 
-;
+            ;
         }
 
 

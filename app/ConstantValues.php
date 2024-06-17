@@ -77,6 +77,11 @@ class ConstantValues
 
     const lord_farm = 20.00;
 
+    //Soulslub connection
+    const souls_connect = 10.000;
+    const x_connect = 5.000;
+    const discord_connect = 5.000;
+
 
 
 }

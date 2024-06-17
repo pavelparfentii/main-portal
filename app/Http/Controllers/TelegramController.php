@@ -153,7 +153,7 @@ class TelegramController extends Controller
 
             if($telegram->next_update_at < now()){
                 $telegram->increment('points', $points);
-                $telegram->update(['next_update_at' => now()->addHours(8)]);
+                $telegram->update(['next_update_at' => now()->addMinutes(8)]);
 
                 Cache::forget($cacheKey);
 
