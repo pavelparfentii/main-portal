@@ -26,6 +26,11 @@ class AccountObserver
             'total_points'=>ConstantValues::souls_connect,
         ]);
 
+        $lowestRank = Account::max('current_rank');
+
+        // Assign the rank to the new account
+        $account->current_rank = $lowestRank;
+
         $currentWeek = Week::getCurrentWeekForAccount($account);
 
 
