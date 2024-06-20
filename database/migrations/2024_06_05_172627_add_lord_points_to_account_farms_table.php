@@ -24,5 +24,6 @@ return new class extends Migration
         Schema::table('account_farms', function (Blueprint $table) {
             $table->dropColumn('lord_points_applied');
         });
+
     }
 };

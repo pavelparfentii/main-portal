@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\AccountResource;
+use App\Models\Account;
 use App\Models\Telegram;
+use App\Models\Week;
 use Carbon\Carbon;
 use DateTime;
 use DateTimeZone;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -135,7 +140,6 @@ class TelegramController extends Controller
         }
         $cacheKey = 'telegram_' . $id;
 
-
         $telegram = Telegram::where('telegram_id', $id)->first();
 
         if (!$telegram) {
@@ -162,5 +166,241 @@ class TelegramController extends Controller
                 return response()->json(['message' => 'not allowed to update'], 423);
             }
         }
+    }
+
+    public function getPoints2(Request $request)
+    {
+        $bearer = $request->bearerToken();
+
+        if (!$bearer) {
+            return response()->json(['errors' => 'No authentification token'], 401);
+        }
+
+        $parts = explode('.', $bearer);
+        if (count($parts) === 2) {
+            $id = $parts[1];
+        }
+//        $id = '1234';
+
+
+        $cacheKey = 'telegram_' . $id;
+
+        $response = Cache::get($cacheKey);
+        if($response){
+            return $response;
+        }
+
+        $telegram = Telegram::where('telegram_id', $id)->first();
+
+        if ($telegram ) {
+            $account = $telegram->account;
+            if($account){
+                $response = $this->getInfo($account);
+
+                Cache::put($cacheKey, $response, now()->addHours(3));
+            }else{
+                $account = new Account();
+                $account->save();
+                $telegram->account()->save($account);
+                $response = $this->getInfo($account);
+
+                Cache::put($cacheKey, $response, now()->addHours(3));
+            }
+
+        } else {
+//            $account = new Account();
+//            $account->save();
+//
+//            $telegram = Telegram::create([
+//                'telegram_id' => $id,
+//                'points' => 0,
+//                'next_update_at' => now(),
+//            ]);
+//            $telegram->account()->save($account);
+//
+//            $response = $this->getInfo($account);
+//            Cache::put($cacheKey, $response, now()->addHours(3));
+            return response()->json(['message' => 'not found'], 204);
+
+//            $telegramRecord = DB::table('telegrams')
+//                ->table('telegrams')
+//                ->where('telegram_id', $id)
+//                ->first();
+//
+////            $telegram = Telegram::on('pgsql_telegrams')->find($telegramRecord->id);
+//
+//            $telegram = Telegram::where('telegram_id', $id)->first();
+//
+//            if ($telegram) {
+//
+//                Cache::put($cacheKey, $telegram, now()->addHours(3));
+//
+//                return response()->json($telegram);
+//            } else {
+//                return response()->json(['message' => 'not found'], 204);
+//            }
+        }
+    }
+
+    public function updatePoints2(Request $request)
+    {
+        $points = 1.0;
+//
+        $bearer = $request->bearerToken();
+
+        if (!$bearer) {
+            return response()->json(['errors' => 'No authentification token'], 401);
+        }
+
+        $parts = explode('.', $bearer);
+        if (count($parts) === 2) {
+            $id = $parts[1];
+        }
+//        $id = '1234';
+        $cacheKey = 'telegram_' . $id;
+
+//        $telegramRecord = DB::connection('pgsql_telegrams')
+//            ->table('telegrams')
+//            ->where('telegram_id', $id)
+//            ->first();
+
+        $telegram = Telegram::where('telegram_id', $id)->first();
+
+        if(!$telegram){
+            $account = new Account();
+            $account->total_points = 0;
+            $account->save();
+
+            $currentWeek = Week::getCurrentWeekForAccount($account);
+            DB::table('telegrams')->insert([
+                'telegram_id'=>$id,
+                'account_id'=>$account->id,
+                'points' => $points,
+                'next_update_at' => now()->addHours(8),
+            ]);
+
+            DB::table('account_farms')
+                ->where('account_id', $account->id)
+                ->increment('total_points', $points);
+            $currentWeek->increment('points', $points);
+            $currentWeek->increment('total_points', $points);
+            Cache::forget($cacheKey);
+
+            $response = $this->getInfo($account);
+
+
+            return $response;
+
+
+//            return response()->json($account);
+        }else{
+            $telegram = Telegram::where('telegram_id', $id)->first();
+
+//            $telegram = Telegram::on('pgsql_telegrams')->find($telegramRecord->id);
+
+            if ($telegram && $telegram->next_update_at < now()) {
+                $account = Account::where('id', $telegram->account_id)->first();
+
+                $currentWeek = Week::getCurrentWeekForAccount($account);
+                $currentWeek->increment('points', $points);
+                $currentWeek->increment('total_points', $points);
+
+                DB::table('account_farms')
+                    ->where('account_id', $account->id)
+                    ->increment('total_points', $points);
+
+
+                $telegram->increment('points', $points);
+                $telegram->update(['next_update_at' => now()->addMinutes(8)]);
+
+                $response = $this->getInfo($account);
+
+                Cache::forget($cacheKey);
+            } else {
+                return response()->json(['message' => 'not allowed to update'], 423);
+            }
+
+            return response()->json($response);
+        }
+
+    }
+
+    private function getInfo($account)
+    {
+
+        Week::getCurrentWeekForAccount($account);
+        $userRank = DB::table('accounts')
+                ->where('total_points', '>', $account->total_points)
+                ->count() + 1;
+
+        $account->setAttribute('rank', $userRank);
+        $account->setAttribute('current_user', true);
+//            $account->setAttribute('invited', '-');
+
+        if(!empty($account->discord_id)){
+            $account->load('discordRoles');
+        }
+
+        $accountResourceArray = (new AccountResource($account))->resolve();
+
+
+        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+
+//            dd($account->id);
+        $currentUserWeekPoints = $account->weeks()
+                ->where('week_number', $previousWeekNumber)
+                ->where('active', false)
+                ->where('claimed', true)
+                ->first()
+                ->claimed_points ?? null;
+
+        $inviteCheck = DB::table('invites')
+
+            ->where('whom_invited', $account->id)
+            ->pluck('id')
+            ->toArray();
+
+        $inviteController = new InviteController();
+        $inviteCode = $inviteController->activateCode($account);
+
+        $isBlocked = $account->blocked_until;
+//            dd($currentUserWeekPoints);
+
+        // if($account->isNeedShow){
+        $accountResourceArray['claimed_points']= $currentUserWeekPoints ?? $account->weeks()
+                ->where('week_number', $previousWeekNumber)
+                ->where('active', false)
+                ->where('claimed', true)
+                ->first()
+                ->claimed_points ?? null;
+
+        $accountResourceArray['invites_count'] = $account->invitesSent()->count() ?? 0;
+        $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
+        $accountResourceArray['invite_code']=$inviteCode;
+        $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
+        $accountResourceArray['total_points']=$account->dailyFarm->total_points;
+        $accountResourceArray['daily_farm']=$account->dailyFarm->daily_farm;
+        // }
+
+        $claimed = $account->weeks()
+            ->where('week_number', $previousWeekNumber)
+            ->where('active', false)
+            ->where('claimed', false)->first();
+
+        return response()->json([
+            'user' => $accountResourceArray,
+            'global'=>[
+                'dropInfo'=>[
+                    'nextDrop'=>Carbon::now()->endOfWeek(),
+                    'lastDrop'=>Carbon::now()->subWeek()->endOfWeek()
+
+                ],
+                'total_users'=> DB::table('accounts')->count(),
+                'total_teams'=>DB::table('teams')->count(),
+                'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
+                'claimed'=>$claimed ? false : true,
+
+            ]
+        ]);
     }
 }

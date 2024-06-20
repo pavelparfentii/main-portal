@@ -147,7 +147,13 @@ class AuthHelper
                     $userWallet = strtolower($isHotWallet);  // Assume checkHotWallet returns the correct wallet address
                 }
 
-                $account = Account::where('wallet', $userWallet)->orWhere('auth_id', $authId)->first();
+                if(!is_null($userWallet) && !empty($userWallet)){
+                    $account = Account::where('wallet', $userWallet)->orWhere('auth_id', $authId)->first();
+                }else{
+                    $account = Account::where('auth_id', $authId)->first();
+                }
+
+
 
                 if (!$account) {
                     // User doesn't exist, create a new user
@@ -179,7 +185,7 @@ class AuthHelper
                 }
                 if(!is_null($decodedToken['email'])){
                     $email = $decodedToken['email'] ?? null;
-                    $account->update(['twitter_avatar' => $email]);
+                    $account->update(['email' => $email]);
                 }
 
                 $account->update(['wallet'=>$userWallet]);
@@ -219,6 +225,7 @@ class AuthHelper
                 return false;
             }
         }
+        return false;
     }
 
 }

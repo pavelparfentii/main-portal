@@ -19,7 +19,7 @@ class Account extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $guarded = false;
 
     protected $hidden = ['created_at', 'updated_at', 'wallet', 'auth_id'];
 
@@ -508,6 +508,16 @@ class Account extends Model
     {
         return $this->hasOne(AccountFarm::class);
     }
+
+    public function telegram(): HasOne
+    {
+        return $this->hasOne(Telegram::class);
+    }
+
+//    public function telegram()
+//    {
+//        return DB::connection('pgsql_telegrams')->table('telegrams')->where('account_id', $this->id)->get();
+//    }
 
 
 

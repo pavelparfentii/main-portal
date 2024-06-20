@@ -9,22 +9,30 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+
     public function up(): void
     {
         Schema::create('telegrams', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('account_id')->nullable();
             $table->string('telegram_id')->nullable();
+            $table->string('telegram_username')->nullable();
             $table->decimal('points', 10, 3)->default(0);
             $table->dateTime('next_update_at')->nullable();
             $table->timestamps();
         });
+
+        Schema::table('telegrams', function (Blueprint $table) {
+            $table->foreign('account_id')->references('id')->on('accounts')->onDelete('cascade');
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
+        Schema::table('telegrams', function (Blueprint $table) {
+            $table->dropForeign(['account_id']);
+        });
+
         Schema::dropIfExists('telegrams');
     }
 };

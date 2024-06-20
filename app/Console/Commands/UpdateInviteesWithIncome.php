@@ -33,7 +33,7 @@ class UpdateInviteesWithIncome extends Command
 
         foreach ($accounts as $account) {
 
-            $nextReferralsClaim = $account->next_referrals_claim ?? now()->addDays(1);
+            $nextReferralsClaim = $account->next_referrals_claim ?? now()->addDays(7);
 //            $nextReferralsClaim = now()->addDays(1);
             $account->next_referrals_claim = $nextReferralsClaim;
             $account->save();

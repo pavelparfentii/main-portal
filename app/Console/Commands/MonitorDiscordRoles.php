@@ -82,7 +82,7 @@ class MonitorDiscordRoles extends Command
             if (json_last_error() === JSON_ERROR_NONE) {
                 // Check the role action
                 if (isset($data['role']) && isset($data['discord_id']) && isset($data['role_id'])) {
-                    $this->info('here');
+
                     $role = $data['role'];
                     $discordId = $data['discord_id'];
                     $roleId = $data['role_id'];

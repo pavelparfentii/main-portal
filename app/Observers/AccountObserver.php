@@ -31,6 +31,8 @@ class AccountObserver
         // Assign the rank to the new account
         $account->current_rank = $lowestRank;
 
+        $account->save();
+
         $currentWeek = Week::getCurrentWeekForAccount($account);
 
 
