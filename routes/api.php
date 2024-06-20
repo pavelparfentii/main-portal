@@ -66,8 +66,11 @@ Route::post('/telegram/initiate', [\App\Http\Controllers\TelegramController::cla
 
 //Route::get('/telegram/points1', [\App\Http\Controllers\TelegramController::class, 'getPoints2']);
 //Route::post('/telegram/points/store1', [\App\Http\Controllers\TelegramController::class, 'updatePoints2']);
+//Route::get('/telegram/points', [\App\Http\Controllers\TelegramController::class, 'getPoints2']);
+
+Route::post('/telegram/points/store', [\App\Http\Controllers\TelegramController::class, 'updatePoints2']);
 
 Route::group(['middleware'=>['custom.api']], function (){
-   Route::get('/telegram/points', [\App\Http\Controllers\TelegramController::class, 'getPoints2']);
-   Route::post('/telegram/points/store', [\App\Http\Controllers\TelegramController::class, 'updatePoints2']);
+
+
 });

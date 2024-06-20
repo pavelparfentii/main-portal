@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AuthHelper;
 use App\Http\Resources\AccountResource;
 use App\Models\Account;
 use App\Models\Telegram;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Facades\JWTFactory;
 
 class TelegramController extends Controller
 {
@@ -79,11 +82,34 @@ class TelegramController extends Controller
         if ($computedHash == $hash) {
             //отправить на аус сервис запрос с user_id, чего получим токен, + решреш , передавать в респонсе токен + рефреш
             $id = json_decode($queryParams['user'])->id;
+//            $id = 367531909;
+//
+//            Cache::put('Bearer ' . $hash . '.' . $id, 'Bearer ' . $hash . '.' . $id, now()->addMinutes(30));
+//
+//            return response()->json(['message' => 'Session initiated', 'key' => 'Bearer ' . $hash . '.' . $id]);
+            $array = ['367531909', '1235'];
 
-            Cache::put('Bearer ' . $hash . '.' . $id, 'Bearer ' . $hash . '.' . $id, now()->addMinutes(30));
+            if(in_array($id, $array)){
+                $telegram = Telegram::where('telegram_id', $id)->first();
+                $sub = $telegram->account->auth_id;
 
-            return response()->json(['message' => 'Session initiated', 'key' => 'Bearer ' . $hash . '.' . $id]);
-        };
+                $customClaims = [
+                    'sub' => $sub,
+                    'telegram_id' => $id,
+                    'exp' => now()->addYear()->timestamp, // Expiration time (1 hour in the future)
+                ];
+
+                //Working with the newest release
+                JWTFactory::customClaims($customClaims);
+                $payload = JWTFactory::make($customClaims);
+                $token = JWTAuth::encode($payload);
+
+                return response()->json(['message' => 'Session initiated', 'token'=>(string)$token, 'exp'=>now()->addYear()->timestamp]);
+            }else{
+                return response()->json(['errors' => 'Not found'], 404);
+            }
+
+        }
 
         return response()->json(['errors' => 'Authentification failed'], 401);
 
@@ -147,7 +173,7 @@ class TelegramController extends Controller
             $telegram = Telegram::create([
                 'telegram_id' => $id,
                 'points' => $points,
-                'next_update_at' => now()->addHours(8),
+                'next_update_at' => now()->addMinutes(8),
             ]);
 
             Cache::forget($cacheKey);
@@ -170,17 +196,25 @@ class TelegramController extends Controller
 
     public function getPoints2(Request $request)
     {
-        $bearer = $request->bearerToken();
-
-        if (!$bearer) {
-            return response()->json(['errors' => 'No authentification token'], 401);
-        }
-
-        $parts = explode('.', $bearer);
-        if (count($parts) === 2) {
-            $id = $parts[1];
-        }
+//        $bearer = $request->bearerToken();
+//
+//        if (!$bearer) {
+//            return response()->json(['errors' => 'No authentification token'], 401);
+//        }
+//
+//        $parts = explode('.', $bearer);
+//        if (count($parts) === 2) {
+//            $id = $parts[1];
+//        }
 //        $id = '1234';
+
+        $account = AuthHelper::auth($request);
+
+        if (!$account) {
+            return response()->json(['message' => 'non authorized'], 401);
+        }
+
+        dd($account);
 
 
         $cacheKey = 'telegram_' . $id;
@@ -195,17 +229,18 @@ class TelegramController extends Controller
         if ($telegram ) {
             $account = $telegram->account;
             if($account){
-                $response = $this->getInfo($account);
+                $response = $this->getInfo($account, $telegram->next_update_at);
 
                 Cache::put($cacheKey, $response, now()->addHours(3));
             }else{
                 $account = new Account();
                 $account->save();
                 $telegram->account()->save($account);
-                $response = $this->getInfo($account);
+                $response = $this->getInfo($account, $telegram->next_update_at);
 
                 Cache::put($cacheKey, $response, now()->addHours(3));
             }
+            return $response;
 
         } else {
 //            $account = new Account();
@@ -244,68 +279,52 @@ class TelegramController extends Controller
 
     public function updatePoints2(Request $request)
     {
+
+        $account = AuthHelper::auth($request);
+
+        if (!$account) {
+            return response()->json(['message' => 'non authorized'], 401);
+        }
+
         $points = 1.0;
 //
-        $bearer = $request->bearerToken();
+//        $bearer = $request->bearerToken();
+//
+//        if (!$bearer) {
+//            return response()->json(['errors' => 'No authentification token'], 401);
+//        }
 
-        if (!$bearer) {
-            return response()->json(['errors' => 'No authentification token'], 401);
-        }
-
-        $parts = explode('.', $bearer);
-        if (count($parts) === 2) {
-            $id = $parts[1];
-        }
+//        $parts = explode('.', $bearer);
+//        if (count($parts) === 2) {
+//            $id = $parts[1];
+//        }
 //        $id = '1234';
-        $cacheKey = 'telegram_' . $id;
+//        $cacheKey = 'telegram_' . $id;
 
-//        $telegramRecord = DB::connection('pgsql_telegrams')
-//            ->table('telegrams')
-//            ->where('telegram_id', $id)
-//            ->first();
+        $telegram = Telegram::where('account_id', $account->id)->first();
 
-        $telegram = Telegram::where('telegram_id', $id)->first();
 
         if(!$telegram){
-            $account = new Account();
-            $account->total_points = 0;
-            $account->save();
 
-            $currentWeek = Week::getCurrentWeekForAccount($account);
-            $telegram = Telegram::create(
-                [
-                    'telegram_id'=>$id,
-                    'account_id'=>$account->id,
-                    'points' => $points,
-                    'next_update_at' => now()->addMinutes(8),
+            return response()->json([
+
+                'user' => null,
+                'global'=>[
+                    'dropInfo'=>[
+                        'nextDrop'=>Carbon::now()->endOfWeek(),
+                        'lastDrop'=>Carbon::now()->subWeek()->endOfWeek()
+
+                    ],
+                    'total_users'=> DB::table('accounts')->count(),
+                    'total_teams'=>DB::table('teams')->count(),
+                    'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
+                    'claimed'=>null,
+
                 ]
-            );
 
-//            DB::table('telegrams')->insert([
-//                'telegram_id'=>$id,
-//                'account_id'=>$account->id,
-//                'points' => $points,
-//                'next_update_at' => now()->addMinutes(8),
-//            ]);
+            ]);
 
-            DB::table('account_farms')
-                ->where('account_id', $account->id)
-                ->increment('total_points', $points);
-            $currentWeek->increment('points', $points);
-            $currentWeek->increment('total_points', $points);
-            Cache::forget($cacheKey);
-
-            $response = $this->getInfo($account, $telegram->next_update_at);
-
-
-            return $response;
-
-
-//            return response()->json($account);
         }else{
-            $telegram = Telegram::where('telegram_id', $id)->first();
-
-//            $telegram = Telegram::on('pgsql_telegrams')->find($telegramRecord->id);
 
             if ($telegram && $telegram->next_update_at < now()) {
                 $account = Account::where('id', $telegram->account_id)->first();
@@ -324,7 +343,6 @@ class TelegramController extends Controller
 
                 $response = $this->getInfo($account, $telegram->next_update_at );
 
-                Cache::forget($cacheKey);
             } else {
                 return response()->json(['message' => 'not allowed to update'], 423);
             }
@@ -344,7 +362,7 @@ class TelegramController extends Controller
 
         $account->setAttribute('rank', $userRank);
         $account->setAttribute('current_user', true);
-        $account->setAttribute('$next_update_at', $next_update_at);
+        $account->setAttribute('telegram_next_update_at', $next_update_at);
 //            $account->setAttribute('invited', '-');
 
         if(!empty($account->discord_id)){
@@ -390,6 +408,8 @@ class TelegramController extends Controller
         $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
         $accountResourceArray['total_points']=$account->dailyFarm->total_points;
         $accountResourceArray['daily_farm']=$account->dailyFarm->daily_farm;
+
+        $account->telegram()->exists() ? $accountResourceArray['telegram_next_update'] = $account->telegram->next_update_at : $accountResourceArray['telegram_next_update'] = null;
         // }
 
         $claimed = $account->weeks()
@@ -398,7 +418,7 @@ class TelegramController extends Controller
             ->where('claimed', false)->first();
 
         return response()->json([
-            'telegram'=> [
+
                 'user' => $accountResourceArray,
                 'global'=>[
                     'dropInfo'=>[
@@ -412,7 +432,25 @@ class TelegramController extends Controller
                     'claimed'=>$claimed ? false : true,
 
                 ]
-            ]
+
         ]);
+    }
+
+    public static function generateToken(Request $request): string
+    {
+        // Example payload (claims)
+        $customClaims = [
+            'sub' => $request->sub,
+            'telegram_id' => $request->wallet_address,
+            'exp' => now()->addYear()->timestamp, // Expiration time (1 hour in the future)
+        ];
+
+        //Working with the newest release
+        JWTFactory::customClaims($customClaims);
+        $payload = JWTFactory::make($customClaims);
+        $token = JWTAuth::encode($payload);
+
+        return response()->json(['token'=>(string)$token, 'exp'=>now()->addYear()->timestamp]);
+//        return (string)$token;
     }
 }

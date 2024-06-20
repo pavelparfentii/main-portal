@@ -246,6 +246,9 @@ class PointsController extends Controller
 
             $account->setAttribute('rank', $userRank);
             $account->setAttribute('current_user', true);
+
+
+
 //            $account->setAttribute('invited', '-');
 
             if(!empty($account->discord_id)){
@@ -291,6 +294,8 @@ class PointsController extends Controller
             $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
             $accountResourceArray['total_points']=$account->dailyFarm->total_points;
             $accountResourceArray['daily_farm']=$account->dailyFarm->daily_farm;
+
+            $account->telegram()->exists() ? $accountResourceArray['telegram_next_update'] = $account->telegram->next_update_at : $accountResourceArray['telegram_next_update'] = null;
             // }
 
             $claimed = $account->weeks()
