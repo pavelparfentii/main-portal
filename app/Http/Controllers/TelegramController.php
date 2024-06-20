@@ -272,12 +272,21 @@ class TelegramController extends Controller
             $account->save();
 
             $currentWeek = Week::getCurrentWeekForAccount($account);
-            DB::table('telegrams')->insert([
-                'telegram_id'=>$id,
-                'account_id'=>$account->id,
-                'points' => $points,
-                'next_update_at' => now()->addHours(8),
-            ]);
+            $telegram = Telegram::create(
+                [
+                    'telegram_id'=>$id,
+                    'account_id'=>$account->id,
+                    'points' => $points,
+                    'next_update_at' => now()->addMinutes(8),
+                ]
+            );
+
+//            DB::table('telegrams')->insert([
+//                'telegram_id'=>$id,
+//                'account_id'=>$account->id,
+//                'points' => $points,
+//                'next_update_at' => now()->addMinutes(8),
+//            ]);
 
             DB::table('account_farms')
                 ->where('account_id', $account->id)
@@ -286,7 +295,7 @@ class TelegramController extends Controller
             $currentWeek->increment('total_points', $points);
             Cache::forget($cacheKey);
 
-            $response = $this->getInfo($account);
+            $response = $this->getInfo($account, $telegram->next_update_at);
 
 
             return $response;
@@ -313,19 +322,19 @@ class TelegramController extends Controller
                 $telegram->increment('points', $points);
                 $telegram->update(['next_update_at' => now()->addMinutes(8)]);
 
-                $response = $this->getInfo($account);
+                $response = $this->getInfo($account, $telegram->next_update_at );
 
                 Cache::forget($cacheKey);
             } else {
                 return response()->json(['message' => 'not allowed to update'], 423);
             }
 
-            return response()->json($response);
+            return $response;
         }
 
     }
 
-    private function getInfo($account)
+    private function getInfo($account, $next_update_at)
     {
 
         Week::getCurrentWeekForAccount($account);
@@ -335,6 +344,7 @@ class TelegramController extends Controller
 
         $account->setAttribute('rank', $userRank);
         $account->setAttribute('current_user', true);
+        $account->setAttribute('$next_update_at', $next_update_at);
 //            $account->setAttribute('invited', '-');
 
         if(!empty($account->discord_id)){
@@ -388,18 +398,20 @@ class TelegramController extends Controller
             ->where('claimed', false)->first();
 
         return response()->json([
-            'user' => $accountResourceArray,
-            'global'=>[
-                'dropInfo'=>[
-                    'nextDrop'=>Carbon::now()->endOfWeek(),
-                    'lastDrop'=>Carbon::now()->subWeek()->endOfWeek()
+            'telegram'=> [
+                'user' => $accountResourceArray,
+                'global'=>[
+                    'dropInfo'=>[
+                        'nextDrop'=>Carbon::now()->endOfWeek(),
+                        'lastDrop'=>Carbon::now()->subWeek()->endOfWeek()
 
-                ],
-                'total_users'=> DB::table('accounts')->count(),
-                'total_teams'=>DB::table('teams')->count(),
-                'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
-                'claimed'=>$claimed ? false : true,
+                    ],
+                    'total_users'=> DB::table('accounts')->count(),
+                    'total_teams'=>DB::table('teams')->count(),
+                    'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
+                    'claimed'=>$claimed ? false : true,
 
+                ]
             ]
         ]);
     }
