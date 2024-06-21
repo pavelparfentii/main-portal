@@ -82,14 +82,39 @@ class TelegramController extends Controller
         if ($computedHash == $hash) {
             //отправить на аус сервис запрос с user_id, чего получим токен, + решреш , передавать в респонсе токен + рефреш
             $id = json_decode($queryParams['user'])->id;
-//            $id = 367531909;
-//
-//            Cache::put('Bearer ' . $hash . '.' . $id, 'Bearer ' . $hash . '.' . $id, now()->addMinutes(30));
-//
-//            return response()->json(['message' => 'Session initiated', 'key' => 'Bearer ' . $hash . '.' . $id]);
-            $array = ['367531909', '1235'];
 
-            if(in_array($id, $array)){
+            $telegram = Telegram::where('telegram_id', $id)->first();
+
+            if(!$telegram){
+                $auth_id = $this->generateUuidV4();
+                $account = Account::create([
+                   'auth_id'=> $auth_id,
+                   'total_points'=>0
+                ]);
+                $telegram = Telegram::create(
+                    [
+                      'account_id'=>$account->id,
+                      'telegram_id'=>$id,
+                      'next_update_at'=>now(),
+                    ]
+                );
+
+                $sub = $telegram->account->auth_id;
+
+                $customClaims = [
+                    'sub' => $sub,
+                    'telegram_id' => $id,
+                    'exp' => now()->addYear()->timestamp, // Expiration time (1 hour in the future)
+                ];
+
+                //Working with the newest release
+                JWTFactory::customClaims($customClaims);
+                $payload = JWTFactory::make($customClaims);
+                $token = JWTAuth::encode($payload);
+
+                return response()->json(['message' => 'Session initiated', 'token'=>(string)$token, 'exp'=>now()->addYear()->timestamp]);
+
+            }else{
                 $telegram = Telegram::where('telegram_id', $id)->first();
                 $sub = $telegram->account->auth_id;
 
@@ -105,8 +130,6 @@ class TelegramController extends Controller
                 $token = JWTAuth::encode($payload);
 
                 return response()->json(['message' => 'Session initiated', 'token'=>(string)$token, 'exp'=>now()->addYear()->timestamp]);
-            }else{
-                return response()->json(['errors' => 'Not found'], 404);
             }
 
         }
@@ -452,5 +475,13 @@ class TelegramController extends Controller
 
         return response()->json(['token'=>(string)$token, 'exp'=>now()->addYear()->timestamp]);
 //        return (string)$token;
+    }
+
+    function generateUuidV4() {
+        $data = random_bytes(16);
+        $data[6] = chr((ord($data[6]) & 0x0f) | 0x40); // set version to 0100
+        $data[8] = chr((ord($data[8]) & 0x3f) | 0x80); // set bits 6-7 to 10
+
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 }

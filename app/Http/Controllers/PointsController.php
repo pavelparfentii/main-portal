@@ -240,11 +240,11 @@ class PointsController extends Controller
             $this->updateFarmPoints($account);
 
             Week::getCurrentWeekForAccount($account);
-            $userRank = DB::table('accounts')
-                    ->where('total_points', '>', $account->total_points)
-                    ->count() + 1;
-
-            $account->setAttribute('rank', $userRank);
+//            $userRank = DB::table('accounts')
+//                    ->where('total_points', '>', $account->total_points)
+//                    ->count() + 1;
+//
+//            $account->setAttribute('rank', $userRank);
             $account->setAttribute('current_user', true);
 
 
