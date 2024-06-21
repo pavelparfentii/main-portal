@@ -77,7 +77,7 @@ def main() -> None:
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
 
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.Regex("🎮 Launch app|💬 Chat|💎 souls.club channel|🌐 About souls.club"), start))
 
     # Register handlers for custom keyboard buttons
     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("🎮 Launch app"), handle_launch_app))
