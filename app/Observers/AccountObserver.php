@@ -19,17 +19,39 @@ class AccountObserver
      */
     public function created(Account $account): void
     {
-        AccountFarm::create([
-            'account_id' => $account->id,
-            'daily_farm' => 0.00, // Default value
-            'daily_farm_last_update' => now(), // Default value
-            'total_points'=>ConstantValues::souls_connect,
-        ]);
+        if(!is_null($account->wallet) && !empty($account->wallet)){
+            $winners = DB::table('farming_n_f_t_s')
+                ->where('holder', $account->wallet)
+                ->get();
+            if(count($winners)>0){
+                $farmPoints = DB::table('farming_n_f_t_s')
+                        ->where('holder', $account->wallet)
+                        ->sum('farm_points_daily_total') ?? 0;
+
+                AccountFarm::create([
+                    'account_id' => $account->id,
+                    'daily_farm' => $farmPoints,
+                    'daily_farm_last_update' => now(),
+                    'total_points'=>ConstantValues::souls_connect,
+                ]);
+            }
+        }else{
+            AccountFarm::create([
+                'account_id' => $account->id,
+                'daily_farm' => 0.00, // Default value
+                'daily_farm_last_update' => now(), // Default value
+                'total_points'=>ConstantValues::souls_connect,
+            ]);
+        }
+
+
 
         $lowestRank = Account::max('current_rank');
+        $previousLowestRank = Account::max('previous_rank');
 
         // Assign the rank to the new account
         $account->current_rank = $lowestRank;
+        $account->previous_rank = $previousLowestRank;
 
         $account->save();
 

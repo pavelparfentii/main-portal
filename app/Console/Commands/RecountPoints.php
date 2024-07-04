@@ -52,10 +52,11 @@ class RecountPoints extends Command
                 ->first();
 
             if($previousWeek){
+
                 $account->total_points += $previousWeek->total_points;
                 $account->save();
                 $previousWeek->update(['active'=>false]);
-
+                $account->refresh();
                 DB::table('account_farms')
                     ->where('account_id', $account->id)
                     ->update(['total_points' => $account->total_points]);

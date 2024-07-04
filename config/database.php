@@ -78,6 +78,19 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        'pgsql_telegrams' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_HOST_TELEGRAMS', '127.0.0.1'),
+            'port' => env('DB_PORT_TELEGRAMS', '6432'),
+            'database' => env('DB_DATABASE_TELEGRAMS', 'telegrams_db'),
+            'username' => env('DB_USERNAME_TELEGRAMS', 'youruser'),
+            'password' => env('DB_PASSWORD_TELEGRAMS', 'yourpassword'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'schema' => 'public',
+            'sslmode' => 'prefer',
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

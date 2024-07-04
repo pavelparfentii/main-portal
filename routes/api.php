@@ -60,7 +60,9 @@ Route::group(['middleware' => ['api.key']], function() {
     Route::get('/user/info', [\App\Http\Controllers\PointsController::class, 'getPersonalPointsForSafeSoul']);
 });
 
-Route::post('/telegram/initiate', [\App\Http\Controllers\TelegramController::class, 'initiateSession']);
+//Route::post('/telegram/initiate', [\App\Http\Controllers\TelegramController::class, 'initiateSession']);
+
+Route::post('/googlesheet', [\App\Http\Controllers\GooglesheetPartnerController::class, 'index']);
 
 //Route::post('/telegram/points/store', [\App\Http\Controllers\TelegramController::class, 'updatePoints']);
 
@@ -73,4 +75,27 @@ Route::post('/telegram/points/store', [\App\Http\Controllers\TelegramController:
 Route::group(['middleware'=>['custom.api']], function (){
 
 
+});
+
+Route::prefix('telegram')->group(function(){
+    Route::post('initiate', [\App\Http\Controllers\TelegramController::class, 'initiateSessionSeparateDB']);
+    Route::get('/portal/info', [\App\Http\Controllers\TelegramController::class, 'getInfoEndpoint']);
+    Route::get('/points/account', [\App\Http\Controllers\TelegramController::class, 'getPointsDataEndpoint']);
+    Route::get('/points/friends', [\App\Http\Controllers\TelegramController::class, 'getFriendsForAccountEndpoint']);
+
+    Route::post('/points/store', [\App\Http\Controllers\TelegramController::class, 'updatePoints2']);
+
+    Route::post('/team/create', [\App\Http\Controllers\TelegramController::class, 'makeTeamEndpoint']);
+    Route::post('team/{slug}/join', [\App\Http\Controllers\TelegramController::class, 'joinTeamEndpoint']);
+    Route::get('team/{slug}', [\App\Http\Controllers\TelegramController::class, 'getTeamListEndpoint']);
+
+    Route::get('/points/teams', [\App\Http\Controllers\TelegramController::class, 'getTeamsListEndpoint']);
+    Route::post('team/leave', [\App\Http\Controllers\TelegramController::class, 'leaveTeamEndpoint']);
+
+    Route::post('/team/check/name', [\App\Http\Controllers\TelegramController::class, 'checkNameEndpoint']);
+
+    Route::post('/invite/account', [\App\Http\Controllers\TelegramController::class, 'inviteUserEndpoint']);
+
+    Route::get('/referrals/list', [\App\Http\Controllers\TelegramController::class, 'getReferralsDataEndpoint']);
+//    Route::get('/points/friends', )
 });

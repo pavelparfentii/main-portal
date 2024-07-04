@@ -82,4 +82,33 @@ class Week extends Model
         return $currentWeek;
     }
 
+    public static function getCurrentWeekForTelegramAccount(Account $account)
+    {
+        $currentDate = Carbon::now();
+
+        $startOfWeek = $currentDate->copy()->startOfWeek();
+        $endOfWeek = $currentDate->copy()->endOfWeek();
+
+        $currentWeek = static::on('pgsql_telegrams')
+            ->where('account_id', $account->id)
+            ->where('start_date', '<=', $startOfWeek)
+            ->where('end_date', '>=', $endOfWeek)
+            ->where('active', true)
+            ->first();
+
+        if (!$currentWeek) {
+            $currentWeek = $account->weeks()->create([
+                'week_number' => $currentDate->weekOfYear . '-' . $currentDate->year,
+                'start_date' => $startOfWeek->toDateString(),
+                'end_date' => $endOfWeek->toDateString(),
+                'active' => true,
+                'points' => 0,
+                'claim_points' => 0,
+                'claimed' => false
+            ]);
+        }
+
+        return $currentWeek;
+    }
+
 }

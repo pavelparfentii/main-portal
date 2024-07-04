@@ -130,8 +130,6 @@ class ReferralsController extends Controller
 
         $account->referrals_claimed = true;
         $account->next_referrals_claim = now()->addDays(7);
-//        $account->next_referrals_claim = now()->addDays(1);
-        // $account->total_points = $totalIncome;
 
         $currentWeek = Week::getCurrentWeekForAccount($account);
         $currentWeek->increment('referrals_income', $totalIncome);

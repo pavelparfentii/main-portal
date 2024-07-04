@@ -467,6 +467,25 @@ class Account extends Model
         });
     }
 
+    public function createTeamAndAssignTelegram($teamData)
+    {
+        DB::transaction(function () use ($teamData) {
+
+            if ($this->team_id) {
+
+
+                $this->team_id = null;
+                $this->save();
+            }
+
+
+            $team = Team::on('pgsql_telegrams')->create($teamData);
+
+            $this->team()->associate($team);
+            $this->save();
+        });
+    }
+
     public function downloadTwitterAvatar($result): ?string
     {
         $TWITTER_AVATAR_PATH = 'twitter/avatars';

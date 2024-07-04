@@ -323,4 +323,28 @@ class InviteController extends Controller
         }
     }
 
+    public function activateCodeTelegram($account)
+    {
+
+        if(!$account){
+            return response()->json(['message'=>'non authorized'], 401);
+        }
+
+        if($account->codes()->where('active', true)->exists()){
+            $code =$account->codes()->where('active', true)->latest()->first();
+
+
+        }else{
+            $code = Code::on('pgsql_telegrams')->create([
+                'value' => strtoupper(Str::random(5)),
+                'active' => true,
+                'account_id'=>$account->id
+            ]);
+
+        }
+
+        return $code->value;
+
+    }
+
 }

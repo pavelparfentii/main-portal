@@ -7,6 +7,7 @@ use App\Nova\Metrics\AllTwitterComments;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Testing\Concerns\Has;
+use Laravel\Nova\Fields\Boolean;
 use Laravel\Nova\Fields\Date;
 use Laravel\Nova\Fields\DateTime;
 use Laravel\Nova\Fields\HasMany;
@@ -38,7 +39,7 @@ class Account extends Resource
      * @var array
      */
     public static $search = [
-        'id', 'wallet', 'twitter_username', 'email'
+        'id', 'wallet', 'twitter_username', 'email', 'discord_id'
     ];
 
     /**
@@ -76,6 +77,8 @@ class Account extends Resource
             })->sortable(),
 
             DateTime::make('Created at', 'created_at'),
+
+            Boolean::make('Ambassador', 'ambassador'),
 
             Number::make('gitcoin_score')->min(0.00)->step(0.01)->sortable(),
 

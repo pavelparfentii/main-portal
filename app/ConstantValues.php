@@ -81,6 +81,7 @@ class ConstantValues
     const souls_connect = 10.000;
     const x_connect = 5.000;
     const discord_connect = 5.000;
+    const telegram_connect = 5.000;
 
 
 
