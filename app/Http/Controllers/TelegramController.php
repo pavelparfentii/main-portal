@@ -372,6 +372,13 @@ class TelegramController extends Controller
 
         $authDate = $queryParams['auth_date'] ?? null;
 
+        $user = $queryParams['user'] ?? null;
+
+        $fist_name = $user['first_name'] ?? null;
+        $last_name = $user['last_name'] ?? null;
+        $username = $user['username'] ?? null;
+        $avatar = null;
+
         $authDateTime = new DateTime("@$authDate");
         $authDateTime->setTimezone(new DateTimeZone('Europe/Moscow')); // Assuming the auth_date is in UTC
         $currentDateTime = new DateTime('now', new DateTimeZone('Europe/Moscow'));
@@ -407,6 +414,10 @@ class TelegramController extends Controller
                 $telegram = Telegram::on('pgsql_telegrams')->create(
                     [
                         'account_id'=>$account->id,
+                        'first_name'=>$fist_name,
+                        'last_name'=>$last_name,
+                        'telegram_username'=>$username,
+                        'avatar'=>$avatar,
                         'telegram_id'=>$id,
                         'next_update_at'=>now(),
                     ]
@@ -431,6 +442,16 @@ class TelegramController extends Controller
 
             }else{
                 $telegram = Telegram::on('pgsql_telegrams')->where('telegram_id', $id)->first();
+
+                if(empty($telegram->first_name) || is_null($telegram->first_name)){
+                    $telegram->update([
+                        'first_name'=>$fist_name,
+                        'last_name'=>$last_name,
+                        'telegram_username'=>$username,
+                        'avatar'=>$avatar,
+                    ]);
+                }
+
                 $sub = $telegram->account->auth_id;
 
                 $customClaims = [
@@ -584,6 +605,11 @@ class TelegramController extends Controller
         return $this->getReferralsData($request);
     }
 
+    public function claimIncomeEndpoint(Request $request)
+    {
+        return $this->claimIncome($request);
+    }
+
     public function accountCreated($account)
     {
 
@@ -592,7 +618,7 @@ class TelegramController extends Controller
 
         // Assign the rank to the new account
         $account->current_rank = $lowestRank;
-        $account->previous_rank = $previousLowestRank;
+//        $account->previous_rank = $previousLowestRank;
 
         $account->save();
 

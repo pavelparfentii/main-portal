@@ -150,9 +150,9 @@ trait TelegramTrait{
 
         $cacheKey = $this->getCacheKey($period, $account);
 
-        if (Cache::has($cacheKey)) {
-            return response()->json(Cache::get($cacheKey));
-        }
+//        if (Cache::has($cacheKey)) {
+//            return response()->json(Cache::get($cacheKey));
+//        }
 
         if($period === 'total'){
             $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
@@ -237,7 +237,7 @@ trait TelegramTrait{
                 'list' => AccountResource::collection($topAccounts),
             ];
 
-            Cache::put($cacheKey, $response, now()->addHours(10));
+//            Cache::put($cacheKey, $response, now()->addHours(10));
 
             return response()->json($response);
 
@@ -335,7 +335,7 @@ trait TelegramTrait{
                 'list' => AccountResource::collection($topAccounts),
             ];
 
-            Cache::put($cacheKey, $response, now()->addHours(36));
+//            Cache::put($cacheKey, $response, now()->addHours(36));
 
             return response()->json($response);
 

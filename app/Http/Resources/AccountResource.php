@@ -32,6 +32,10 @@ class AccountResource extends JsonResource
             'referrals_claimed'=> $this->referrals_claimed,
             'current_rank'=>$this->current_rank,
             'previous_rank'=>$this->previous_rank,
+            'telegram_username'=>$this->telegram->telegram_username ?? null,
+            'telegram_first_name'=>$this->telegram->first_name ?? null,
+            'telegram_last_name'=>$this->telegram->last_name ?? null,
+            'telegram_avatar'=>$this->telegram->avatar ?? null,
 
 //            'discord_roles' => $this->whenLoaded('discordRoles', function () {
 //                return $this->discordRoles->map(function ($role) {

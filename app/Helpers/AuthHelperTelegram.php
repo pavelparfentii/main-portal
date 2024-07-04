@@ -27,8 +27,10 @@ class AuthHelperTelegram
                     'auth_id'=> $authId,
                     'total_points'=>0
                 ]);
-                Week::on('pgsql_telegrams')->getCurrentWeekForAccount($account);
             }
+
+
+            Week::getCurrentWeekForTelegramAccount($account);
 
             return $account;
 
