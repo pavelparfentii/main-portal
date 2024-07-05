@@ -22,12 +22,12 @@ class AuthHelperTelegram
 
             $account = Account::on('pgsql_telegrams')->where('auth_id', $authId)->first();
 
-            if(!$account){
-                $account = Account::on('pgsql_telegrams')->create([
-                    'auth_id'=> $authId,
-                    'total_points'=>0
-                ]);
-            }
+//            if(!$account){
+//                $account = Account::on('pgsql_telegrams')->create([
+//                    'auth_id'=> $authId,
+//                    'total_points'=>0
+//                ]);
+//            }
 
 
             Week::getCurrentWeekForTelegramAccount($account);

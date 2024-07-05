@@ -852,7 +852,7 @@ trait TelegramTrait{
                 $totalFirstLevelIncome = $referral->accumulated_income;
                 $totalSecondLevelIncome +=$referral->accumulated_income;
 
-                if(!empty($account->twitter_id)){
+                if(!empty($account->telegram->telegram_id)){
                     return [
                         'id'=>$account->id,
                         'twitter_name' => $account->twitter_name,
@@ -860,7 +860,10 @@ trait TelegramTrait{
                         'twitter_username'=>$account->twitter_username,
                         'total_points' => $account->total_points,
                         'invited'=>$account->invitesSent()->count(),
-                        'referral_income'=>$totalFirstLevelIncome
+                        'referral_income'=>$totalFirstLevelIncome,
+                        'telegram_first_name'=>$account->telegram->first_name,
+                        'telegram_last_name'=>$account->telegram->last_name,
+                        'telegram_avatar'=>$account->telegram->avatar
 
                     ];
                 }else{
@@ -877,6 +880,8 @@ trait TelegramTrait{
         $inviteReceived = $account->invitedMe()->first();
         $invitedMe = null;
 
+//        dd(Telegram::on('pgsql_telegrams')->where('account_id', $inviteReceived->invited_by)->pluck('first_name'));
+
         if ($inviteReceived) {
             $invitedMe = [
                 'id' => $inviteReceived->invitedBy->id,
@@ -884,7 +889,10 @@ trait TelegramTrait{
                 'twitter_avatar' => $inviteReceived->invitedBy->twitter_avatar,
                 'twitter_username'=>$inviteReceived->invitedBy->twitter_username,
                 'total_points' => $inviteReceived->invitedBy->total_points,
-                'code'=>$inviteReceived->used_code
+                'code'=>$inviteReceived->used_code,
+                'telegram_first_name'=>Telegram::on('pgsql_telegrams')->where('account_id', $inviteReceived->invited_by)->value('first_name') ?? null,
+                'telegram_last_name'=>Telegram::on('pgsql_telegrams')->where('account_id', $inviteReceived->invited_by)->value('last_name') ?? null,
+                'telegram_avatar'=>Telegram::on('pgsql_telegrams')->where('account_id', $inviteReceived->invited_by)->value('avatar') ?? null
 
             ];
         }

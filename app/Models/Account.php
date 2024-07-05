@@ -35,57 +35,91 @@ class Account extends Model
     {
         static::created(function ($account) {
 
-            //create previous week and attach to new account
-            $currentDate = Carbon::now();
-            $startOfWeek = $currentDate->copy()->subWeek()->startOfWeek();
-            $endOfWeek = $currentDate->copy()->subWeek()->endOfWeek();
+            $connection = $account->getConnectionName();
 
-            $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+            if($connection === 'pgsql'){
+                //create previous week and attach to new account
+                $currentDate = Carbon::now();
+                $startOfWeek = $currentDate->copy()->subWeek()->startOfWeek();
+                $endOfWeek = $currentDate->copy()->subWeek()->endOfWeek();
 
-            $previousWeek = Week::where('account_id', $account->id)
-                ->where('start_date', '<=', $startOfWeek)
-                ->where('end_date', '>=', $endOfWeek)
-                ->where('active', false)
-                ->first();
+                $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+
+                $previousWeek = Week::where('account_id', $account->id)
+                    ->where('start_date', '<=', $startOfWeek)
+                    ->where('end_date', '>=', $endOfWeek)
+                    ->where('active', false)
+                    ->first();
 
 
-            if (!$previousWeek) {
+                if (!$previousWeek) {
 
-                $previousWeek = $account->weeks()->create([
-                    'week_number' => $previousWeekNumber,
-                    'start_date' => $startOfWeek->toDateString(),
-                    'end_date' => $endOfWeek->toDateString(),
-                    'active' => false,
-                    'total_points'=>0.000,
-                    'points' => 0.000,
-                    'claim_points' => 0.000,
-                    'claimed' => true
-                ]);
+                    $previousWeek = $account->weeks()->create([
+                        'week_number' => $previousWeekNumber,
+                        'start_date' => $startOfWeek->toDateString(),
+                        'end_date' => $endOfWeek->toDateString(),
+                        'active' => false,
+                        'total_points'=>0.000,
+                        'points' => 0.000,
+                        'claim_points' => 0.000,
+                        'claimed' => true
+                    ]);
+                }
+
+                $currentWeek = Week::getCurrentWeekForAccount($account);
+                if ($account->role === ConstantValues::safesoul_og_patrol_role) {
+                    $safeSoul = new SafeSoul([
+                        'account_id' => $account->id,
+                        'week_id' => $currentWeek->id,
+                        'points' => ConstantValues::safesoul_OG_patrol_points,
+                        'comment' => 'роль Ог патрульный',
+                        'query_param' => ConstantValues::safesoul_og_patrol_role
+                    ]);
+                    $currentWeek->safeSouls()->save($safeSoul);
+                    $currentWeek->increment('points', ConstantValues::safesoul_OG_patrol_points);
+                }
+                if ($account->role === ConstantValues::safesoul_patrol_role) {
+                    $safeSoul = new SafeSoul([
+                        'account_id' => $account->id,
+                        'week_id' => $currentWeek->id,
+                        'points' => ConstantValues::safesoul_patrol_points,
+                        'comment' => 'роль патрульный',
+                        'query_param' => ConstantValues::safesoul_patrol_role
+                    ]);
+                    $currentWeek->safeSouls()->save($safeSoul);
+                    $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
+                }
+            }elseif($connection === 'pgsql_telegrams'){
+                $currentDate = Carbon::now();
+                $startOfWeek = $currentDate->copy()->subWeek()->startOfWeek();
+                $endOfWeek = $currentDate->copy()->subWeek()->endOfWeek();
+
+                $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+
+                $previousWeek = Week::on('pgsql_telegrams')->where('account_id', $account->id)
+                    ->where('start_date', '<=', $startOfWeek)
+                    ->where('end_date', '>=', $endOfWeek)
+                    ->where('active', false)
+                    ->first();
+
+
+                if (!$previousWeek) {
+
+                    $previousWeek = $account->weeks()->create([
+                        'week_number' => $previousWeekNumber,
+                        'start_date' => $startOfWeek->toDateString(),
+                        'end_date' => $endOfWeek->toDateString(),
+                        'active' => false,
+                        'total_points'=>0.000,
+                        'points' => 0.000,
+                        'claim_points' => 0.000,
+                        'claimed' => true
+                    ]);
+                }
+
+                $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
             }
 
-            $currentWeek = Week::getCurrentWeekForAccount($account);
-            if ($account->role === ConstantValues::safesoul_og_patrol_role) {
-                $safeSoul = new SafeSoul([
-                    'account_id' => $account->id,
-                    'week_id' => $currentWeek->id,
-                    'points' => ConstantValues::safesoul_OG_patrol_points,
-                    'comment' => 'роль Ог патрульный',
-                    'query_param' => ConstantValues::safesoul_og_patrol_role
-                ]);
-                $currentWeek->safeSouls()->save($safeSoul);
-                $currentWeek->increment('points', ConstantValues::safesoul_OG_patrol_points);
-            }
-            if ($account->role === ConstantValues::safesoul_patrol_role) {
-                $safeSoul = new SafeSoul([
-                    'account_id' => $account->id,
-                    'week_id' => $currentWeek->id,
-                    'points' => ConstantValues::safesoul_patrol_points,
-                    'comment' => 'роль патрульный',
-                    'query_param' => ConstantValues::safesoul_patrol_role
-                ]);
-                $currentWeek->safeSouls()->save($safeSoul);
-                $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
-            }
         });
 
         static::saved(function ($account) {
@@ -161,6 +195,7 @@ class Account extends Model
         });
 
         static::retrieved(function($account){
+
             if ($account->blocked_until && Carbon::parse($account->blocked_until)->isPast()) {
                 $account->update(['code_attempts' => 0, 'blocked_until' => null]);
             }

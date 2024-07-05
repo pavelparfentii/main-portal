@@ -372,7 +372,9 @@ class TelegramController extends Controller
 
         $authDate = $queryParams['auth_date'] ?? null;
 
-        $user = $queryParams['user'] ?? null;
+        $jsonString = $queryParams['user'] ?? null;
+
+        $user = json_decode($jsonString, true);
 
         $fist_name = $user['first_name'] ?? null;
         $last_name = $user['last_name'] ?? null;
@@ -405,6 +407,8 @@ class TelegramController extends Controller
 
             if(!$telegram){
                 $auth_id = $this->generateUuidV4();
+
+
                 $account = Account::on('pgsql_telegrams')->create([
                     'auth_id'=> $auth_id,
                     'total_points'=>0

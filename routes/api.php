@@ -98,6 +98,6 @@ Route::prefix('telegram')->group(function(){
 
     Route::get('/referrals/list', [\App\Http\Controllers\TelegramController::class, 'getReferralsDataEndpoint']);
 
-    Route::get('/referrals/claim', [\App\Http\Controllers\TelegramController::class, 'claimIncomeEndpoint']);
+    Route::post('/referrals/claim', [\App\Http\Controllers\TelegramController::class, 'claimIncomeEndpoint']);
 //    Route::get('/points/friends', )
 });

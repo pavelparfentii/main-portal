@@ -17,7 +17,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         [InlineKeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=f"https://tg-bot-staging.netlify.app/"))],
         [InlineKeyboardButton("💬 Chat", url="https://t.me/+YqZWK8A9lV1iNTIy")],
         [InlineKeyboardButton("💎 souls.club channel", url="https://t.me/soulsclub")],
-        [InlineKeyboardButton("🌐 About souls.club", url="https://souls.club/airdrop")],
+        [InlineKeyboardButton("🌐 About souls.club", url="https://souls.club/airdrop/about")],
     ]
 
 #     # Create the inline keyboard markup
@@ -35,9 +35,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Create custom keyboard buttons
     custom_keyboard = [
-#         [KeyboardButton("💎 Get Diamond")],  # Add the "Get Diamond" button here
+#         [KeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=f"https://t.me/breinburg_bot/test_soul?{unique_id}"))],  # Add the "Get Diamond" button here
 #         [KeyboardButton("get 💎", web_app=WebAppInfo(url="https://tg-bot-staging.netlify.app/"))],
-        [KeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=f"https://t.me/breinburg_bot/test_soul?{unique_id}")), KeyboardButton("💬 Chat"), KeyboardButton("💎 souls.club channel")],
+        [KeyboardButton("💬 Chat"), KeyboardButton("💎 souls.club channel")],
         [KeyboardButton("🌐 About souls.club")]
     ]
 #
@@ -79,14 +79,14 @@ async def handle_channel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def handle_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     message = (
-        '<b>Welcome to <a href="https://souls.club">Souls.club</a> 🌟</b>\n\n'
+        '<b>Welcome to <a href="https://souls.club/airdrop/about">Souls.club</a> 🌟</b>\n\n'
         '<a href="https://souls.club">Souls.club</a> is a multi-level ecosystem that blends blockchain visualization, gaming, social security, and NFT mechanics. Our platform offers a range of innovative products:\n\n'
         '💎 <b>Digital Soul:</b> Experience dynamic blockchain visualization. Transform your social activity and wallet data into art as a decentralized ID.\n\n'
         '🦖 <b>Digital Animals NFTs:</b> Own unique generative artworks created by our SEO.\n\n'
         '🎮 <b>Digital Animals Game:</b> Embark on a meditative mobile adventure. Explore a utopian world governed by AI, where souls are embodied as animals.\n\n'
         '🔒 <b>SafeSoul:</b> Stay protected with our community-driven safety platform, which displays scam alerts on websites.\n\n'
         '🛍️ <b>Store:</b> Shop for exclusive <i>merch</i> in our dedicated department.\n\n'
-        '<b>Join the <a href="https://souls.club">Souls.club</a> family 👇</b>\n\n'
+        '<b>Join the <a href="https://souls.club/airdrop/about">Souls.club</a> family 👇</b>\n\n'
         '<a href="https://t.me/+YqZWK8A9lV1iNTIy">Chat</a> | <a href="https://twitter.com/soulsclub">Twitter</a> | <a href="https://discord.gg/soulsclub">Discord</a> | <a href="https://opensea.io/collection/soulsclub">OpenSea</a> | <a href="https://souls.club">Website</a>'
     )
 

@@ -44,21 +44,28 @@ class AccountObserver
             ]);
         }
 
+        $connection = $account->getConnectionName();
 
+        if($connection === 'pgsql_telegrams'){
+            $lowestRank = Account::max('current_rank');
+            $account->current_rank = $lowestRank;
+            $account->save();
 
-        $lowestRank = Account::max('current_rank');
-        $previousLowestRank = Account::max('previous_rank');
+        }elseif($connection === 'pgsql'){
+            $lowestRank = Account::max('current_rank');
+            // $lowestRank +1;
+            $previousLowestRank = Account::max('previous_rank');
 
-        // Assign the rank to the new account
-        $account->current_rank = $lowestRank;
-        $account->previous_rank = $previousLowestRank;
+            // Assign the rank to the new account
+            $account->current_rank = $lowestRank;
+            $account->previous_rank = $previousLowestRank;
 
-        $account->save();
+            $account->save();
 
-        $currentWeek = Week::getCurrentWeekForAccount($account);
+            $currentWeek = Week::getCurrentWeekForAccount($account);
+            $currentWeek->increment('total_points', ConstantValues::souls_connect);
+        }
 
-
-        $currentWeek->increment('total_points', ConstantValues::souls_connect);
 
     }
 
