@@ -63,7 +63,7 @@ class TelegramTemporaryDBUpdate extends Command
                 ->table('account_farms')
                 ->insert([
                 'account_id' => $account->id,
-                'daily_farm' => 0, // Set default value for daily_farm
+                'daily_farm' => $currentWeek->total_points, // Set default value for daily_farm
                 'daily_farm_last_update' => now(), // Set default value for daily_farm_last_update
                 'total_points' => $earnedPoints,
                 'created_at' => now(),
@@ -76,10 +76,13 @@ class TelegramTemporaryDBUpdate extends Command
                 ->first();
 
 
+        }else{
+            DB::connection('pgsql_telegrams')
+                ->table('account_farms')
+            ->where('account_id', $account->id)
+            ->update(['total_points'=> $earnedPoints, 'daily_farm'=>$currentWeek->total_points]);
         }
-//        DB::connection('pgsql_telegrams')->table('account_farms')
-//            ->where('account_id', $account->id)
-//            ->increment('total_points', $earnedPoints);
+
 
 
 

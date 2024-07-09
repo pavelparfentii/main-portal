@@ -869,7 +869,7 @@ trait TelegramTrait{
 
 //                $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
                 $totalFirstLevelIncome = $referral->accumulated_income;
-                //$totalSecondLevelIncome +=$referral->accumulated_income;
+                $totalSecondLevelIncome +=$referral->accumulated_income;
 
                 if(!empty($account->telegram->telegram_id)){
                     return [
