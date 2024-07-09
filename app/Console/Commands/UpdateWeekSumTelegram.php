@@ -96,7 +96,7 @@ class UpdateWeekSumTelegram extends Command
                     'current_rank' => $position,
                 ]);
 
-            if ($account->total_points !== null || $account->total_points != 0) {
+            if ($account->total_points !== null && $account->total_points != 0) {
 
                 $rank++;
             }

@@ -8,6 +8,7 @@ use App\Helpers\AuthHelperTelegram;
 use App\Http\Resources\AccountResource;
 use App\Models\Account;
 use App\Models\DigitalAnimal;
+use App\Models\Invite;
 use App\Models\Telegram;
 use App\Models\Week;
 use App\Traits\TelegramTrait;
@@ -234,19 +235,6 @@ class TelegramController extends Controller
         }
 
         $points = 1.0;
-//
-//        $bearer = $request->bearerToken();
-//
-//        if (!$bearer) {
-//            return response()->json(['errors' => 'No authentification token'], 401);
-//        }
-
-//        $parts = explode('.', $bearer);
-//        if (count($parts) === 2) {
-//            $id = $parts[1];
-//        }
-//        $id = '1234';
-//        $cacheKey = 'telegram_' . $id;
 
         $telegram = Telegram::on('pgsql_telegrams')
             ->where('account_id', $account->id)
@@ -284,13 +272,20 @@ class TelegramController extends Controller
                 $currentWeek->increment('points', $points);
                 $currentWeek->increment('total_points', $points);
 
-//                DB::table('account_farms')
-//                    ->where('account_id', $telegram->account_id)
-//                    ->increment('total_points', $points);
+                DB::connection('pgsql_telegrams')
+                    ->table('account_farms')
+                    ->where('account_id', $telegram->account_id)
+                    ->increment('total_points', $points);
+
+                DB::connection('pgsql_telegrams')
+                    ->table('account_farms')
+                    ->where('account_id', $telegram->account_id)
+                    ->increment('daily_farm', $points);
+
 
 
                 $telegram->increment('points', $points);
-                $telegram->update(['next_update_at' => now()->addMinutes(8)]);
+                $telegram->update(['next_update_at' => now()->addHours(24)]);
 
                 $response = $this->getInfo($request);
 
@@ -541,7 +536,7 @@ class TelegramController extends Controller
 
 
                 $telegram->increment('points', $points);
-                $telegram->update(['next_update_at' => now()->addMinutes(8)]);
+                $telegram->update(['next_update_at' => now()->addHours(24)]);
 
                 $response = $this->getInfo($account, $telegram->next_update_at );
 
@@ -654,4 +649,6 @@ class TelegramController extends Controller
             }
         }
     }
+
+
 }

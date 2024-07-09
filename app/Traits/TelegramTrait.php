@@ -32,11 +32,17 @@ trait TelegramTrait{
 
         if ($account) {
 
-            $telegram = Telegram::on('pgsql_telegrams')->where('account_id', $account->id)->first();
+            $telegram = Telegram::on('pgsql_telegrams')
+                ->where('account_id', $account->id)
+                ->first();
 
-            $next_update_at = $telegram->next_update_at;
 
-//            $this->updateFarmPoints($account);
+            $total_points = DB::connection('pgsql_telegrams')
+                    ->table('account_farms')
+                    ->where('account_id', $account->id)
+                    ->value('total_points') ?? 0;
+
+            $this->checkDailyPoints($account);
 
            $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
 //            $userRank = DB::table('accounts')
@@ -45,8 +51,6 @@ trait TelegramTrait{
 //
 //            $account->setAttribute('rank', $userRank);
             $account->setAttribute('current_user', true);
-
-
 
 //            $account->setAttribute('invited', '-');
 
@@ -67,8 +71,8 @@ trait TelegramTrait{
                     ->first()
                     ->claimed_points ?? null;
 
-            $inviteCheck = DB::connection('pgsql_telegrams')->table('invites')
-
+            $inviteCheck = DB::connection('pgsql_telegrams')
+                ->table('invites')
                 ->where('whom_invited', $account->id)
                 ->pluck('id')
                 ->toArray();
@@ -91,7 +95,7 @@ trait TelegramTrait{
             $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
             $accountResourceArray['invite_code']=$inviteCode;
             $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
-            $accountResourceArray['total_points']=$currentWeek->total_points;
+            $accountResourceArray['total_points']=$total_points;
 //            $accountResourceArray['total_points']=$account->total_points;
 //            $accountResourceArray['daily_farm']=$account->dailyFarm->daily_farm;
             $accountResourceArray['daily_farm']=0;
@@ -304,7 +308,8 @@ trait TelegramTrait{
                         ->total_points ?? 0;
 //                dd($currentUserWeekPoints);
                 // Розраховуємо ранг користувача на основі його очок за тиждень
-                $userRankBasedOnWeekPoints = DB::table('accounts')
+                $userRankBasedOnWeekPoints = DB::connection('pgsql_telegrams')
+                        ->table('accounts')
                         ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
                         ->where('weeks.week_number', '=', $previousWeekNumber)
                         ->where('weeks.total_points', '>', $currentUserWeekPoints)
@@ -398,12 +403,14 @@ trait TelegramTrait{
                     ->total_points ?? 0;
 
             if ($period == 'total') {
-                $friendRank = DB::connection('pgsql_telegrams')->table('accounts')
+                $friendRank = DB::connection('pgsql_telegrams')
+                        ->table('accounts')
                         ->where('total_points', '>', $friend->total_points)
                         ->count() + 1;
                 $friend->week_points = $friendWeekPoints;
             }else {
-                $friendRank = DB::connection('pgsql_telegrams')->table('accounts')
+                $friendRank = DB::connection('pgsql_telegrams')
+                        ->table('accounts')
                         ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
                         ->where('weeks.week_number', '=', $previousWeekNumber)
                         ->where('weeks.total_points', '>', $friendWeekPoints)
@@ -800,6 +807,14 @@ trait TelegramTrait{
             ->first();
 
         if(!$inviteCheck){
+
+            $checkAcc = $checkCode->account;
+
+            $telegramDetails = Telegram::on('pgsql_telegrams')
+                ->where('account_id', $checkAcc->id)
+                ->select('first_name', 'last_name', 'avatar')
+                ->first();
+
             $invite = Invite::on('pgsql_telegrams')->create([
                 'invited_by'=>$checkCode->account->id,
                 'inviter_wallet'=>$checkCode->account->wallet ?? 'empty',
@@ -810,11 +825,14 @@ trait TelegramTrait{
             ]);
 
             return response()->json([
-                    'id'=>$checkCode->account->id,
-                    'twitter_id'=>$checkCode->account->twitter_id,
-                    'twitter_avatar'=>$checkCode->account->twitter_avatar,
-                    'twitter_name'=>$checkCode->account->twitter_name,
-                    'twitter_username'=>$checkCode->account->twitter_username,
+                    'id'=>$checkAcc->id,
+                    'twitter_id'=>$checkAcc->twitter_id,
+                    'twitter_avatar'=>$checkAcc->twitter_avatar,
+                    'twitter_name'=>$checkAcc->twitter_name,
+                    'twitter_username'=>$checkAcc->twitter_username,
+                    'telegram_first_name'=>$telegramDetails->first_name ?? null,
+                    'telegram_last_name'=>$telegramDetails->last_name ?? null,
+                    'telegram_avatar'=>$telegramDetails->avatar ?? null,
                 ]
             );
         }else{
@@ -849,8 +867,9 @@ trait TelegramTrait{
                 ->first();
             if ($account){
 
+//                $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
                 $totalFirstLevelIncome = $referral->accumulated_income;
-                $totalSecondLevelIncome +=$referral->accumulated_income;
+                //$totalSecondLevelIncome +=$referral->accumulated_income;
 
                 if(!empty($account->telegram->telegram_id)){
                     return [
@@ -883,16 +902,22 @@ trait TelegramTrait{
 //        dd(Telegram::on('pgsql_telegrams')->where('account_id', $inviteReceived->invited_by)->pluck('first_name'));
 
         if ($inviteReceived) {
+
+            $invitedBy = $inviteReceived->invitedBy;
+            $telegramDetails = Telegram::on('pgsql_telegrams')
+                ->where('account_id', $inviteReceived->invited_by)
+                ->select('first_name', 'last_name', 'avatar')
+                ->first();
             $invitedMe = [
-                'id' => $inviteReceived->invitedBy->id,
-                'twitter_name' => $inviteReceived->invitedBy->twitter_name,
-                'twitter_avatar' => $inviteReceived->invitedBy->twitter_avatar,
-                'twitter_username'=>$inviteReceived->invitedBy->twitter_username,
-                'total_points' => $inviteReceived->invitedBy->total_points,
+                'id' => $invitedBy->id,
+                'twitter_name' => $invitedBy->twitter_name ?? null,
+                'twitter_avatar' => $invitedBy->twitter_avatar ?? null,
+                'twitter_username'=>$invitedBy->twitter_username ?? null,
+                'total_points' => $invitedBy->total_points,
                 'code'=>$inviteReceived->used_code,
-                'telegram_first_name'=>Telegram::on('pgsql_telegrams')->where('account_id', $inviteReceived->invited_by)->value('first_name') ?? null,
-                'telegram_last_name'=>Telegram::on('pgsql_telegrams')->where('account_id', $inviteReceived->invited_by)->value('last_name') ?? null,
-                'telegram_avatar'=>Telegram::on('pgsql_telegrams')->where('account_id', $inviteReceived->invited_by)->value('avatar') ?? null
+                'telegram_first_name'=>$telegramDetails->first_name ?? null,
+                'telegram_last_name'=>$telegramDetails->last_name ?? null,
+                'telegram_avatar'=>$telegramDetails->last_name ?? null,
 
             ];
         }
@@ -917,7 +942,7 @@ trait TelegramTrait{
             return response()->json(['message' => 'non authorized'], 401);
         }
 
-        $lastClaimDate = $account->last_claim_date;
+//        $lastClaimDate = $account->last_claim_date;
         $currentDate = now();
 
         if ($account->referrals_claimed && $account->next_referrals_claim > now()) {
@@ -926,26 +951,30 @@ trait TelegramTrait{
         }
 
         // Check if a week has passed since the last claim
-        if ($lastClaimDate && $lastClaimDate->diffInDays($currentDate) < 7) {
-            return response()->json(['message' => 'You can only claim your income once a week.'], 400);
-        }
+//        if ($lastClaimDate->diffInDays($currentDate) < 7) {
+//            return response()->json(['message' => 'You can only claim your income once a week.'], 400);
+//        }
 
-        $totalIncome = Invite::on('pgsql_telegrams')->where('invited_by', $account->id)
+        $totalIncome = Invite::on('pgsql_telegrams')
+            ->where('invited_by', $account->id)
             ->sum('accumulated_income');
 
         $account->referrals_claimed = true;
-        $account->next_referrals_claim = now()->addDays(7);
+        $account->next_referrals_claim = now()->addHours(24);;
+        $account->save();
 
         $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
         $currentWeek->increment('referrals_income', $totalIncome);
         $currentWeek->increment('total_points', $totalIncome);
 
         // $account->last_claim_date = $currentDate;
-        $account->save();
 
-        Invite::on('pgsql_telegrams')->where('invited_by', $account->id)
+        Invite::on('pgsql_telegrams')
+            ->where('invited_by', $account->id)
             ->update(['accumulated_income' => 0.000]);
 
+
+        $this->skipAllReferralsIncome($account);
 
         return response()->json(['message' => 'Income claimed successfully']);
     }
@@ -963,6 +992,54 @@ trait TelegramTrait{
         return "teams_list_{$period}_{$userId}";
     }
 
+    private function checkDailyPoints($account)
+    {
+        $accountDailyFarm = DB::connection('pgsql_telegrams')
+            ->table('account_farms')
+            ->where('account_id', $account->id)
+            ->first();
+
+        if (!$accountDailyFarm) {
+            DB::connection('pgsql_telegrams')
+                ->table('account_farms')
+                ->insert([
+                'account_id' => $account->id,
+                'daily_farm' => 0, // Set default value for daily_farm
+                'daily_farm_last_update' => now(), // Set default value for daily_farm_last_update
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+    }
+
+    private function skipAllReferralsIncome($account)
+    {
+        $invitesSent = $account->invitesSent()->get();
+
+        foreach ($invitesSent as $referral) {
+            $firstLevelAccount = Account::on('pgsql_telegrams')
+                ->where('id', $referral->whom_invited)
+                ->first();
+            if($firstLevelAccount){
+                $earnedPoints = DB::connection('pgsql_telegrams')
+                    ->table('account_farms')
+                    ->where('account_id', $firstLevelAccount->id)
+                    ->update(['daily_farm'=> 0.0]);
+
+                $secondLevelInvites = Invite::on('pgsql_telegrams')->where('invited_by', $firstLevelAccount->id)->get();
+                foreach ($secondLevelInvites as $secondLevelInvite) {
+                    $secondLevelAccount = Account::on('pgsql_telegrams')->where('id', $secondLevelInvite->whom_invited)->first();
+
+                    if($secondLevelAccount){
+                        $earnedPoints = DB::connection('pgsql_telegrams')
+                            ->table('account_farms')
+                            ->where('account_id', $secondLevelAccount->id)
+                            ->update(['daily_farm'=> 0.0]);
+                    }
+                }
+            }
+        }
+    }
 
 
 }

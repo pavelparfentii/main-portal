@@ -37,7 +37,8 @@ class RecountPointsTelegram extends Command
 
         foreach ($accounts as $account){
 
-            $previousWeek = Week::where('account_id', $account->id)
+            $previousWeek = Week::on('pgsql_telegrams')
+                ->where('account_id', $account->id)
                 ->where('week_number', '=', $previousWeekNumber)
                 ->where('active', true)
                 ->first();
@@ -48,6 +49,11 @@ class RecountPointsTelegram extends Command
                 $account->save();
                 $previousWeek->update(['active'=>false]);
                 $account->refresh();
+                DB::connection('pgsql_telegrams')
+                    ->table('account_farms')
+                    ->where('account_id', $account->id)
+                    ->update(['total_points' => $account->total_points]);
+
             }
 
             Week::getCurrentWeekForTelegramAccount($account);
