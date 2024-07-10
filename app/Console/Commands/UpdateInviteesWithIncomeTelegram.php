@@ -33,10 +33,13 @@ class UpdateInviteesWithIncomeTelegram extends Command
 
         foreach ($accounts as $account) {
 
-            $nextReferralsClaim = $account->next_referrals_claim ?? now()->addDays(1);
+//            $nextReferralsClaim = $account->next_referrals_claim ?? now()->addDays(1);
 //            $nextReferralsClaim = now()->addDays(1);
-            $account->next_referrals_claim = $nextReferralsClaim;
-            $account->save();
+            $nextReferralsClaim = $account->next_referrals_claim;
+            if (empty($account->next_referrals_claim)) {
+                $account->next_referrals_claim = now()->addDays(1);
+                $account->save();
+            }
 
             $invitesSent = $account->invitesSent()->get();
 

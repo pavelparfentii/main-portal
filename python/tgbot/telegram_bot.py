@@ -6,6 +6,9 @@ import uuid
 # Replace 'YOUR_BOT_TOKEN' with your actual bot token
 BOT_TOKEN = '7475491207:AAGA37IImPNWoZd_jsuAvmY7cgOiBhe_jGc'
 
+# prod
+# BOT_TOKEN = '7133712001:AAF_-jyDA81HO9yPY9yErEPGq1g0-_gHky0'
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Get the user's first name and last name
     user_first_name = update.message.from_user.first_name
@@ -14,7 +17,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     unique_id = str(uuid.uuid4())
     # Create inline keyboard buttons
     inline_keyboard = [
-        [InlineKeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=f"https://tg-bot-staging.netlify.app/"))],
+        [InlineKeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=f"https://tg-app.souls.club"))],
         [InlineKeyboardButton("💬 Chat", url="https://t.me/+YqZWK8A9lV1iNTIy")],
         [InlineKeyboardButton("💎 souls.club channel", url="https://t.me/soulsclub")],
         [InlineKeyboardButton("🌐 About souls.club", url="https://souls.club/airdrop/about")],
@@ -50,7 +53,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         reply_markup=custom_reply_markup
     )
 
-    web_app_info = WebAppInfo(url=f"https://tg-bot-staging.netlify.app/")  # Replace with your URL
+#     web_app_info = WebAppInfo(url=f"https://tg-bot-staging.netlify.app/")  # Replace with your URL
+    web_app_info = WebAppInfo(url=f"https://tg-app.souls.club")
     menu_but = MenuButtonWebApp(text="get 💎", web_app=web_app_info)
     await context.bot.set_chat_menu_button(chat_id=update.message.chat_id, menu_button=menu_but)
 

@@ -272,6 +272,9 @@ class TelegramController extends Controller
                 $currentWeek->increment('points', $points);
                 $currentWeek->increment('total_points', $points);
 
+                //for current total
+                $account->total_points = $points;
+
                 DB::connection('pgsql_telegrams')
                     ->table('account_farms')
                     ->where('account_id', $telegram->account_id)

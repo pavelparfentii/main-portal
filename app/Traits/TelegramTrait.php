@@ -37,10 +37,10 @@ trait TelegramTrait{
                 ->first();
 
 
-            $total_points = DB::connection('pgsql_telegrams')
-                    ->table('account_farms')
-                    ->where('account_id', $account->id)
-                    ->value('total_points') ?? 0;
+//            $total_points = DB::connection('pgsql_telegrams')
+//                    ->table('account_farms')
+//                    ->where('account_id', $account->id)
+//                    ->value('total_points') ?? 0;
 
             $this->checkDailyPoints($account);
 
@@ -95,8 +95,8 @@ trait TelegramTrait{
             $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
             $accountResourceArray['invite_code']=$inviteCode;
             $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
-            $accountResourceArray['total_points']=$total_points;
-//            $accountResourceArray['total_points']=$account->total_points;
+//            $accountResourceArray['total_points']=$total_points;
+            $accountResourceArray['total_points']=$account->total_points;
 //            $accountResourceArray['daily_farm']=$account->dailyFarm->daily_farm;
             $accountResourceArray['daily_farm']=0;
 
@@ -154,9 +154,9 @@ trait TelegramTrait{
 
         $cacheKey = $this->getCacheKey($period, $account);
 
-//        if (Cache::has($cacheKey)) {
-//            return response()->json(Cache::get($cacheKey));
-//        }
+        if (Cache::has($cacheKey)) {
+            return response()->json(Cache::get($cacheKey));
+        }
 
         if($period === 'total'){
             $friendIds = $account ? $account->friends->pluck('id')->toArray() : [];
@@ -241,7 +241,7 @@ trait TelegramTrait{
                 'list' => AccountResource::collection($topAccounts),
             ];
 
-//            Cache::put($cacheKey, $response, now()->addHours(10));
+            Cache::put($cacheKey, $response, now()->addMinutes(5));
 
             return response()->json($response);
 
@@ -340,7 +340,7 @@ trait TelegramTrait{
                 'list' => AccountResource::collection($topAccounts),
             ];
 
-//            Cache::put($cacheKey, $response, now()->addHours(36));
+            Cache::put($cacheKey, $response, now()->addMinutes(5));
 
             return response()->json($response);
 
@@ -961,17 +961,26 @@ trait TelegramTrait{
 
         $account->referrals_claimed = true;
         $account->next_referrals_claim = now()->addHours(24);;
+        //for current total
+        $account->total_points = $totalIncome;
         $account->save();
 
         $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
         $currentWeek->increment('referrals_income', $totalIncome);
         $currentWeek->increment('total_points', $totalIncome);
 
+
+
         // $account->last_claim_date = $currentDate;
 
         Invite::on('pgsql_telegrams')
             ->where('invited_by', $account->id)
             ->update(['accumulated_income' => 0.000]);
+
+        DB::connection('pgsql_telegrams')
+            ->table('account_farms')
+            ->where('account_id', $account->id)
+            ->increment('total_points', $totalIncome);
 
 
         $this->skipAllReferralsIncome($account);

@@ -196,13 +196,26 @@ class Account extends Model
 
         static::retrieved(function($account){
 
-            if ($account->blocked_until && Carbon::parse($account->blocked_until)->isPast()) {
-                $account->update(['code_attempts' => 0, 'blocked_until' => null]);
+            $connection = $account->getConnectionName();
+
+            if($connection === 'pgsql'){
+                if ($account->blocked_until && Carbon::parse($account->blocked_until)->isPast()) {
+                    $account->update(['code_attempts' => 0, 'blocked_until' => null]);
+                }
+
+                if ($account->next_referrals_claim && Carbon::parse($account->next_referrals_claim)->isPast()) {
+                    $account->update(['referrals_claimed' => 0, 'next_referrals_claim' => null]);
+                }
+            }elseif ($connection === 'pgsql_telegrams'){
+                if ($account->blocked_until && Carbon::parse($account->blocked_until)->isPast()) {
+                    $account->update(['code_attempts' => 0, 'blocked_until' => null]);
+                }
+
+                if ($account->next_referrals_claim && Carbon::parse($account->next_referrals_claim)->isPast()) {
+                    $account->update(['referrals_claimed' => 0, 'next_referrals_claim' => null]);
+                }
             }
 
-            if ($account->next_referrals_claim && Carbon::parse($account->next_referrals_claim)->isPast()) {
-                $account->update(['referrals_claimed' => 0, 'next_referrals_claim' => null]);
-            }
         });
     }
 
