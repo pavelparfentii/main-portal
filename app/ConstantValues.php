@@ -83,6 +83,12 @@ class ConstantValues
     const discord_connect = 5.000;
     const telegram_connect = 5.000;
 
+    //Referrrals Points
+    const first_level_ref = 0.1;
+    const second_level_ref = 0.02;
+    const first_level_ambas_ref = 0.2;
+    const second_level_ambas_ref = 0.05;
+
 
 
 }

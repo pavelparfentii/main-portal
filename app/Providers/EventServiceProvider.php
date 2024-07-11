@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Events\DigitalAnimalsCreationEvent;
 use App\Events\FarmingNFTUpdated;
 use App\Events\SafeSoulCreationEvent;
+use App\Events\TelegramPointsUpdated;
 use App\Events\TwitterCreationEvent;
 use App\Listeners\DigitalAnimalsListener;
 use App\Listeners\SafeSoulCreationListener;
+use App\Listeners\TelegramUpdateReferralIncome;
 use App\Listeners\TwitterCreationListener;
 use App\Listeners\UpdateAccountFarmingPoints;
 use Illuminate\Auth\Events\Registered;
@@ -37,6 +39,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         FarmingNFTUpdated::class => [
             UpdateAccountFarmingPoints::class
+        ],
+        TelegramPointsUpdated::class => [
+            TelegramUpdateReferralIncome::class
         ]
 
     ];

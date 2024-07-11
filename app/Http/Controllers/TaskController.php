@@ -13,9 +13,15 @@ class TaskController extends Controller
     {
         $account = AuthHelperTelegram::auth($request);
 
-        $tasks = $account->tasks()->with(['tags', 'parent.tags'])->get();
+//        $tasks = $account->tasks()->with(['tags', 'parent.tags'])->get();
 
-        return response()->json($tasks->map(function ($task) {
+        $tasks = Task::on('pgsql_telegrams')
+            ->with(['tags', 'parent.tags'])
+            ->get();
+
+        $completedTasks = $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();
+
+        return response()->json($tasks->map(function ($task) use ($completedTasks) {
             $parents = [];
             $currentParent = $task->parent;
 
@@ -34,30 +40,13 @@ class TaskController extends Controller
                 'description' => $task->description,
                 'link' => $task->link,
                 'points' => $task->points,
-                'isDone' => $task->pivot->is_done,
+                'isDone' => in_array($task->id, $completedTasks),
                 'tags' => $task->tags->pluck('code')->toArray(),
                 'action' => $task->action,
                 'parents' => $parents
             ];
         }));
 
-//        return response()->json($tasks->map(function ($task) {
-//            return [
-//                'id' => $task->id,
-//                'title' => $task->title,
-//                'description' => $task->description,
-//                'link' => $task->link,
-//                'points' => $task->points,
-//                'isDone' => $task->pivot->is_done,
-//                'tag' => $task->tags()->get(),
-//                'action' => $task->action,
-//                'parents' => $task->parent ? [
-//                    'id' => $task->parent->id,
-//                    'title' => $task->parent->title,
-//                    'tags' => $task->parent->tags()->get(),
-//                ] : null,
-//            ];
-//        }));
     }
 
     public function updateTask(Request $request)
@@ -77,8 +66,9 @@ class TaskController extends Controller
             ->where('id', $task_id)
             ->first();
 
-        if($task){
+        if ($task) {
             $account = AuthHelperTelegram::auth($request);
+
 
             $pivotRow = $account->tasks()->where('task_id', $task->id)->first();
 
@@ -86,14 +76,42 @@ class TaskController extends Controller
                 return response()->json(['error' => 'Task is already done'], 400);
             }
 
-            $account->tasks()->updateExistingPivot($task->id, ['is_done' => true]);
+            $account->tasks()->attach($task->id, ['is_done' => true]);
 
-            $account->total_points += $task->points;
-            $account->save();
+            $account->increment('total_points', $task->points);
 
-            $tasks = $account->tasks()->with(['tags', 'parent.tags'])->get();
+//            $tasks = $account->tasks()->with(['tags', 'parent.tags'])->get();
+//
+//            return response()->json($tasks->map(function ($task) {
+//                $parents = [];
+//                $currentParent = $task->parent;
+//
+//                while ($currentParent) {
+//                    $parents[] = [
+//                        'id' => $currentParent->id,
+//                        'title' => $currentParent->title,
+//                        'tags' => $currentParent->tags->pluck('code')->toArray(),
+//                    ];
+//                    $currentParent = $currentParent->parent;
+//                }
+//
+//                return [
+//                    'id' => $task->id,
+//                    'title' => $task->title,
+//                    'description' => $task->description,
+//                    'link' => $task->link,
+//                    'points' => $task->points,
+//                    'isDone' => $task->pivot->is_done,
+//                    'tags' => $task->tags->pluck('code')->toArray(),
+//                    'action' => $task->action,
+//                    'parents' => $parents
+//                ];
+//            }));
+            $tasks = Task::on('pgsql_telegrams')->with(['tags', 'parent.tags'])->get();
 
-            return response()->json($tasks->map(function ($task) {
+            $completedTasks = $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();
+
+            return response()->json($tasks->map(function ($task) use ($completedTasks) {
                 $parents = [];
                 $currentParent = $task->parent;
 
@@ -112,13 +130,13 @@ class TaskController extends Controller
                     'description' => $task->description,
                     'link' => $task->link,
                     'points' => $task->points,
-                    'isDone' => $task->pivot->is_done,
+                    'isDone' => in_array($task->id, $completedTasks),
                     'tags' => $task->tags->pluck('code')->toArray(),
                     'action' => $task->action,
                     'parents' => $parents
                 ];
             }));
-        }else{
+        } else {
             return response()->json(['error' => 'Task not found'], 404);
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\ConstantValues;
 use App\Models\DiscordRole;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -36,6 +37,9 @@ class AccountResource extends JsonResource
             'telegram_first_name'=>$this->telegram->first_name ?? null,
             'telegram_last_name'=>$this->telegram->last_name ?? null,
             'telegram_avatar'=>$this->telegram->avatar ?? null,
+            'isAmbassador' =>$this->ambassador,
+            'referral_income_percent' =>$this->ambassador ? ConstantValues::first_level_ambas_ref : ConstantValues::first_level_ref,
+            'referral_income_2nd_level_percent'=> $this->ambassador ? ConstantValues::second_level_ambas_ref : ConstantValues::second_level_ref,
 
 //            'discord_roles' => $this->whenLoaded('discordRoles', function () {
 //                return $this->discordRoles->map(function ($role) {

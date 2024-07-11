@@ -119,12 +119,6 @@ class Account extends Model
 
                 $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
 
-                //добавление тасок новосозданному аккаунту
-                $tasks = Task::on('pgsql_telegrams')->get();
-
-                foreach ($tasks as $task) {
-                    $account->tasks()->attach($task->id, ['is_done' => false]);
-                }
             }
 
         });

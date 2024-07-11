@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 
+use App\Events\TelegramPointsUpdated;
 use App\Helpers\AuthHelperTelegram;
 use App\Http\Controllers\InviteController;
 use App\Http\Resources\AccountResource;
@@ -32,9 +33,9 @@ trait TelegramTrait{
 
         if ($account) {
 
-            $telegram = Telegram::on('pgsql_telegrams')
-                ->where('account_id', $account->id)
-                ->first();
+//            $telegram = Telegram::on('pgsql_telegrams')
+//                ->where('account_id', $account->id)
+//                ->first();
 
 
 //            $total_points = DB::connection('pgsql_telegrams')
@@ -97,8 +98,8 @@ trait TelegramTrait{
             $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
 //            $accountResourceArray['total_points']=$total_points;
             $accountResourceArray['total_points']=$account->total_points;
-//            $accountResourceArray['daily_farm']=$account->dailyFarm->daily_farm;
-            $accountResourceArray['daily_farm']=0;
+            $accountResourceArray['daily_farm']=$account->dailyFarm->daily_farm;
+            $accountResourceArray['isAmbassador']=$account->ambassador;
 
             $account->telegram()->exists() ? $accountResourceArray['telegram_next_update'] = $account->telegram->next_update_at : $accountResourceArray['telegram_next_update'] = null;
             // }
@@ -186,7 +187,9 @@ trait TelegramTrait{
 
             // Enrich the collection with rank, current_user flags, and is_friend flag
             $topAccounts->transform(function ($item, $key) use ($account, $friendIds) {
-                $item->rank = $key + 1;
+//                $item->rank =$key + 1; was
+                $item->current_rank = $key + 1;
+                $item->previous_rank = null;
                 $item->current_user = $account && $account->id == $item->id;
                 if(!empty($account->twitter_username)){
                     $item->friend = in_array($item->id, $friendIds);
@@ -219,9 +222,12 @@ trait TelegramTrait{
                         ->where('total_points', '>', $account->total_points)
                         ->count() + 1;
 
-                if ($userRank > 1) { // Assuming the current user is outside the top 100
+
+                if ($userRank > 1) {
                     $currentUserForTop = clone $account;
-                    $currentUserForTop->rank = $userRank;
+//                    $currentUserForTop->rank = $userRank;
+                    $currentUserForTop->current_rank = $userRank;
+                    $currentUserForTop->previous_rank = null;
                     $currentUserForTop->current_user = true;
                     $currentUserForTop->week_points = $currentUserWeekPoints;
                     $currentUserForTop->friend = false; // The user is not a friend to themselves
@@ -903,6 +909,8 @@ trait TelegramTrait{
 
         if ($inviteReceived) {
 
+            event(new TelegramPointsUpdated($account));
+
             $invitedBy = $inviteReceived->invitedBy;
             $telegramDetails = Telegram::on('pgsql_telegrams')
                 ->where('account_id', $inviteReceived->invited_by)
@@ -921,6 +929,8 @@ trait TelegramTrait{
 
             ];
         }
+
+        event(new TelegramPointsUpdated($account));
 
         return response()->json([
             'referrals' => $collectReferral,

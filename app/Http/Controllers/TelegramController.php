@@ -227,7 +227,7 @@ class TelegramController extends Controller
 
     public function updatePoints2(Request $request)
     {
-        $cacheKey = 'telegram_' . $id;
+//        $cacheKey = 'telegram_' . $id;
         $account = AuthHelperTelegram::auth($request);
 
         if (!$account) {

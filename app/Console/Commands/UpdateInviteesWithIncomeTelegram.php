@@ -119,7 +119,7 @@ class UpdateInviteesWithIncomeTelegram extends Command
 //        }
 
         if ($lastUpdate != $today) {
-            $invite->accumulated_income += $income;
+            $invite->accumulated_income = $income;
             $invite->next_update_date = now();
             $invite->save();
         }
