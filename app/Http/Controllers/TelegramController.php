@@ -227,7 +227,7 @@ class TelegramController extends Controller
 
     public function updatePoints2(Request $request)
     {
-
+        $cacheKey = 'telegram_' . $id;
         $account = AuthHelperTelegram::auth($request);
 
         if (!$account) {
@@ -273,18 +273,18 @@ class TelegramController extends Controller
                 $currentWeek->increment('total_points', $points);
 
                 //for current total
-                $account->total_points = $points;
-
-                DB::connection('pgsql_telegrams')
-                    ->table('account_farms')
-                    ->where('account_id', $telegram->account_id)
-                    ->increment('total_points', $points);
+//                $account->total_points += $points;
+                $account->increment('total_points', $points);
+                $account->save();
+//                DB::connection('pgsql_telegrams')
+//                    ->table('account_farms')
+//                    ->where('account_id', $telegram->account_id)
+//                    ->increment('total_points', $points);
 
                 DB::connection('pgsql_telegrams')
                     ->table('account_farms')
                     ->where('account_id', $telegram->account_id)
                     ->increment('daily_farm', $points);
-
 
 
                 $telegram->increment('points', $points);
@@ -620,6 +620,7 @@ class TelegramController extends Controller
 
         // Assign the rank to the new account
         $account->current_rank = $lowestRank;
+        $account->total_points += ConstantValues::telegram_connect;
 //        $account->previous_rank = $previousLowestRank;
 
         $account->save();

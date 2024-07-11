@@ -99,5 +99,8 @@ Route::prefix('telegram')->group(function(){
     Route::get('/referrals/list', [\App\Http\Controllers\TelegramController::class, 'getReferralsDataEndpoint']);
 
     Route::post('/referrals/claim', [\App\Http\Controllers\TelegramController::class, 'claimIncomeEndpoint']);
+
+    Route::get('/tasks/list', [\App\Http\Controllers\TaskController::class, 'getTaskList']);
+    Route::put('/task/update', [\App\Http\Controllers\TaskController::class, 'updateTask']);
 //    Route::get('/points/friends', )
 });

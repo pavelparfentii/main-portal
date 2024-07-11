@@ -13,8 +13,12 @@ return new class extends Migration
     {
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
+            $table->string('title')->nullable();
             $table->string('description')->nullable();
+            $table->string('link')->nullable();
+            $table->integer('points')->default(0);
+            $table->string('action')->nullable();
+            $table->foreignId('parent_task_id')->nullable()->constrained('tasks')->onDelete('cascade');
             $table->timestamps();
         });
     }

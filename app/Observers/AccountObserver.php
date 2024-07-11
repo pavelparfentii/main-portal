@@ -39,6 +39,8 @@ class AccountObserver
                     ]);
                 }
             }else{
+
+
                 AccountFarm::create([
                     'account_id' => $account->id,
                     'daily_farm' => 0.00, // Default value
@@ -127,11 +129,11 @@ class AccountObserver
         if(!empty($account->discord_id)){
             $queryParam = 'discord_connect';
 
-            $existingTwitter = DigitalAnimal::where('query_param', $queryParam)
+            $existingDiscord = DigitalAnimal::where('query_param', $queryParam)
                 ->where('account_id', $account->id)
                 ->first();
 
-            if(!$existingTwitter){
+            if(!$existingDiscord){
                 $newAnimal = new DigitalAnimal([
                     'account_id' => $account->id,
                     'points' => ConstantValues::discord_connect,

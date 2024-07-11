@@ -33,8 +33,6 @@ class RecountPointsTelegram extends Command
 
         $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
-
-
         foreach ($accounts as $account){
 
             $previousWeek = Week::on('pgsql_telegrams')
@@ -45,14 +43,16 @@ class RecountPointsTelegram extends Command
 
             if($previousWeek){
 
-                $account->total_points += $previousWeek->total_points;
-                $account->save();
+            // Old functionality
+//                $account->total_points += $previousWeek->total_points;
+//                $account->save();
                 $previousWeek->update(['active'=>false]);
                 $account->refresh();
-                DB::connection('pgsql_telegrams')
-                    ->table('account_farms')
-                    ->where('account_id', $account->id)
-                    ->update(['total_points' => $account->total_points]);
+            // Old functionality
+//                DB::connection('pgsql_telegrams')
+//                    ->table('account_farms')
+//                    ->where('account_id', $account->id)
+//                    ->update(['total_points' => $account->total_points]);
 
             }
 

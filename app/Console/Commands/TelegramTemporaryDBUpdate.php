@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Account;
 use App\Models\AccountFarm;
+use App\Models\Task;
 use App\Models\Week;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -32,16 +33,26 @@ class TelegramTemporaryDBUpdate extends Command
     {
         $accounts = Account::on('pgsql_telegrams')->cursor();
 
-        foreach ($accounts as $account){
-            $farm = AccountFarm::on('pgsql_telegrams')
-                ->where('account_id', $account->id)
-                ->first();
+        $tasks = Task::on('pgsql_telegrams')->cursor();
 
-            if($farm){
-                $account->total_points = $farm->total_points;
-                $account->save();
+
+
+        foreach ($accounts as $account){
+
+            foreach ($tasks as $task) {
+                $account->tasks()->attach($task->id, ['is_done' => false]);
             }
+//            $farm = AccountFarm::on('pgsql_telegrams')
+//                ->where('account_id', $account->id)
+//                ->first();
+//
+//            if($farm){
+//                $account->total_points = $farm->total_points;
+//                $account->save();
+//            }
         }
+
+
 
 //        foreach ($accounts as $account){
 //            $this->checkDailyPoints($account);

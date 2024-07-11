@@ -118,79 +118,19 @@ class Account extends Model
                 }
 
                 $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
+
+                //добавление тасок новосозданному аккаунту
+                $tasks = Task::on('pgsql_telegrams')->get();
+
+                foreach ($tasks as $task) {
+                    $account->tasks()->attach($task->id, ['is_done' => false]);
+                }
             }
 
         });
 
         static::saved(function ($account) {
 
-            //something strange here
-//        $currentRole = $account->role;
-//
-//        $id = $account->id;
-//        if ($account->isDirty('role')) {
-//            $patrol = DB::table('safe_souls')
-//                ->where('account_id', $id)
-//                ->where('query_param', 'patrol' )
-//                ->first();
-//            $og_patrol = DB::table('safe_souls')
-//                ->where('account_id', $id)
-//                ->where('query_param', 'og_patrol' )
-//                ->first();
-//
-//            if(isset($patrol) && $currentRole === ConstantValues::safesoul_og_patrol_role){
-//                $safeSoul = new SafeSoul([
-//                    'account_id' => $id,
-//                    'points' => ConstantValues::safesoul_OG_patrol_points,
-//                    'comment' => 'получил роль Ог патрульный, потерял очки за роль патруль',
-//                    'query_param' => ConstantValues::safesoul_og_patrol_role
-//                ]);
-//                $account->safeSouls()->save($safeSoul);
-//                $safeSoul = new SafeSoul([
-//                    'account_id'=>$id,
-//                    'points'=>-ConstantValues::safesoul_patrol_points,
-//                    'comment'=> 'удалены очки за роль патрульный',
-//                    'query_param'=>ConstantValues::safesoul_patrol_role
-//                ]);
-//                $account->safeSouls()->save($safeSoul);
-//            }elseif (isset($og_patrol) && $currentRole === ConstantValues::safesoul_patrol_role){
-//                $safeSoul = new SafeSoul([
-//                    'account_id' => $id,
-//                    'points' => -ConstantValues::safesoul_OG_patrol_points,
-//                    'comment' => 'получил роль патрульный, потерял очки за роль Ог патруль',
-//                    'query_param' => ConstantValues::safesoul_og_patrol_role
-//                ]);
-//                $account->safeSouls()->save($safeSoul);
-//                $safeSoul = new SafeSoul([
-//                    'account_id' => $id,
-//                    'points' => ConstantValues::safesoul_patrol_points,
-//                    'comment' => 'получил роль патрульный',
-//                    'query_param' => ConstantValues::safesoul_patrol_role
-//                ]);
-//                $account->safeSouls()->save($safeSoul);
-//            }elseif (!isset($og_patrol) && !isset($patrol) && !is_null($currentRole)){
-//
-//                if($currentRole === ConstantValues::safesoul_og_patrol_role){
-//                    $safeSoul = new SafeSoul([
-//                        'account_id'=>$id,
-//                        'points'=>ConstantValues::safesoul_OG_patrol_points,
-//                        'comment'=> 'Ог патрульный',
-//                        'query_param'=>ConstantValues::safesoul_og_patrol_role
-//                    ]);
-//                    $account->safeSouls()->save($safeSoul);
-//                }
-//                if($currentRole === ConstantValues::safesoul_patrol_role){
-//                    $safeSoul = new SafeSoul([
-//                        'account_id'=>$id,
-//                        'points'=>ConstantValues::safesoul_patrol_points,
-//                        'comment'=> 'патрульный',
-//                        'query_param'=>ConstantValues::safesoul_patrol_role
-//                    ]);
-//                    $account->safeSouls()->save($safeSoul);
-//                }
-//
-//            }
-//        }
 
         });
 
@@ -214,6 +154,7 @@ class Account extends Model
                 if ($account->next_referrals_claim && Carbon::parse($account->next_referrals_claim)->isPast()) {
                     $account->update(['referrals_claimed' => 0, 'next_referrals_claim' => null]);
                 }
+
             }
 
         });
@@ -494,6 +435,11 @@ class Account extends Model
     public function createdTeam(): HasOne
     {
         return $this->hasOne(Team::class, 'account_id');
+    }
+
+    public function tasks()
+    {
+        return $this->belongsToMany(Task::class, 'account_task')->withPivot('is_done')->withTimestamps();
     }
 
     public function createTeamAndAssign($teamData)

@@ -962,7 +962,7 @@ trait TelegramTrait{
         $account->referrals_claimed = true;
         $account->next_referrals_claim = now()->addHours(24);;
         //for current total
-        $account->total_points = $totalIncome;
+        $account->total_points += $totalIncome;
         $account->save();
 
         $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
