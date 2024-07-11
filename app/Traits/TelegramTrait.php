@@ -98,7 +98,7 @@ trait TelegramTrait{
             $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
 //            $accountResourceArray['total_points']=$total_points;
             $accountResourceArray['total_points']=$account->total_points;
-            $accountResourceArray['daily_farm']=$account->dailyFarm->daily_farm;
+            $accountResourceArray['daily_farm']=0;
             $accountResourceArray['isAmbassador']=$account->ambassador;
 
             $account->telegram()->exists() ? $accountResourceArray['telegram_next_update'] = $account->telegram->next_update_at : $accountResourceArray['telegram_next_update'] = null;

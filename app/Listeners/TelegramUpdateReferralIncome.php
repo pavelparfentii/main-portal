@@ -19,12 +19,6 @@ class TelegramUpdateReferralIncome
     {
         $account = $event->account;
 
-        $nextReferralsClaim = $account->next_referrals_claim ?? now()->addDays(1);
-        $account->save();
-        if (empty($account->next_referrals_claim)) {
-            $account->next_referrals_claim = now()->addDays(1);
-            $account->save();
-        }
 
         $invitesSent = $account->invitesSent()->get();
 
