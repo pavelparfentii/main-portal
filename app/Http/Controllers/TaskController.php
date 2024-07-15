@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AuthHelperTelegram;
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class TaskController extends Controller
@@ -72,6 +73,7 @@ class TaskController extends Controller
 
             $pivotRow = $account->tasks()->where('task_id', $task->id)->first();
 
+
             if ($pivotRow && $pivotRow->pivot->is_done) {
                 return response()->json(['error' => 'Task is already done'], 400);
             }
@@ -79,6 +81,12 @@ class TaskController extends Controller
             $account->tasks()->attach($task->id, ['is_done' => true]);
 
             $account->increment('total_points', $task->points);
+
+            DB::connection('pgsql_telegrams')
+                ->table('account_farms')
+                ->where('account_id', $account->id)
+                ->increment('daily_farm', $task->points);
+
 
 //            $tasks = $account->tasks()->with(['tags', 'parent.tags'])->get();
 //

@@ -19,9 +19,11 @@ class Kernel extends ConsoleKernel
         //recount positions
         $schedule->command('app:update-week-sum')->weeklyOn(1, '00:30');
 
-        $schedule->command('app:recount-points-telegram')->weeklyOn(1, '01:00');
 
-        $schedule->command('app:update-week-sum-telegram')->weeklyOn(1, '01:30');
+        //NO NEED TELEGRAM
+        //$schedule->command('app:recount-points-telegram')->weeklyOn(1, '01:00');
+        //$schedule->command('app:update-week-sum-telegram')->weeklyOn(1, '01:30');
+
 
         // Update accounts data  commented13.06
         //$schedule->command('app:update-user-data-command')->dailyAt('00:30');
@@ -109,7 +111,7 @@ class Kernel extends ConsoleKernel
         //Accumulate points for referrals
         $schedule->command('app:update-invitees-with-income')->dailyAt('13:30');
 
-        $schedule->command('app:update-invitees-with-income-telegram')->dailyAt('13:30');
+//        $schedule->command('app:update-invitees-with-income-telegram')->dailyAt('13:30');
 
     }
 

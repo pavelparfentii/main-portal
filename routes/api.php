@@ -77,7 +77,7 @@ Route::group(['middleware'=>['custom.api']], function (){
 
 });
 
-Route::prefix('telegram')->group(function(){
+Route::prefix('telegram')->middleware('api')->group(function(){
     Route::post('initiate', [\App\Http\Controllers\TelegramController::class, 'initiateSessionSeparateDB']);
     Route::get('/portal/info', [\App\Http\Controllers\TelegramController::class, 'getInfoEndpoint']);
     Route::get('/points/account', [\App\Http\Controllers\TelegramController::class, 'getPointsDataEndpoint']);
@@ -85,14 +85,15 @@ Route::prefix('telegram')->group(function(){
 
     Route::post('/points/store', [\App\Http\Controllers\TelegramController::class, 'updatePoints2']);
 
-    Route::post('/team/create', [\App\Http\Controllers\TelegramController::class, 'makeTeamEndpoint']);
-    Route::post('team/{slug}/join', [\App\Http\Controllers\TelegramController::class, 'joinTeamEndpoint']);
-    Route::get('team/{slug}', [\App\Http\Controllers\TelegramController::class, 'getTeamListEndpoint']);
+    // TEAM endopoints
+//    Route::post('/team/create', [\App\Http\Controllers\TelegramController::class, 'makeTeamEndpoint']);
+//    Route::post('team/{slug}/join', [\App\Http\Controllers\TelegramController::class, 'joinTeamEndpoint']);
+//    Route::get('team/{slug}', [\App\Http\Controllers\TelegramController::class, 'getTeamListEndpoint']);
+//    Route::post('team/leave', [\App\Http\Controllers\TelegramController::class, 'leaveTeamEndpoint']);
+//    Route::post('/team/check/name', [\App\Http\Controllers\TelegramController::class, 'checkNameEndpoint']);
 
     Route::get('/points/teams', [\App\Http\Controllers\TelegramController::class, 'getTeamsListEndpoint']);
-    Route::post('team/leave', [\App\Http\Controllers\TelegramController::class, 'leaveTeamEndpoint']);
 
-    Route::post('/team/check/name', [\App\Http\Controllers\TelegramController::class, 'checkNameEndpoint']);
 
     Route::post('/invite/account', [\App\Http\Controllers\TelegramController::class, 'inviteUserEndpoint']);
 

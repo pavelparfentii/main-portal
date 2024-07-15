@@ -28,24 +28,14 @@ trait TelegramTrait{
     public function getInfo(Request $request): JsonResponse
     {
         $account = AuthHelperTelegram::auth($request);
-//        dd($account);
+
+
         $token = $request->bearerToken();
 
         if ($account) {
 
-//            $telegram = Telegram::on('pgsql_telegrams')
-//                ->where('account_id', $account->id)
-//                ->first();
-
-
-//            $total_points = DB::connection('pgsql_telegrams')
-//                    ->table('account_farms')
-//                    ->where('account_id', $account->id)
-//                    ->value('total_points') ?? 0;
-
             $this->checkDailyPoints($account);
 
-           $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
 //            $userRank = DB::table('accounts')
 //                    ->where('total_points', '>', $account->total_points)
 //                    ->count() + 1;
@@ -61,17 +51,6 @@ trait TelegramTrait{
 
             $accountResourceArray = (new AccountResource($account))->resolve();
 
-
-            $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
-
-//            dd($account->id);
-            $currentUserWeekPoints = $account->weeks()
-                    ->where('week_number', $previousWeekNumber)
-                    ->where('active', false)
-                    ->where('claimed', true)
-                    ->first()
-                    ->claimed_points ?? null;
-
             $inviteCheck = DB::connection('pgsql_telegrams')
                 ->table('invites')
                 ->where('whom_invited', $account->id)
@@ -82,15 +61,8 @@ trait TelegramTrait{
             $inviteCode = $inviteController->activateCodeTelegram($account);
 
             $isBlocked = $account->blocked_until;
-//            dd($currentUserWeekPoints);
 
-            // if($account->isNeedShow){
-            $accountResourceArray['claimed_points']= $currentUserWeekPoints ?? $account->weeks()
-                    ->where('week_number', $previousWeekNumber)
-                    ->where('active', false)
-                    ->where('claimed', true)
-                    ->first()
-                    ->claimed_points ?? null;
+            $accountResourceArray['claimed_points']=  null;
 
             $accountResourceArray['invites_count'] = $account->invitesSent()->count() ?? 0;
             $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
@@ -101,28 +73,20 @@ trait TelegramTrait{
             $accountResourceArray['daily_farm']=0;
             $accountResourceArray['isAmbassador']=$account->ambassador;
 
-            $account->telegram()->exists() ? $accountResourceArray['telegram_next_update'] = $account->telegram->next_update_at : $accountResourceArray['telegram_next_update'] = null;
-            // }
+            if ($account->telegram()->exists()) {
+                $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_at)->setTimezone('UTC')->toISOString();
+            } else {
+                $accountResourceArray['telegram_next_update'] = null;
+            }
 
-            $claimed = $account->weeks()
-                ->where('week_number', $previousWeekNumber)
-                ->where('active', false)
-                ->where('claimed', false)->first();
 
 
             return response()->json([
                 'user' => $accountResourceArray,
                 'global'=>[
-                    'dropInfo'=>[
-                        'nextDrop'=>Carbon::now()->endOfWeek(),
-                        'lastDrop'=>Carbon::now()->subWeek()->endOfWeek()
-
-                    ],
                     'total_users'=> DB::connection('pgsql_telegrams')->table('accounts')->count(),
                     'total_teams'=>DB::connection('pgsql_telegrams')->table('teams')->count(),
                     'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
-                    'claimed'=>$claimed ? false : true,
-
                 ]
             ]);
 
@@ -134,11 +98,6 @@ trait TelegramTrait{
             return response()->json([
                 'user' => null,
                 'global'=>[
-                    'dropInfo'=>[
-                        'nextDrop'=>Carbon::now()->endOfWeek(),
-                        'lastDrop'=>Carbon::now()->subWeek()->endOfWeek()
-
-                    ],
                     'total_users'=> DB::connection('pgsql_telegrams')->table('accounts')->count(),
                     'total_teams'=>DB::connection('pgsql_telegrams')->table('teams')->count(),
                     'friends'=>null
@@ -175,7 +134,7 @@ trait TelegramTrait{
                     'accounts.wallet',
                     'accounts.twitter_username',
                     'accounts.total_points',
-                    'weeks.total_points as week_points',
+//                    'weeks.total_points as week_points',
                     'accounts.twitter_name',
                     'accounts.twitter_avatar',
                     'accounts.team_id',
@@ -209,16 +168,17 @@ trait TelegramTrait{
             }
 
             if ($account) {
-                Week::getCurrentWeekForTelegramAccount($account);
+                //Week::getCurrentWeekForTelegramAccount($account);
 
-                $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
-                $currentUserWeekPoints = $account->weeks()
-                        ->where('week_number', $previousWeekNumber)
-                        ->where('active', false)
-                        ->first()
-                        ->total_points ?? 0;
+                //$previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
+//                $currentUserWeekPoints = $account->weeks()
+//                        ->where('week_number', $previousWeekNumber)
+//                        ->where('active', false)
+//                        ->first()
+//                        ->total_points ?? 0;
 
-                $userRank = DB::connection('pgsql_telegrams')->table('accounts')
+                $userRank = DB::connection('pgsql_telegrams')
+                        ->table('accounts')
                         ->where('total_points', '>', $account->total_points)
                         ->count() + 1;
 
@@ -229,7 +189,7 @@ trait TelegramTrait{
                     $currentUserForTop->current_rank = $userRank;
                     $currentUserForTop->previous_rank = null;
                     $currentUserForTop->current_user = true;
-                    $currentUserForTop->week_points = $currentUserWeekPoints;
+//                    $currentUserForTop->week_points = $currentUserWeekPoints;
                     $currentUserForTop->friend = false; // The user is not a friend to themselves
 
                     $currentUserForTop->load($loadRelations);
@@ -247,7 +207,7 @@ trait TelegramTrait{
                 'list' => AccountResource::collection($topAccounts),
             ];
 
-            Cache::put($cacheKey, $response, now()->addMinutes(5));
+            Cache::put($cacheKey, $response, now()->addMinutes(15));
 
             return response()->json($response);
 
@@ -770,7 +730,6 @@ trait TelegramTrait{
             return response()->json(['message'=>'non authorized'], 401);
         }
 
-        Week::getCurrentWeekForTelegramAccount($account);
         if ($account->blocked_until && $account->blocked_until > now()) {
 
             return response()->json(['message' => 'User is blocked for 24 hours'], 429);
@@ -786,13 +745,11 @@ trait TelegramTrait{
 
             $account->increment('code_attempts');
 
-
             if ($account->code_attempts >= $maxAttempts) {
 
                 $account->update(['blocked_until' => $blockPeriod]);
                 return response()->json(['message' => 'User is blocked for 24 hours'], 429);
             }
-
 
             return response()->json(['message' => 'Wrong code'], 422);
         }
@@ -800,12 +757,20 @@ trait TelegramTrait{
         $account->update(['code_attempts' => 0, 'blocked_until'=>null]);
 
 
-        $inviter = Account::on('pgsql_telegrams')
-            ->where('id', $checkCode->account_id)
-            ->first();
-
         if($checkCode->account_id == $account->id){
             return response()->json(['message'=>'Self-invite not permitted'], 400);
+        }
+
+        $existingInvite = Invite::where(function ($query) use ($account, $checkCode) {
+            $query->where('invited_by', $account->id)
+                ->where('whom_invited', $checkCode->account_id);
+        })->orWhere(function ($query) use ($account, $checkCode) {
+            $query->where('invited_by', $checkCode->account_id)
+                ->where('whom_invited', $account->id);
+        })->first();
+
+        if ($existingInvite) {
+            return response()->json(['message' => 'Cross-invite not permitted'], 400);
         }
 
         $inviteCheck = Invite::on('pgsql_telegrams')
@@ -909,8 +874,6 @@ trait TelegramTrait{
 
         if ($inviteReceived) {
 
-            event(new TelegramPointsUpdated($account));
-
             $invitedBy = $inviteReceived->invitedBy;
             $telegramDetails = Telegram::on('pgsql_telegrams')
                 ->where('account_id', $inviteReceived->invited_by)
@@ -929,8 +892,6 @@ trait TelegramTrait{
 
             ];
         }
-
-        event(new TelegramPointsUpdated($account));
 
         return response()->json([
             'referrals' => $collectReferral,
@@ -975,9 +936,10 @@ trait TelegramTrait{
         $account->total_points += $totalIncome;
         $account->save();
 
-        $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
-        $currentWeek->increment('referrals_income', $totalIncome);
-        $currentWeek->increment('total_points', $totalIncome);
+        //Old functionalit
+//        $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
+//        $currentWeek->increment('referrals_income', $totalIncome);
+//        $currentWeek->increment('total_points', $totalIncome);
 
 
 

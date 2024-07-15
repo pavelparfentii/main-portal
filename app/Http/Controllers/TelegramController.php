@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\ConstantValues;
+use App\Events\TelegramPointsUpdated;
 use App\Helpers\AuthHelper;
 use App\Helpers\AuthHelperTelegram;
 use App\Http\Resources\AccountResource;
@@ -401,7 +402,9 @@ class TelegramController extends Controller
             //отправить на аус сервис запрос с user_id, чего получим токен, + решреш , передавать в респонсе токен + рефреш
             $id = json_decode($queryParams['user'])->id;
 //            $id = '888';
-            $telegram = Telegram::on('pgsql_telegrams')->where('telegram_id', $id)->first();
+            $telegram = Telegram::on('pgsql_telegrams')
+                ->where('telegram_id', $id)
+                ->first();
 
             if(!$telegram){
                 $auth_id = $this->generateUuidV4();
@@ -425,6 +428,8 @@ class TelegramController extends Controller
                     ]
                 );
 
+                event(new TelegramPointsUpdated($account));
+
                 $this->accountCreated($account);
 
                 $sub = $telegram->account->auth_id;
@@ -432,6 +437,7 @@ class TelegramController extends Controller
                 $customClaims = [
                     'sub' => $sub,
                     'telegram_id' => $id,
+                    'is_new'=>true,
                     'exp' => now()->addYear()->timestamp, // Expiration time (1 hour in the future)
                 ];
 
@@ -454,6 +460,8 @@ class TelegramController extends Controller
                     ]);
                 }
 
+                event(new TelegramPointsUpdated($telegram->account));
+
                 $sub = $telegram->account->auth_id;
 
                 $customClaims = [
@@ -467,7 +475,10 @@ class TelegramController extends Controller
                 $payload = JWTFactory::make($customClaims);
                 $token = JWTAuth::encode($payload);
 
-                return response()->json(['message' => 'Session initiated', 'token'=>(string)$token, 'exp'=>now()->addYear()->timestamp]);
+                return response()->json([
+                    'message' => 'Session initiated',
+                    'token'=>(string)$token,
+                    'exp'=>now()->addYear()->timestamp]);
             }
 
         }
@@ -529,9 +540,10 @@ class TelegramController extends Controller
             if ($telegram && $telegram->next_update_at < now()) {
                 $account = Account::where('id', $telegram->account_id)->first();
 
-                $currentWeek = Week::getCurrentWeekForAccount($account);
-                $currentWeek->increment('points', $points);
-                $currentWeek->increment('total_points', $points);
+                //Old content
+//                $currentWeek = Week::getCurrentWeekForAccount($account);
+//                $currentWeek->increment('points', $points);
+//                $currentWeek->increment('total_points', $points);
 
                 DB::table('account_farms')
                     ->where('account_id', $account->id)
@@ -621,37 +633,44 @@ class TelegramController extends Controller
         // Assign the rank to the new account
         $account->current_rank = $lowestRank;
         $account->total_points += ConstantValues::telegram_connect;
+
+        DB::connection('pgsql_telegrams')
+            ->table('account_farms')
+            ->where('account_id', $account->id)
+            ->increment('daily_farm', ConstantValues::telegram_connect);
+
 //        $account->previous_rank = $previousLowestRank;
 
         $account->save();
 
-        $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
-        $telegram = Telegram::on('pgsql_telegrams')->where('account_id', $account->id)->first();
-        if($telegram){
-            $queryParam = 'telegram_connect';
-
-            $existingTelegram = DigitalAnimal::on('pgsql_telegrams')->where('query_param', $queryParam)
-                ->where('account_id', $account->id)
-                ->first();
-
-            if(!$existingTelegram){
-
-                $newAnimal = DigitalAnimal::on('pgsql_telegrams')->create(
-                    [
-                        'account_id' => $account->id,
-                        'points' => ConstantValues::telegram_connect,
-                        'comment' => 'telegram_connect',
-                        'query_param' => $queryParam
-                    ]
-                );
-
-                $newAnimal->save();
-
-                $currentWeek->animals()->save($newAnimal);
-                $currentWeek->increment('total_points', ConstantValues::telegram_connect);
-                $currentWeek->increment('points', ConstantValues::telegram_connect);
-            }
-        }
+        //OLD content
+        //$currentWeek = Week::getCurrentWeekForTelegramAccount($account);
+//        $telegram = Telegram::on('pgsql_telegrams')->where('account_id', $account->id)->first();
+//        if($telegram){
+//            $queryParam = 'telegram_connect';
+//
+//            $existingTelegram = DigitalAnimal::on('pgsql_telegrams')->where('query_param', $queryParam)
+//                ->where('account_id', $account->id)
+//                ->first();
+//
+//            if(!$existingTelegram){
+//
+//                $newAnimal = DigitalAnimal::on('pgsql_telegrams')->create(
+//                    [
+//                        'account_id' => $account->id,
+//                        'points' => ConstantValues::telegram_connect,
+//                        'comment' => 'telegram_connect',
+//                        'query_param' => $queryParam
+//                    ]
+//                );
+//
+//                $newAnimal->save();
+//
+////                $currentWeek->animals()->save($newAnimal);
+////                $currentWeek->increment('total_points', ConstantValues::telegram_connect);
+////                $currentWeek->increment('points', ConstantValues::telegram_connect);
+//            }
+//        }
     }
 
 

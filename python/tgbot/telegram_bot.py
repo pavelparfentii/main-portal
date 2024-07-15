@@ -1,10 +1,33 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo, MenuButtonWebApp, MenuButtonCommands
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
+from dotenv import load_dotenv
 import uuid
+import os
 
 # Replace 'YOUR_BOT_TOKEN' with your actual bot token
-BOT_TOKEN = '7475491207:AAGA37IImPNWoZd_jsuAvmY7cgOiBhe_jGc'
+# BOT_TOKEN = '7475491207:AAGA37IImPNWoZd_jsuAvmY7cgOiBhe_jGc'
+
+load_dotenv()
+
+BOT_TOKEN = os.getenv('TELEGRAM_BOT')
+APP_ENV = os.getenv('APP_ENV', 'local')
+
+if not BOT_TOKEN:
+    print("No BOT_TOKEN found in environment variables")
+else:
+    print(BOT_TOKEN)
+
+
+# Set URL based on APP_ENV
+if APP_ENV == 'production':
+    app_url = "https://tg-app.souls.club"
+    chat_url = "https://t.me/soulsclubeth"
+elif APP_ENV == 'staging':
+    app_url = "https://tg-bot-staging.souls.club"
+else:
+    app_url = "https://tg-bot-staging.souls.club"
+    chat_url ="https://t.me/+YqZWK8A9lV1iNTIy"  # Default to local
 
 # prod
 # BOT_TOKEN = '7133712001:AAF_-jyDA81HO9yPY9yErEPGq1g0-_gHky0'
@@ -17,8 +40,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     unique_id = str(uuid.uuid4())
     # Create inline keyboard buttons
     inline_keyboard = [
-        [InlineKeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=f"https://tg-app.souls.club"))],
-        [InlineKeyboardButton("💬 Chat", url="https://t.me/+YqZWK8A9lV1iNTIy")],
+        [InlineKeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=app_url))],
+        [InlineKeyboardButton("💬 Chat", url=chat_url)],
         [InlineKeyboardButton("💎 souls.club channel", url="https://t.me/soulsclub")],
         [InlineKeyboardButton("🌐 About souls.club", url="https://souls.club/airdrop/about")],
     ]
@@ -54,7 +77,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 #     web_app_info = WebAppInfo(url=f"https://tg-bot-staging.netlify.app/")  # Replace with your URL
-    web_app_info = WebAppInfo(url=f"https://tg-app.souls.club")
+    web_app_info = WebAppInfo(url=app_url)
     menu_but = MenuButtonWebApp(text="get 💎", web_app=web_app_info)
     await context.bot.set_chat_menu_button(chat_id=update.message.chat_id, menu_button=menu_but)
 
@@ -62,7 +85,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     keyboard = [
-        [InlineKeyboardButton("Join our Chat", url="https://t.me/+YqZWK8A9lV1iNTIy")]
+        [InlineKeyboardButton("Join our Chat", url=chat_url)]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -91,7 +114,7 @@ async def handle_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         '🔒 <b>SafeSoul:</b> Stay protected with our community-driven safety platform, which displays scam alerts on websites.\n\n'
         '🛍️ <b>Store:</b> Shop for exclusive <i>merch</i> in our dedicated department.\n\n'
         '<b>Join the <a href="https://souls.club/airdrop/about">Souls.club</a> family 👇</b>\n\n'
-        '<a href="https://t.me/+YqZWK8A9lV1iNTIy">Chat</a> | <a href="https://twitter.com/soulsclub">Twitter</a> | <a href="https://discord.gg/soulsclub">Discord</a> | <a href="https://opensea.io/collection/soulsclub">OpenSea</a> | <a href="https://souls.club">Website</a>'
+        '<a href="https://t.me/soulsclubeth">Chat</a> | <a href="https://twitter.com/soulsclub">Twitter</a> | <a href="https://discord.gg/soulsclub">Discord</a> | <a href="https://opensea.io/collection/soulsclub">OpenSea</a> | <a href="https://souls.club">Website</a>'
     )
 
     await update.message.reply_text(text=message, parse_mode=ParseMode.HTML)

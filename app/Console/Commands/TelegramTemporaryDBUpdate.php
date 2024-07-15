@@ -31,26 +31,39 @@ class TelegramTemporaryDBUpdate extends Command
      */
     public function handle()
     {
-        $accounts = Account::on('pgsql_telegrams')->cursor();
+        $startOfDay = Carbon::today()->startOfDay();
+        $endOfDay = Carbon::today()->endOfDay();
 
-        $tasks = Task::on('pgsql_telegrams')->cursor();
-
-
+        // Виконуємо запит для отримання всіх користувачів, створених сьогодні
+        $accounts = Account::on('pgsql_telegrams')->whereBetween('created_at', [$startOfDay, $endOfDay])->get();
+//
+//        $accounts = Account::on('pgsql_telegrams')->cursor();
+//
+//        $tasks = Task::on('pgsql_telegrams')->cursor();
 
         foreach ($accounts as $account){
-
-            foreach ($tasks as $task) {
-                $account->tasks()->attach($task->id, ['is_done' => false]);
-            }
-//            $farm = AccountFarm::on('pgsql_telegrams')
-//                ->where('account_id', $account->id)
-//                ->first();
-//
-//            if($farm){
-//                $account->total_points = $farm->total_points;
-//                $account->save();
-//            }
+            $accountDailyFarm = DB::connection('pgsql_telegrams')
+                ->table('account_farms')
+                ->where('account_id', $account->id)
+                ->update(['daily_farm'=>$account->total_balance]);
         }
+
+
+
+//        foreach ($accounts as $account){
+//
+//            foreach ($tasks as $task) {
+//                $account->tasks()->attach($task->id, ['is_done' => false]);
+//            }
+////            $farm = AccountFarm::on('pgsql_telegrams')
+////                ->where('account_id', $account->id)
+////                ->first();
+////
+////            if($farm){
+////                $account->total_points = $farm->total_points;
+////                $account->save();
+////            }
+//        }
 
 
 
