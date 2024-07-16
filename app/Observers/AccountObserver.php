@@ -51,10 +51,8 @@ class AccountObserver
         }
 
         if($connection === 'pgsql_telegrams'){
-            $lowestRank = Account::on('pgsql_telegrams')->max('current_rank');
-            $previousLowestRank = Account::on('pgsql_telegrams')->max('previous_rank');
-            $account->current_rank = $lowestRank;
-            $account->previous_rank = $previousLowestRank;
+
+            $account->total_points = ConstantValues::telegram_connect;
             $account->save();
 
             AccountFarm::on('pgsql_telegrams')->create([

@@ -816,6 +816,7 @@ trait TelegramTrait{
     {
         $account = AuthHelperTelegram::auth($request);
 
+
         if(!$account){
             return response()->json(['message'=>'non authorized'], 401);
         }

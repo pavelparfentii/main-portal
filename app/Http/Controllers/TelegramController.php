@@ -431,7 +431,6 @@ class TelegramController extends Controller
                 $customClaims = [
                     'sub' => $sub,
                     'telegram_id' => $id,
-                    'is_new'=>true,
                     'exp' => now()->addYear()->timestamp, // Expiration time (1 hour in the future)
                 ];
 
@@ -440,7 +439,11 @@ class TelegramController extends Controller
                 $payload = JWTFactory::make($customClaims);
                 $token = JWTAuth::encode($payload);
 
-                return response()->json(['message' => 'Session initiated', 'token'=>(string)$token, 'exp'=>now()->addYear()->timestamp]);
+                return response()->json([
+                    'message' => 'Session initiated',
+                    'token'=>(string)$token,
+                    'is_new'=>true,
+                    'exp'=>now()->addYear()->timestamp]);
 
             }else{
                 $telegram = Telegram::on('pgsql_telegrams')->where('telegram_id', $id)->first();
@@ -472,6 +475,7 @@ class TelegramController extends Controller
                 return response()->json([
                     'message' => 'Session initiated',
                     'token'=>(string)$token,
+                    'is_new'=>false,
                     'exp'=>now()->addYear()->timestamp]);
             }
 
