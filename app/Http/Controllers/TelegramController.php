@@ -269,12 +269,8 @@ class TelegramController extends Controller
                     ->where('id', $telegram->account_id)
                     ->first();
 
-                $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
-                $currentWeek->increment('points', $points);
-                $currentWeek->increment('total_points', $points);
 
                 //for current total
-//                $account->total_points += $points;
                 $account->increment('total_points', $points);
                 $account->save();
 //                DB::connection('pgsql_telegrams')
@@ -430,8 +426,6 @@ class TelegramController extends Controller
 
                 event(new TelegramPointsUpdated($account));
 
-                $this->accountCreated($account);
-
                 $sub = $telegram->account->auth_id;
 
                 $customClaims = [
@@ -484,84 +478,6 @@ class TelegramController extends Controller
         }
 
         return response()->json(['errors' => 'Authentification failed'], 401);
-    }
-
-    public function updatePointsSeparate(Request $request)
-    {
-
-        $account = AuthHelper::auth($request);
-
-        if (!$account) {
-            return response()->json(['message' => 'non authorized'], 401);
-        }
-
-        $points = 1.0;
-//
-//        $bearer = $request->bearerToken();
-//
-//        if (!$bearer) {
-//            return response()->json(['errors' => 'No authentification token'], 401);
-//        }
-
-//        $parts = explode('.', $bearer);
-//        if (count($parts) === 2) {
-//            $id = $parts[1];
-//        }
-//        $id = '1234';
-//        $cacheKey = 'telegram_' . $id;
-
-        $telegram = Telegram::on('pgsql_telegrams')
-            ->where('account_id', $account->id)
-            ->first();
-
-
-        if(!$telegram){
-
-            return response()->json([
-
-                'user' => null,
-                'global'=>[
-                    'dropInfo'=>[
-                        'nextDrop'=>Carbon::now()->endOfWeek(),
-                        'lastDrop'=>Carbon::now()->subWeek()->endOfWeek()
-
-                    ],
-                    'total_users'=> DB::table('accounts')->count(),
-                    'total_teams'=>DB::table('teams')->count(),
-                    'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
-                    'claimed'=>null,
-
-                ]
-
-            ]);
-
-        }else{
-
-            if ($telegram && $telegram->next_update_at < now()) {
-                $account = Account::where('id', $telegram->account_id)->first();
-
-                //Old content
-//                $currentWeek = Week::getCurrentWeekForAccount($account);
-//                $currentWeek->increment('points', $points);
-//                $currentWeek->increment('total_points', $points);
-
-                DB::table('account_farms')
-                    ->where('account_id', $account->id)
-                    ->increment('total_points', $points);
-
-
-                $telegram->increment('points', $points);
-                $telegram->update(['next_update_at' => now()->addHours(24)]);
-
-                $response = $this->getInfo($account, $telegram->next_update_at );
-
-            } else {
-                return response()->json(['message' => 'not allowed to update'], 423);
-            }
-
-            return $response;
-        }
-
     }
 
     public function getInfoEndpoint(Request $request)
@@ -624,54 +540,6 @@ class TelegramController extends Controller
         return $this->claimIncome($request);
     }
 
-    public function accountCreated($account)
-    {
-
-        $lowestRank = Account::on('pgsql_telegrams')->max('current_rank') ?? null;
-        $previousLowestRank = Account::on('pgsql_telegrams')->max('previous_rank') ?? null;
-
-        // Assign the rank to the new account
-        $account->current_rank = $lowestRank;
-        $account->total_points += ConstantValues::telegram_connect;
-
-        DB::connection('pgsql_telegrams')
-            ->table('account_farms')
-            ->where('account_id', $account->id)
-            ->increment('daily_farm', ConstantValues::telegram_connect);
-
-//        $account->previous_rank = $previousLowestRank;
-
-        $account->save();
-
-        //OLD content
-        //$currentWeek = Week::getCurrentWeekForTelegramAccount($account);
-//        $telegram = Telegram::on('pgsql_telegrams')->where('account_id', $account->id)->first();
-//        if($telegram){
-//            $queryParam = 'telegram_connect';
-//
-//            $existingTelegram = DigitalAnimal::on('pgsql_telegrams')->where('query_param', $queryParam)
-//                ->where('account_id', $account->id)
-//                ->first();
-//
-//            if(!$existingTelegram){
-//
-//                $newAnimal = DigitalAnimal::on('pgsql_telegrams')->create(
-//                    [
-//                        'account_id' => $account->id,
-//                        'points' => ConstantValues::telegram_connect,
-//                        'comment' => 'telegram_connect',
-//                        'query_param' => $queryParam
-//                    ]
-//                );
-//
-//                $newAnimal->save();
-//
-////                $currentWeek->animals()->save($newAnimal);
-////                $currentWeek->increment('total_points', ConstantValues::telegram_connect);
-////                $currentWeek->increment('points', ConstantValues::telegram_connect);
-//            }
-//        }
-    }
 
 
 }

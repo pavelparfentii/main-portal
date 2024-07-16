@@ -89,36 +89,6 @@ class Account extends Model
                     $currentWeek->safeSouls()->save($safeSoul);
                     $currentWeek->increment('points', ConstantValues::safesoul_patrol_points);
                 }
-            }elseif($connection === 'pgsql_telegrams'){
-                $currentDate = Carbon::now();
-                $startOfWeek = $currentDate->copy()->subWeek()->startOfWeek();
-                $endOfWeek = $currentDate->copy()->subWeek()->endOfWeek();
-
-                $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
-
-                $previousWeek = Week::on('pgsql_telegrams')->where('account_id', $account->id)
-                    ->where('start_date', '<=', $startOfWeek)
-                    ->where('end_date', '>=', $endOfWeek)
-                    ->where('active', false)
-                    ->first();
-
-
-                if (!$previousWeek) {
-
-                    $previousWeek = $account->weeks()->create([
-                        'week_number' => $previousWeekNumber,
-                        'start_date' => $startOfWeek->toDateString(),
-                        'end_date' => $endOfWeek->toDateString(),
-                        'active' => false,
-                        'total_points'=>0.000,
-                        'points' => 0.000,
-                        'claim_points' => 0.000,
-                        'claimed' => true
-                    ]);
-                }
-
-                $currentWeek = Week::getCurrentWeekForTelegramAccount($account);
-
             }
 
         });

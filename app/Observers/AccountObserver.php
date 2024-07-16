@@ -57,11 +57,11 @@ class AccountObserver
             $account->previous_rank = $previousLowestRank;
             $account->save();
 
-            AccountFarm::create([
+            AccountFarm::on('pgsql_telegrams')->create([
                 'account_id' => $account->id,
-                'daily_farm' => 0.00, // Default value
-                'daily_farm_last_update' => now(), // Default value
-                'total_points'=>ConstantValues::telegram_connect,
+                'daily_farm' => ConstantValues::telegram_connect,
+                'daily_farm_last_update' => now(),
+//                'total_points'=>ConstantValues::telegram_connect,
             ]);
 
         }elseif($connection === 'pgsql'){

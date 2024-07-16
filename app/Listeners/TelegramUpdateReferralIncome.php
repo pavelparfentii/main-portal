@@ -45,15 +45,18 @@ class TelegramUpdateReferralIncome
                 $secondLevelInvites = Invite::on('pgsql_telegrams')
                     ->where('invited_by', $firstLevelAccount->id)
                     ->get();
+
                 foreach ($secondLevelInvites as $secondLevelInvite) {
                     $secondLevelAccount = Account::on('pgsql_telegrams')
                         ->where('id', $secondLevelInvite->whom_invited)
                         ->first();
+
                     if ($secondLevelAccount) {
                         $earnedPoints = DB::connection('pgsql_telegrams')
                                 ->table('account_farms')
                                 ->where('account_id', $secondLevelAccount->id)
                                 ->value('daily_farm') ?? 0.0;
+
 
                         $secondLevelIncome = $account->ambassador ? ($earnedPoints) * ConstantValues::second_level_ambas_ref : ($earnedPoints) * ConstantValues::second_level_ref;
 
