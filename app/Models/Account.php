@@ -342,7 +342,6 @@ class Account extends Model
             }
         }
 
-
     }
 
     public function weeks(): HasMany
@@ -519,6 +518,20 @@ class Account extends Model
 
         // Wipe the safesouls table after adjustments
         SafeSoul::query()->delete();
+    }
+
+    public function refSubrefAccounts()
+    {
+        return $this->belongsToMany(Account::class, 'account_referrals', 'account_id', 'ref_subref_id')
+            ->withPivot('claimed_balance', 'income')
+            ->withTimestamps();
+    }
+
+    public function parentRefAccounts()
+    {
+        return $this->belongsToMany(Account::class, 'account_referrals', 'ref_subref_id', 'account_id')
+            ->withPivot('claimed_balance', 'income')
+            ->withTimestamps();
     }
 
 

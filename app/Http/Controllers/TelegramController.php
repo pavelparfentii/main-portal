@@ -273,19 +273,32 @@ class TelegramController extends Controller
                 //for current total
                 $account->increment('total_points', $points);
                 $account->save();
+
+                $exists = DB::connection('pgsql_telegrams')
+                    ->table('account_referrals')
+                    ->where('ref_subref_id', $telegram->account_id)
+                    ->exists();
+
+                if ($exists) {
+                    DB::connection('pgsql_telegrams')
+                        ->table('account_referrals')
+                        ->where('ref_subref_id', $telegram->account_id)
+                        ->increment('income', $points);
+                }
+
 //                DB::connection('pgsql_telegrams')
 //                    ->table('account_farms')
 //                    ->where('account_id', $telegram->account_id)
-//                    ->increment('total_points', $points);
-
-                DB::connection('pgsql_telegrams')
-                    ->table('account_farms')
-                    ->where('account_id', $telegram->account_id)
-                    ->increment('daily_farm', $points);
+//                    ->increment('daily_farm', $points);
 
 
                 $telegram->increment('points', $points);
-                $telegram->update(['next_update_at' => now()->addHours(24)]);
+                if (env('APP_ENV') === 'production') {
+                    $telegram->update(['next_update_at' => now()->addHours(24)]);
+                }else{
+                    $telegram->update(['next_update_at' => now()->addHour()]);
+                }
+
 
                 $response = $this->getInfo($request);
 

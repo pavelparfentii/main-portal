@@ -5,12 +5,36 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class Week extends Model
 {
     use HasFactory;
 
     protected $guarded = [];
+
+    //Where is called
+//    protected static function booted()
+//    {
+//        static::created(function ($model) {
+//            // Отримати стек викликів
+//            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+//
+//            // Форматування стека викликів для логування
+//            $traceString = "";
+//            foreach ($trace as $frame) {
+//                if (isset($frame['file']) && isset($frame['line'])) {
+//                    $traceString .= $frame['file'] . ':' . $frame['line'] . "\n";
+//                }
+//            }
+//
+//            Log::info('Created new Week record', [
+//                'id' => $model->id,
+//                'attributes' => $model->getAttributes(),
+//                'trace' => $traceString
+//            ]);
+//        });
+//    }
 
     public function animals()
     {
@@ -55,31 +79,38 @@ class Week extends Model
 
     public static function getCurrentWeekForAccount(Account $account)
     {
-        $currentDate = Carbon::now();
 
-        $startOfWeek = $currentDate->copy()->startOfWeek();
-        $endOfWeek = $currentDate->copy()->endOfWeek();
+        $connection = $account->getConnectionName();
 
-        $currentWeek = static::where('account_id', $account->id)
-            ->where('start_date', '<=', $startOfWeek)
-            ->where('end_date', '>=', $endOfWeek)
-            ->where('active', true)
-            ->first();
+        if($connection === 'pgsql'){
 
-        if (!$currentWeek) {
             $currentDate = Carbon::now();
-            $currentWeek = $account->weeks()->create([
-                'week_number' => $currentDate->weekOfYear . '-' . $currentDate->year,
-                'start_date' => $startOfWeek->toDateString(),
-                'end_date' => $endOfWeek->toDateString(),
-                'active' => true,
-                'points' => 0,
-                'claim_points' => 0,
-                'claimed'=>false
-            ]);
+
+            $startOfWeek = $currentDate->copy()->startOfWeek();
+            $endOfWeek = $currentDate->copy()->endOfWeek();
+
+            $currentWeek = static::where('account_id', $account->id)
+                ->where('start_date', '<=', $startOfWeek)
+                ->where('end_date', '>=', $endOfWeek)
+                ->where('active', true)
+                ->first();
+
+            if (!$currentWeek) {
+                $currentDate = Carbon::now();
+                $currentWeek = $account->weeks()->create([
+                    'week_number' => $currentDate->weekOfYear . '-' . $currentDate->year,
+                    'start_date' => $startOfWeek->toDateString(),
+                    'end_date' => $endOfWeek->toDateString(),
+                    'active' => true,
+                    'points' => 0,
+                    'claim_points' => 0,
+                    'claimed'=>false
+                ]);
+            }
+
+            return $currentWeek;
         }
 
-        return $currentWeek;
     }
 
     public static function getCurrentWeekForTelegramAccount(Account $account)

@@ -82,39 +82,25 @@ class TaskController extends Controller
 
             $account->increment('total_points', $task->points);
 
-            DB::connection('pgsql_telegrams')
-                ->table('account_farms')
-                ->where('account_id', $account->id)
-                ->increment('daily_farm', $task->points);
+
+            $exists = DB::connection('pgsql_telegrams')
+                ->table('account_referrals')
+                ->where('ref_subref_id', $account->id)
+                ->exists();
+
+            if ($exists) {
+                DB::connection('pgsql_telegrams')
+                    ->table('account_referrals')
+                    ->where('ref_subref_id', $account->id)
+                    ->increment('income', $task->points);
+            }
+
+//            DB::connection('pgsql_telegrams')
+//                ->table('account_farms')
+//                ->where('account_id', $account->id)
+//                ->increment('daily_farm', $task->points);
 
 
-//            $tasks = $account->tasks()->with(['tags', 'parent.tags'])->get();
-//
-//            return response()->json($tasks->map(function ($task) {
-//                $parents = [];
-//                $currentParent = $task->parent;
-//
-//                while ($currentParent) {
-//                    $parents[] = [
-//                        'id' => $currentParent->id,
-//                        'title' => $currentParent->title,
-//                        'tags' => $currentParent->tags->pluck('code')->toArray(),
-//                    ];
-//                    $currentParent = $currentParent->parent;
-//                }
-//
-//                return [
-//                    'id' => $task->id,
-//                    'title' => $task->title,
-//                    'description' => $task->description,
-//                    'link' => $task->link,
-//                    'points' => $task->points,
-//                    'isDone' => $task->pivot->is_done,
-//                    'tags' => $task->tags->pluck('code')->toArray(),
-//                    'action' => $task->action,
-//                    'parents' => $parents
-//                ];
-//            }));
             $tasks = Task::on('pgsql_telegrams')->with(['tags', 'parent.tags'])->get();
 
             $completedTasks = $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();

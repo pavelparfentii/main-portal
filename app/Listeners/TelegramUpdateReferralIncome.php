@@ -20,68 +20,154 @@ class TelegramUpdateReferralIncome
         $account = $event->account;
 
 
+//        $invitesSent = $account->invitesSent()->get();
+//        $totalFirstLevelIncome = 0;
+//        $totalSecondLevelIncome = 0;
+
+
+//        foreach ($invitesSent as $referral) {
+//            $firstLevelAccount = Account::on('pgsql_telegrams')
+//                ->where('id', $referral->whom_invited)
+//                ->first();
+//
+//
+//
+//
+//            if ($firstLevelAccount ) {
+//                $earnedPoints = DB::connection('pgsql_telegrams')
+//                        ->table('account_farms')
+//                        ->where('account_id', $firstLevelAccount->id)
+//                        ->value('daily_farm') ?? 0;
+//
+//                $firstLevelIncome = $account->ambassador ? ($earnedPoints) * ConstantValues::first_level_ambas_ref : ($earnedPoints) * ConstantValues::first_level_ref;
+//
+//                $totalFirstLevelIncome += $firstLevelIncome;
+//
+//                $secondLevelInvites = Invite::on('pgsql_telegrams')
+//                    ->where('invited_by', $firstLevelAccount->id)
+//                    ->get();
+//
+//
+//
+//                foreach ($secondLevelInvites as $secondLevelInvite) {
+//
+//                    $secondLevelAccount = Account::on('pgsql_telegrams')
+//                        ->where('id', $secondLevelInvite->whom_invited)
+//                        ->first();
+//
+//                    if ($secondLevelAccount) {
+//                        $secondLevelEarnedPoints = DB::connection('pgsql_telegrams')
+//                                ->table('account_farms')
+//                                ->where('account_id', $secondLevelAccount->id)
+//                                ->value('daily_farm') ?? 0;
+//
+//
+//                        $secondLevelIncome = $account->ambassador ? ($secondLevelEarnedPoints) * ConstantValues::second_level_ambas_ref : ($secondLevelEarnedPoints) * ConstantValues::second_level_ref;
+//
+//                        $totalSecondLevelIncome += $secondLevelIncome;
+//                    }
+//                }
+//            }
+//            $accumulatedIncome = $totalFirstLevelIncome + $totalSecondLevelIncome;
+//
+//            $this->accumulateIncomeForInvite($referral, $accumulatedIncome);
+//        }
         $invitesSent = $account->invitesSent()->get();
 
         foreach ($invitesSent as $referral) {
-            $firstLevelAccount = Account::on('pgsql_telegrams')
-                ->where('id', $referral->whom_invited)
-                ->first();
-
-            $update = $referral->next_update_date;
 
             $totalFirstLevelIncome = 0;
             $totalSecondLevelIncome = 0;
 
+            $firstLevelAccount = Account::on('pgsql_telegrams')
+                ->where('id', $referral->whom_invited)
+                ->first();
+
             if ($firstLevelAccount ) {
+
                 $earnedPoints = DB::connection('pgsql_telegrams')
-                        ->table('account_farms')
-                        ->where('account_id', $firstLevelAccount->id)
-                        ->value('daily_farm') ?? 0.0;
+                        ->table('account_referrals')
+                        ->where('ref_subref_id', $firstLevelAccount->id)
+                        ->value('income') ?? 0;
 
                 $firstLevelIncome = $account->ambassador ? ($earnedPoints) * ConstantValues::first_level_ambas_ref : ($earnedPoints) * ConstantValues::first_level_ref;
 
-                $totalFirstLevelIncome += $firstLevelIncome;
+
+                $this->checkRelation($account, $firstLevelAccount, $firstLevelIncome, $earnedPoints);
 
                 $secondLevelInvites = Invite::on('pgsql_telegrams')
                     ->where('invited_by', $firstLevelAccount->id)
                     ->get();
 
+
+
                 foreach ($secondLevelInvites as $secondLevelInvite) {
+
                     $secondLevelAccount = Account::on('pgsql_telegrams')
                         ->where('id', $secondLevelInvite->whom_invited)
                         ->first();
 
                     if ($secondLevelAccount) {
-                        $earnedPoints = DB::connection('pgsql_telegrams')
-                                ->table('account_farms')
-                                ->where('account_id', $secondLevelAccount->id)
-                                ->value('daily_farm') ?? 0.0;
+                        $secondLevelEarnedPoints = DB::connection('pgsql_telegrams')
+                                ->table('account_referrals')
+                                ->where('ref_subref_id', $secondLevelAccount->id)
+                                ->value('income') ?? 0;
 
 
-                        $secondLevelIncome = $account->ambassador ? ($earnedPoints) * ConstantValues::second_level_ambas_ref : ($earnedPoints) * ConstantValues::second_level_ref;
+                        $secondLevelIncome = $account->ambassador ? ($secondLevelEarnedPoints) * ConstantValues::second_level_ambas_ref : ($secondLevelEarnedPoints) * ConstantValues::second_level_ref;
 
-                        $totalSecondLevelIncome += $secondLevelIncome;
+//                        $totalSecondLevelIncome += $secondLevelIncome;
+
+                        $this->checkRelation($account, $secondLevelAccount, $secondLevelIncome, $secondLevelEarnedPoints);
+
                     }
                 }
-            }
-            $accumulatedIncome = $totalFirstLevelIncome + $totalSecondLevelIncome;
 
-            $this->accumulateIncomeForInvite($referral, $accumulatedIncome);
+            }
+
         }
     }
 
-    private function accumulateIncomeForInvite($invite, $income)
+//    private function accumulateIncomeForInvite($invite, $income)
+//    {
+//        $lastUpdate = $invite->next_update_date ? now() : null;
+//        $today = now()->toDateString();
+//
+//        $invite->accumulated_income = $income;
+//        $invite->save();
+//
+//        if ($lastUpdate != $today) {
+//
+//            $invite->next_update_date = now();
+//            $invite->save();
+//        }
+//    }
+
+    private function checkRelation($account, $referral, $netIncome, $income)
     {
-        $lastUpdate = $invite->next_update_date ? now() : null;
-        $today = now()->toDateString();
+        $existingRelation = $account->refSubrefAccounts()
+            ->wherePivot('ref_subref_id', $referral->id)
+            ->exists();
 
-        $invite->accumulated_income = $income;
-        $invite->save();
+        if ($existingRelation) {
+            DB::connection('pgsql_telegrams')
+                ->table('account_referrals')
+                ->where('ref_subref_id', $referral->id)
+                ->update(['net_income'=> $netIncome, 'income'=>$income]);
 
-        if ($lastUpdate != $today) {
+//            DB::connection('pgsql_telegrams')
+//                ->table('account_referrals')
+//                ->where('ref_subref_id', $referral->id)
+//                ->increment();
+        }else{
 
-            $invite->next_update_date = now();
-            $invite->save();
+            $account->refSubrefAccounts()->syncWithoutDetaching([$referral->id => [
+                'claimed_balance' => $referral->total_points,
+                'net_income' => 0,
+                'income' =>0
+            ]]);
         }
+
+
     }
 }
