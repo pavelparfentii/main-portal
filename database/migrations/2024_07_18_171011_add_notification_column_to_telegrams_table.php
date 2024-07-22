@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('telegrams', function (Blueprint $table) {
             $table->dateTime('last_notification_at')->nullable();
+            $table->integer('notification_stage')->default(0);
             $table->boolean('notification_sent')->default(false);
         });
     }
@@ -23,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('telegrams', function (Blueprint $table) {
-            //
+            $table->dropColumn('last_notification_at');
+            $table->dropColumn('notification_stage');
+            $table->dropColumn('notification_sent');
         });
     }
 };

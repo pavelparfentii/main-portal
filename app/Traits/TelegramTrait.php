@@ -208,7 +208,7 @@ trait TelegramTrait{
                 'list' => AccountResource::collection($topAccounts),
             ];
 
-            Cache::put($cacheKey, $response, now()->addMinutes(15));
+            Cache::put($cacheKey, $response, now()->addHours(8));
 
             return response()->json($response);
 
@@ -823,99 +823,82 @@ trait TelegramTrait{
     {
 
         $account = AuthHelperTelegram::auth($request);
-        event(new TelegramPointsUpdated($account));
+
 
         if(!$account){
             return response()->json(['message'=>'non authorized'], 401);
         }
 
+        event(new TelegramPointsUpdated($account));
         $invitedCount = $account->invitesSent()->count();
-
-        $invitesReceived = $account->invitedMe()->get();
 
         $referralsList = $account->invitesSent()->get();
 
-//        event(new TelegramPointsUpdated($account));
-        //how much invited second level
-        // total income 1-й + 2-й левел
-        // boolean пройшов  тиждень чи ні referrals_claimed
 
         $totalFirstLevelIncome = 0;
         $totalSecondLevelIncome = 0;
 
-        $collectReferral = $referralsList->map(function ($referral) use (&$totalFirstLevelIncome, &$totalSecondLevelIncome) {
-            $account = Account::on('pgsql_telegrams')
-                ->where('id', $referral->whom_invited)
-                ->first();
-            if ($account){
-//
-//                $secondLeveltotalIncome = Invite::on('pgsql_telegrams')
-//                    ->where('invited_by', $account->id)
-//                    ->sum('accumulated_income');
-//
-//                $secondLevelReferralsId = Invite::on('pgsql_telegrams')
-//                    ->where('invited_by', $account->id)
-//                    ->pluck('whom_invited');
-//
-//
-//                $secondLevelReferralsTotalPoints = Account::on('pgsql_telegrams')
-//                    ->whereIn('id', $secondLevelReferralsId)
-//                    ->sum('total_points');
-//
-//
-//                $secondLevelReferralsClaimedTotal = AccountFarm::on('pgsql_telegrams')
-//                    ->whereIn('account_id', $secondLevelReferralsId)->sum('total_points');
+        $collectReferral = $referralsList->map(function ($referral) use (&$account, &$totalSecondLevelIncome) {
+
+            $firstLevelAccount = $referral->invitee;
+            $secondLevelReferrals =$firstLevelAccount->invitesSent()->pluck('whom_invited');
 
 
-                $secondLevelReferrals = $account->invitesSent()->pluck('whom_invited');
-                $secondLevelNetIncome = DB::connection('pgsql_telegrams')
-                    ->table('account_referrals')
-                    ->whereIn('ref_subref_id', $secondLevelReferrals)
-                    ->sum('net_income');
+            $secondLevelNetIncome = DB::connection('pgsql_telegrams')
+                ->table('account_referrals')
+                ->where('account_id', $account->id)
+                ->whereIn('ref_subref_id', $secondLevelReferrals)
+                ->sum('net_income');
 
-                $firstLevelNetIncome = DB::connection('pgsql_telegrams')
-                    ->table('account_referrals')
-                    ->where('ref_subref_id', $referral->whom_invited)
-                    ->value('net_income');
+            $firstLevelNetIncome = DB::connection('pgsql_telegrams')
+                ->table('account_referrals')
+                ->where('account_id', $account->id)
+                ->where('ref_subref_id', $referral->whom_invited)
+                ->value('net_income');
 
-                $firstLevelReferralClaimedIncome = DB::connection('pgsql_telegrams')
-                    ->table('account_referrals')
-                    ->where('ref_subref_id', $referral->whom_invited)
-                    ->sum('claimed_balance');
+            $firstLevelReferralClaimedIncome = DB::connection('pgsql_telegrams')
+                ->table('account_referrals')
+                ->where('account_id', $account->id)
+                ->where('ref_subref_id', $referral->whom_invited)
+                ->sum('claimed_balance');
 
-                $secondLevelReferralsClaimedTotal = DB::connection('pgsql_telegrams')
-                    ->table('account_referrals')
-                    ->whereIn('ref_subref_id', $secondLevelReferrals)
-                    ->sum('claimed_balance');
+            $secondLevelReferralsClaimedTotal = DB::connection('pgsql_telegrams')
+                ->table('account_referrals')
+                ->where('account_id', $account->id)
+                ->whereIn('ref_subref_id', $secondLevelReferrals)
+                ->sum('claimed_balance');
 
-                $totalFirstLevelIncome = $firstLevelNetIncome+$secondLevelNetIncome;
-                $totalSecondLevelIncome +=$totalFirstLevelIncome;
+            $totalFirstLevelIncome = round($firstLevelNetIncome+$secondLevelNetIncome, 2);
+            $totalSecondLevelIncome +=$totalFirstLevelIncome;
 
-                if(!empty($account->telegram->telegram_id)){
-                    return [
-                        'id'=>$account->id,
-                        'twitter_name' => $account->twitter_name,
-                        'twitter_avatar'=>$account->twitter_avatar,
-                        'twitter_username'=>$account->twitter_username,
-                        'total_points' => $account->total_points,
-                        'invited'=>$account->invitesSent()->count(),
-                        'referral_income'=>$totalFirstLevelIncome,
-                        'referral_claimed_total'=>$firstLevelReferralClaimedIncome,
-                        '2nd_level_claimed_total'=>$secondLevelReferralsClaimedTotal,
-                        'telegram_first_name'=>$account->telegram->first_name,
-                        'telegram_last_name'=>$account->telegram->last_name,
-                        'telegram_avatar'=>$account->telegram->avatar
+            $telegram = $firstLevelAccount->telegram;
+            // Log
 
-                    ];
-                }else{
-                    return [
-                        'id'=>$account->id,
-                        'total_points' => $account->total_points,
-                        'invited'=>$account->invitesSent()->count(),
-                        'referral_income'=>$totalFirstLevelIncome
-                    ];
-                }
+            if(!empty($telegram)){
+                return [
+                    'id'=>$referral->id,
+                    'twitter_name' => $referral->twitter_name,
+                    'twitter_avatar'=>$referral->twitter_avatar,
+                    'twitter_username'=>$referral->twitter_username,
+                    'total_points' => $firstLevelAccount->total_points,
+                    'invited'=>$firstLevelAccount->invitesSent()->count(),
+                    'referral_income'=>$totalFirstLevelIncome,
+                    'referral_claimed_total'=>$firstLevelReferralClaimedIncome ?? 0,
+                    '2nd_level_claimed_total'=>$secondLevelReferralsClaimedTotal ?? 0,
+                    'telegram_first_name'=>$telegram->first_name,
+                    'telegram_last_name'=>$telegram->last_name,
+                    'telegram_avatar'=>$telegram->avatar
+
+                ];
+            }else{
+                return [
+                    'id'=>$referral->id,
+                    'total_points' => $referral->total_points,
+                    'invited'=>$firstLevelAccount->count(),
+                    'referral_income'=>$totalFirstLevelIncome
+                ];
             }
+
         })->filter(); // Filter out any null values
 
         $inviteReceived = $account->invitedMe()->first();
