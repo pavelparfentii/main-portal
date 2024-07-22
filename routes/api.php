@@ -103,5 +103,7 @@ Route::prefix('telegram')->middleware('api')->group(function(){
 
     Route::get('/tasks/list', [\App\Http\Controllers\TaskController::class, 'getTaskList']);
     Route::put('/task/update', [\App\Http\Controllers\TaskController::class, 'updateTask']);
+
+    Route::post('/tasks/check', [\App\Http\Controllers\TaskController::class, 'checkTelegramChannelConnection']);
 //    Route::get('/points/friends', )
 });

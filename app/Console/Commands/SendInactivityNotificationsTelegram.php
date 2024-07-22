@@ -103,75 +103,83 @@ class SendInactivityNotificationsTelegram extends Command
         $batchSize = 100; // Adjust based on your performance testing
         $now = Carbon::now();
 
-        $days1 = 1;
-        $days2 = 2;
-        $days3 = 3;
-        $days4 = 4;
+        $days1 = 30;
+        $days2 = 60;
+        $days3 = 90;
+        $days4 = 120;
 
-        Telegram::on('pgsql_telegrams')->chunkById($batchSize, function ($telegrams) use ($now, $days1, $days2, $days3, $days4) {
-            foreach ($telegrams as $telegram) {
-                $lastNotificationSentAt = $telegram->last_notification_sent_at ? Carbon::parse($telegram->last_notification_sent_at) : null;
-                $nextUpdateAt = $telegram->next_update_at ? Carbon::parse($telegram->next_update_at) : null;
+        Telegram::on('pgsql_telegrams')
+//            ->where('last_notification_at', '>', $now->addDay())
+            ->where('next_update_at', '<', $now->subMinutes($days1))
+            // ->where('notification_sent', false)
+            ->chunkById($batchSize, function ($telegrams) use ($now, $days1, $days2, $days3, $days4) {
+                foreach ($telegrams as $telegram) {
+                    $lastNotificationSentAt = $telegram->last_notification_at ? Carbon::parse($telegram->last_notification_at) : null;
+                    $nextUpdateAt = $telegram->next_update_at ? Carbon::parse($telegram->next_update_at) : null;
+
+                    $createdAt = $telegram->created_at ? Carbon::parse($telegram->created_at) : null;
 
 
-                if ($nextUpdateAt && $lastNotificationSentAt && $nextUpdateAt->gt($lastNotificationSentAt)) {
+                    if((!$nextUpdateAt && $now->diffInDays($createdAt) > $days1) || ($lastNotificationSentAt && $nextUpdateAt->gt($lastNotificationSentAt))){
 
-                    $telegram->update([
-                        'notification_stage' => 0,
-                        'last_notification_sent_at' => null
-                    ]);
-                    continue;
+                        $telegram->update([
+                            'notification_stage' => 0,
+                            'last_notification_at' => null
+                        ]);
+                        continue;
+                    }
+
+                    //юзер новий next_update_at дата создания  > 1 дня то notification_stage проходит так само
+
+                    $message = null;
+
+                    switch ($telegram->notification_stage) {
+                        case 0:
+                            if ($now->diffInMinutes($nextUpdateAt) >= $days1) {
+                                $message = "Hey hey, it's Diamonds calling! Come back to tap!";
+                                $telegram->notification_stage = 1;
+                            }
+                            break;
+
+                        case 1:
+                            if ($now->diffInMinutes($nextUpdateAt) >= $days2) {
+                                $message = "Diamonds are losing their shine without you. Tap to keep them sparkling!";
+                                $telegram->notification_stage = 2;
+                            }
+                            break;
+
+                        case 2:
+                            if ($now->diffInMinutes($nextUpdateAt) >= $days3) {
+                                $message = "Your gems miss you. Tap to reunite with your treasures!";
+                                $telegram->notification_stage = 3;
+                            }
+                            break;
+
+                        case 3:
+                            if ($now->diffInMinutes($nextUpdateAt) >= $days4) {
+                                $message = "It's been a while! Your diamonds are still here, waiting for you. Come back and tap to gather them!";
+                                $telegram->notification_stage = 4;
+                            }
+                            break;
+
+                        default:
+                            break;
+                    }
+
+                    if ($message) {
+                        DB::transaction(function () use ($telegram, $message, $now) {
+                            $this->sendMessage($telegram, $message);
+                            $telegram->save();
+                        });
+                    }
                 }
-
-                $message = null;
-
-                switch ($telegram->notification_stage) {
-                    case 0:
-                        if ($now->diffInHours($nextUpdateAt) >= $days1) {
-                            $message = "Hey hey, it's Diamonds calling! Come back to tap!";
-                            $telegram->notification_stage = 1;
-                        }
-                        break;
-
-                    case 1:
-                        if ($now->diffInHours($nextUpdateAt) >= $days2) {
-                            $message = "Diamonds are losing their shine without you. Tap to keep them sparkling!";
-                            $telegram->notification_stage = 2;
-                        }
-                        break;
-
-                    case 2:
-                        if ($now->diffInHours($nextUpdateAt) >= $days3) {
-                            $message = "Your gems miss you. Tap to reunite with your treasures!";
-                            $telegram->notification_stage = 3;
-                        }
-                        break;
-
-                    case 3:
-                        if ($now->diffInHours($nextUpdateAt) >= $days4) {
-                            $message = "It's been a while! Your diamonds are still here, waiting for you. Come back and tap to gather them!";
-                            $telegram->notification_stage = 4;
-                        }
-                        break;
-
-                    default:
-                        break;
-                }
-
-                if ($message) {
-                    DB::transaction(function () use ($telegram, $message, $now) {
-                        $this->sendMessage($telegram, $message);
-                        $telegram->save();
-                    });
-                }
-            }
-        });
+            });
     }
 
     private function sendMessage($user, $message)
     {
         $delaySeconds = 3;
-        sleep($delaySeconds);
+
 //        var_dump($user->telegram_id);
         SendTelegramNotificationJob::dispatch($user, $message)
             ->delay(now()->addSeconds($delaySeconds))

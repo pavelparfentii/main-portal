@@ -81,6 +81,7 @@ class SendTelegramNotificationJob implements ShouldQueue
 //                Log::info('User notification status updated.');
 
                 $messageId = $response->getMessageId();
+                sleep(3);
 //                Log::info('Message ID: ' . $messageId);
 
             } catch (\Exception $e) {
