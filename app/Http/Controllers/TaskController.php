@@ -72,7 +72,7 @@ class TaskController extends Controller
             return response()->json(['error' => 'Task not found'], 404);
         }
 
-            //enable claim = true
+        //enable claim = true
         $account = AuthHelperTelegram::auth($request);
 
         $pivotRow = $account->tasks()->where('task_id', $task->id)->first();
@@ -85,14 +85,19 @@ class TaskController extends Controller
 
             $account->tasks()->attach($task->id, ['is_done' => true]);
 
+
         }else {
-           $pivot = $account->tasks()->where('task_id', $task->id)->first();
 
-           if(!$pivot->enable_claim) {
+            $pivot = $account->tasks()->where('task_id', $task->id)->first();
 
-               return response()->json(['error' => 'Task is not available to claim'], 400);
-           }
+            if(!$pivot->pivot->enable_claim) {
+
+                return response()->json(['error' => 'Task is not available to claim'], 400);
+            }
+
+            $account->tasks()->updateExistingPivot($task->id, ['is_done' => true]);
         }
+
 
         $account->increment('total_points', $task->points);
 
@@ -165,7 +170,6 @@ class TaskController extends Controller
             ->first();
         if($task){
             $telegram_id = $account->telegram->telegram_id;
-            $telegram_id = 367531909;
 
             if(env('APP_ENV')==='production'){
                 $chat_id = env('TELEGRAM_CHAT_PROD');
@@ -182,12 +186,15 @@ class TaskController extends Controller
             if (is_array($data) && isset($data['result']) && is_array($data['result']) && isset($data['result']['status'])) {
 
                 if ($data['result']['status'] === 'member') {
-                    $account->tasks()->attach($taskId, ['enable_claim' => true]);
+
+                    $this->checkExistingTask($account, $taskId, true);
 
                     $message = ['status' => true];
                     $code = 200;
                     return response()->json($message, $code);
                 }else{
+
+                    $this->checkExistingTask($account, $taskId, false);
 
                     $message = ['status' => false];
                     $code = 200;
@@ -201,5 +208,18 @@ class TaskController extends Controller
 
         return response()->json($message, $code);
 
+    }
+
+    private function checkExistingTask($account, $taskId, $bool)
+    {
+        $existingTask = $account->tasks()->where('task_id', $taskId)->first();
+
+        if ($existingTask) {
+
+            $account->tasks()->updateExistingPivot($taskId, ['enable_claim' => $bool]);
+        } else {
+
+            $account->tasks()->attach($taskId, ['enable_claim' => $bool]);
+        }
     }
 }

@@ -48,16 +48,15 @@ class SendTelegramNotificationJob implements ShouldQueue
             Log::info('Connection is pgsql_telegrams.');
 
             if (env('APP_ENV') === 'production') {
-                $url = "https://tg-app.souls.club";
+                $url = "https://t.me/Souls_Club_bot/Main";
             } else {
                 $url = "https://t.me/breinburg_bot/test_soul";
-//                $url = "https://tg-app.souls.club";
+
             }
-            Log::info('URL: ' . $url);
 
             try {
                 $telegram = new Api(env('TELEGRAM_BOT'));
-                Log::info('Telegram API initialized.');
+//                Log::info('Telegram API initialized.');
 
                 $response = $telegram->sendMessage([
                     'chat_id' => $this->user->telegram_id,
@@ -66,23 +65,23 @@ class SendTelegramNotificationJob implements ShouldQueue
                         'inline_keyboard' => [
                             [
                                 Keyboard::inlineButton([
-                                    'text' => 'Open Mini App',
+                                    'text' => '🎮 Launch app',
                                     'url' => $url
                                 ])
                             ]
                         ]
                     ])
                 ]);
-                Log::info('Message sent.');
+
 
                 $this->user->notification_sent = true;
                 $this->user->last_notification_at = Carbon::now();
                 $this->user->save();
-//                Log::info('User notification status updated.');
+
 
                 $messageId = $response->getMessageId();
                 sleep(3);
-//                Log::info('Message ID: ' . $messageId);
+
 
             } catch (\Exception $e) {
                 Log::error('Error sending message: ' . $e->getMessage());
@@ -90,63 +89,6 @@ class SendTelegramNotificationJob implements ShouldQueue
         } else {
             Log::info('Connection is not pgsql_telegrams.');
         }
-
-//        Log::info('Starting handle method.');
-//
-//        Log::info('User telegram_id: ' . $this->user->telegram_id);
-//        $connection = $this->user->getConnectionName();
-//        Log::info('Connection: ' . $connection);
-//
-//        if ($connection === 'pgsql_telegrams') {
-//            Log::info('Connection is pgsql_telegrams.');
-//
-//            if (env('APP_ENV') === 'production') {
-//                $url = "https://tg-app.souls.club";
-//            } else {
-//                $url = "https://tg-app.souls.club";
-//            }
-//            Log::info('URL: ' . $url);
-//
-//            try {
-//                $client = new Client();
-//                $response = $client->post('https://api.telegram.org/bot' . env('TELEGRAM_BOT') . '/sendMessage', [
-//                    'form_params' => [
-//                        'chat_id' => $this->user->telegram_id,
-//                        'text' => $this->message,
-//                        'reply_markup' => json_encode([
-//                            'inline_keyboard' => [
-//                                [
-//                                    [
-//                                        'text' => 'Open Mini App',
-//                                        'url' => $url
-//                                    ]
-//                                ]
-//                            ]
-//                        ])
-//                    ]
-//                ]);
-//
-//                $responseBody = json_decode($response->getBody(), true);
-//
-//                if ($responseBody['ok']) {
-//                    Log::info('Message sent.');
-//
-//                    $this->user->notification_sent = true;
-//                    $this->user->save();
-//                    Log::info('User notification status updated.');
-//
-//                    $messageId = $responseBody['result']['message_id'];
-//                    Log::info('Message ID: ' . $messageId);
-//                } else {
-//                    Log::error('Error sending message: ' . $responseBody['description']);
-//                }
-//
-//            } catch (\Exception $e) {
-//                Log::error('Error sending message: ' . $e->getMessage());
-//            }
-//        } else {
-//            Log::info('Connection is not pgsql_telegrams.');
-//        }
 
     }
 }

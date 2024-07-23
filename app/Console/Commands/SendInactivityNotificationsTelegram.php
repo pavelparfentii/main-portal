@@ -27,100 +27,33 @@ class SendInactivityNotificationsTelegram extends Command
     /**
      * Execute the console command.
      */
-//    public function handle()
-//    {
-//        $batchSize = 100; // Adjust based on your performance testing
-//        $now = Carbon::now();
-//
-//        $day1 = 1;
-//        $day2 = 2;
-//        $day3 = 3;
-//        $day4 = 4;
-//
-//        $threeHoursAgo = $now->subHours(1);
-//        $fourHoursAgo = $now->subHours(4);
-//
-//        Telegram::on('pgsql_telegrams')
-//            ->where('notification_sent', true)
-//            ->where('next_update_at', '<', $fourHoursAgo)
-//            ->chunkById($batchSize, function ($telegrams) use ($now, $day1, $day2, $day3, $day4) {
-//            foreach ($telegrams as $telegram) {
-//                $lastNotification = $telegram->last_notification_at ? Carbon::parse($telegram->last_notification_at) : null;
-//
-//                if ($lastNotification === null) {
-//                    continue;
-//                }
-//
-//                if ($now->diffInHours($lastNotification) >= $day1 && $now->diffInHours($lastNotification) < $day2) {
-//                    $telegram->update(['notification_sent' => false]);
-//                } elseif ($now->diffInHours($lastNotification) >= $day2 && $now->diffInHours($lastNotification) < $day3) {
-//                    $telegram->update(['notification_sent' => false]);
-//                } elseif ($now->diffInHours($lastNotification) >= $day3 && $now->diffInHours($lastNotification) < $day4) {
-//                    $telegram->update(['notification_sent' => false]);
-//                }elseif ($now->diffInHours($lastNotification) > $day4){
-//                    $telegram->update(['notification_sent' => true]);
-//                }
-//            }
-//        });
-//
-//
-//        Telegram::on('pgsql_telegrams')
-//            ->where('notification_sent', false)
-//
-//            ->where('next_update_at', '<', $threeHoursAgo)
-//            ->where('notification_sent', false)
-//            ->groupBy('telegram_id', 'telegrams.id')
-//            ->chunkById($batchSize, function ($users) use ($now, $day1, $day2, $day3, $day4) {
-//                foreach ($users as $user) {
-//
-//
-//                    $lastInteraction = Carbon::parse($user->next_update_at);
-//                    var_dump($lastInteraction);
-//
-//                    $message = null;
-////                    var_dump($user->telegram_id);
-//
-//                    if($now->diffInHours($lastInteraction) >= $day1 && $now->diffInHours($lastInteraction) < $day2) {
-//                        $message = "Hey hey, it's Diamonds calling! Come back to tap!";
-//                    }elseif ($now->diffInHours($lastInteraction) >= $day2 && $now->diffInHours($lastInteraction) < $day3){
-//                        $message = "Diamonds are losing their shine without you. Tap to keep them sparkling!";
-//                    }elseif ($now->diffInHours($lastInteraction) >= $day3 && $now->diffInHours($lastInteraction) < $day4){
-//                        $message = "Your gems miss you. Tap to reunite with your treasures!";
-//                    }elseif($now->diffInHours($lastInteraction) >= $day4){
-//                        $message = "It's been a while! Your diamonds are still here, waiting for you. Come back and tap to gather them!";
-//                    }
-//
-//                    if ($message) {
-//                        $this->sendMessage($user, $message);
-//
-//                    }
-//                }
-//            });
-//    }
 
     public function handle()
     {
         $batchSize = 100; // Adjust based on your performance testing
-        $now = Carbon::now();
+        $timezone = config('app.timezone');
+        $now = Carbon::now($timezone);
 
-        $days1 = 30;
-        $days2 = 60;
-        $days3 = 90;
-        $days4 = 120;
+        $days1 = 25;
+        $days2 = 3;
+        $days3 = 10;
+        $days4 = 20;
 
         Telegram::on('pgsql_telegrams')
-//            ->where('last_notification_at', '>', $now->addDay())
-            ->where('next_update_at', '<', $now->subMinutes($days1))
-            // ->where('notification_sent', false)
+
+            ->where('next_update_at', '<=', $now->subHours($days1)->toDateTimeString())
+            ->groupBy('telegram_id')
             ->chunkById($batchSize, function ($telegrams) use ($now, $days1, $days2, $days3, $days4) {
                 foreach ($telegrams as $telegram) {
+
+
                     $lastNotificationSentAt = $telegram->last_notification_at ? Carbon::parse($telegram->last_notification_at) : null;
                     $nextUpdateAt = $telegram->next_update_at ? Carbon::parse($telegram->next_update_at) : null;
 
                     $createdAt = $telegram->created_at ? Carbon::parse($telegram->created_at) : null;
 
 
-                    if((!$nextUpdateAt && $now->diffInDays($createdAt) > $days1) || ($lastNotificationSentAt && $nextUpdateAt->gt($lastNotificationSentAt))){
+                    if((!$nextUpdateAt && $now->diffInHours($createdAt) > $days1) || ($lastNotificationSentAt && $nextUpdateAt->gt($lastNotificationSentAt))){
 
                         $telegram->update([
                             'notification_stage' => 0,
@@ -135,28 +68,28 @@ class SendInactivityNotificationsTelegram extends Command
 
                     switch ($telegram->notification_stage) {
                         case 0:
-                            if ($now->diffInMinutes($nextUpdateAt) >= $days1) {
+                            if ($now->diffInHours($nextUpdateAt) >= $days1) {
                                 $message = "Hey hey, it's Diamonds calling! Come back to tap!";
                                 $telegram->notification_stage = 1;
                             }
                             break;
 
                         case 1:
-                            if ($now->diffInMinutes($nextUpdateAt) >= $days2) {
+                            if ($now->diffInDays($nextUpdateAt) >= $days2) {
                                 $message = "Diamonds are losing their shine without you. Tap to keep them sparkling!";
                                 $telegram->notification_stage = 2;
                             }
                             break;
 
                         case 2:
-                            if ($now->diffInMinutes($nextUpdateAt) >= $days3) {
+                            if ($now->diffInDays($nextUpdateAt) >= $days3) {
                                 $message = "Your gems miss you. Tap to reunite with your treasures!";
                                 $telegram->notification_stage = 3;
                             }
                             break;
 
                         case 3:
-                            if ($now->diffInMinutes($nextUpdateAt) >= $days4) {
+                            if ($now->diffInDays($nextUpdateAt) >= $days4) {
                                 $message = "It's been a while! Your diamonds are still here, waiting for you. Come back and tap to gather them!";
                                 $telegram->notification_stage = 4;
                             }
@@ -180,7 +113,6 @@ class SendInactivityNotificationsTelegram extends Command
     {
         $delaySeconds = 3;
 
-//        var_dump($user->telegram_id);
         SendTelegramNotificationJob::dispatch($user, $message)
             ->delay(now()->addSeconds($delaySeconds))
             ->onQueue('telegram');

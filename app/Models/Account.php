@@ -402,7 +402,7 @@ class Account extends Model
 
     public function tasks()
     {
-        return $this->belongsToMany(Task::class, 'account_task')->withPivot('is_done')->withTimestamps();
+        return $this->belongsToMany(Task::class, 'account_task')->withPivot('is_done', 'enable_claim')->withTimestamps();
     }
 
     public function createTeamAndAssign($teamData)
