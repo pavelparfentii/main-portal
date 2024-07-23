@@ -294,9 +294,17 @@ class TelegramController extends Controller
 
                 $telegram->increment('points', $points);
                 if (env('APP_ENV') === 'production') {
-                    $telegram->update(['next_update_at' => now()->addHours(24)]);
+                    $telegram->update([
+                        'next_update_at' => now()->addHours(24),
+                        'notification_stage' => 0,
+                        'last_notification_at' => null
+                    ]);
                 }else{
-                    $telegram->update(['next_update_at' => now()->addHour()]);
+                    $telegram->update([
+                        'next_update_at' => now()->addHour(),
+                        'notification_stage' => 0,
+                        'last_notification_at' => null
+                    ]);
                 }
 
 

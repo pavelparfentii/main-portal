@@ -113,7 +113,7 @@ class Kernel extends ConsoleKernel
 
         //Schedule notification
 
-//        $schedule->command('app:send-inactivity-notifications-telegram')->dailyAt('15:00');
+        $schedule->command('app:send-inactivity-notifications-telegram')->hourly();
 
 //        $schedule->command('app:update-invitees-with-income-telegram')->dailyAt('13:30');
 

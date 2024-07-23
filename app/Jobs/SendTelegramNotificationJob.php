@@ -38,17 +38,15 @@ class SendTelegramNotificationJob implements ShouldQueue
     public function handle(): void
     {
 
-        Log::info('Starting handle method.');
 
-        Log::info('User telegram_id: ' . $this->user->telegram_id);
         $connection = $this->user->getConnectionName();
-        Log::info('Connection: ' . $connection);
+
 
         if ($connection === 'pgsql_telegrams') {
-            Log::info('Connection is pgsql_telegrams.');
+
 
             if (env('APP_ENV') === 'production') {
-                $url = "https://t.me/Souls_Club_bot/Main";
+                $url = "https://t.me/Souls_Club_bot/SCLUB";
             } else {
                 $url = "https://t.me/breinburg_bot/test_soul";
 
@@ -80,7 +78,7 @@ class SendTelegramNotificationJob implements ShouldQueue
 
 
                 $messageId = $response->getMessageId();
-                sleep(3);
+                usleep(25000);
 
 
             } catch (\Exception $e) {

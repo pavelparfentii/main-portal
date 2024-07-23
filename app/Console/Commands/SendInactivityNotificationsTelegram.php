@@ -34,7 +34,7 @@ class SendInactivityNotificationsTelegram extends Command
         $timezone = config('app.timezone');
         $now = Carbon::now($timezone);
 
-        $days1 = 25;
+        $days1 = 1;
         $days2 = 3;
         $days3 = 10;
         $days4 = 20;
