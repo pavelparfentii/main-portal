@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::table('telegrams', function (Blueprint $table) {
+        Schema::table('notification_stage', function (Blueprint $table) {
             $table->foreign('account_id')->references('id')->on('accounts')->onDelete('cascade');
         });
     }
@@ -33,6 +33,6 @@ return new class extends Migration
             $table->dropForeign(['account_id']);
         });
 
-        Schema::dropIfExists('telegrams');
+        Schema::dropIfExists('notification_stage');
     }
 };

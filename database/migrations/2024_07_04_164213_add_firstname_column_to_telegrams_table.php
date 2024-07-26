@@ -23,7 +23,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('telegrams', function (Blueprint $table) {
+        Schema::table('notification_stage', function (Blueprint $table) {
             $table->dropColumn('first_name');
             $table->dropColumn('last_name');
             $table->dropColumn('avatar');

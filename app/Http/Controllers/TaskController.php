@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\AuthHelperTelegram;
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
@@ -17,11 +18,20 @@ class TaskController extends Controller
 
 //        $tasks = $account->tasks()->with(['tags', 'parent.tags'])->get();
 
-        $tasks = Task::on('pgsql_telegrams')
-            ->with(['tags', 'parent.tags'])
-            ->get();
 
-        $completedTasks = $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();
+        $cacheKeyTasks = 'tasks_for_account_' . $account->id;
+        $cacheKeyCompletedTasks = 'completed_tasks_for_account_' . $account->id;
+
+        // Отримуємо задачі з кешу, якщо вони є, або завантажуємо і кешуємо їх
+        $tasks = Cache::remember($cacheKeyTasks, now()->addHours(30), function () {
+            return Task::on('pgsql_telegrams')
+                ->with(['tags', 'parent.tags'])
+                ->get();
+        });
+
+        $completedTasks = Cache::remember($cacheKeyCompletedTasks, now()->addHours(30), function () use ($account) {
+            return $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();
+        });
 
         return response()->json($tasks->map(function ($task) use ($completedTasks) {
             $parents = [];
@@ -114,9 +124,13 @@ class TaskController extends Controller
         }
 
         //enable_claim false
-        // account_task для дан таски і дан юзера проверить запись enable_claim = true
-        //якшо true виконується як раніше, тілоьки без створення таск_аккаунт запису
-        //якшо !task enable_claim false не приймається виконання not validated error
+        //cache
+
+        $cacheKeyTasks = 'tasks_for_account_' . $account->id;
+        $cacheKeyCompletedTasks = 'completed_tasks_for_account_' . $account->id;
+
+        Cache::forget($cacheKeyTasks);
+        Cache::forget($cacheKeyCompletedTasks);
 
         $tasks = Task::on('pgsql_telegrams')->with(['tags', 'parent.tags'])->get();
 
@@ -165,48 +179,12 @@ class TaskController extends Controller
             return response()->json(['error'=>'task_id is required'], 400);
         }
 
-        $task = Task::on('pgsql_telegrams')->where('id', $taskId)
-            ->where('action', 'like','%check_telegram_channel%')
-            ->first();
-        if($task){
-            $telegram_id = $account->telegram->telegram_id;
 
-            if(env('APP_ENV')==='production'){
-                $chat_id = env('TELEGRAM_CHAT_PROD');
-                $botToken = env('TELEGRAM_BOT');
-            }else{
-                $chat_id = env('TELEGRAM_CHAT');
-                $botToken = env('TELEGRAM_BOT');
-            }
+        $arrayResponse = $this->taskChecking($taskId, $account);
 
-            $response = Http::post("https://api.telegram.org/bot$botToken/getChatMember?chat_id=@$chat_id&user_id=$telegram_id");
+        // dd($arrayResponse);
 
-            $data = json_decode($response, true);
-
-            if (is_array($data) && isset($data['result']) && is_array($data['result']) && isset($data['result']['status'])) {
-
-                if ($data['result']['status'] === 'member') {
-
-                    $this->checkExistingTask($account, $taskId, true);
-
-                    $message = ['status' => true];
-                    $code = 200;
-                    return response()->json($message, $code);
-                }else{
-
-                    $this->checkExistingTask($account, $taskId, false);
-
-                    $message = ['status' => false];
-                    $code = 200;
-                    return response()->json($message, $code);
-                }
-            }
-
-        }
-        $message = ['error' => 'Task not found'];
-        $code = 404;
-
-        return response()->json($message, $code);
+        return response()->json($arrayResponse['message'], $arrayResponse['code']);
 
     }
 
@@ -222,4 +200,103 @@ class TaskController extends Controller
             $account->tasks()->attach($taskId, ['enable_claim' => $bool]);
         }
     }
+
+    private function taskChecking($taskId, $account): array
+    {
+        $task = Task::on('pgsql_telegrams')->where('id', $taskId)
+            ->where('action', 'like','%check_%')
+            ->first();
+
+
+
+        if(!$task){
+
+            $response = [
+                'message' => ['error' => 'Task not found'],
+                'code' => 200
+            ];
+
+            return $response;
+        }
+
+
+        if (str_contains($task->action, 'telegram')) {
+
+            return $this->checkTelegramSubscribe($task, $account);
+
+        }
+
+        $response = [
+            'message' => ['error' => 'Task not found'],
+            'code' => 200
+        ];
+
+        return $response;
+
+    }
+
+    private function checkTelegramSubscribe($task, $account)
+    {
+        $chat_id = null;
+
+        $taskId = $task->id;
+
+        if (preg_match('/https:\/\/t\.me\/([^\/]+)/', $task->link, $matches)) {
+            $chat_id = $matches[1];
+
+        }
+
+        if(env('APP_ENV')==='production'){
+
+            $botToken = env('TELEGRAM_BOT');
+        }else{
+
+            $botToken = env('TELEGRAM_BOT');
+        }
+
+        if(!$chat_id){
+
+            $response = [
+                'message' => ['status' => false],
+                'code' => 200
+            ];
+
+            return $response;
+        }
+
+        $telegram_id = $account->telegram->telegram_id;
+
+        $response = Http::post("https://api.telegram.org/bot$botToken/getChatMember?chat_id=@$chat_id&user_id=$telegram_id");
+
+        $data = json_decode($response, true);
+
+        if (is_array($data) && isset($data['result']) && is_array($data['result']) && isset($data['result']['status'])) {
+
+            if ($data['result']['status'] !== 'left') {
+
+                $this->checkExistingTask($account, $taskId, true);
+
+
+                $response = [
+                    'message' => ['status' => true],
+                    'code' => 200
+                ];
+
+                return $response;
+
+            }else{
+
+                $this->checkExistingTask($account, $taskId, false);
+
+                $response = [
+                    'message' => ['status' => false],
+                    'code' => 200
+                ];
+
+                return $response;
+            }
+        }
+    }
+
+
 }

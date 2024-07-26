@@ -12,9 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('telegrams', function (Blueprint $table) {
-            $table->dateTime('last_notification_at')->nullable();
-            $table->integer('notification_stage')->default(0);
-            $table->boolean('notification_sent')->default(false);
+
+            if (!Schema::hasColumn('telegrams', 'last_notification_at')) {
+                $table->dateTime('last_notification_at')->nullable();
+            }
+            if (!Schema::hasColumn('telegrams', 'notification_stage')) {
+                $table->integer('notification_stage')->default(0);
+            }
+            if (!Schema::hasColumn('telegrams', 'notification_sent')) {
+                $table->boolean('notification_sent')->default(false);
+            }
         });
     }
 

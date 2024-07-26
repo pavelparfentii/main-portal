@@ -400,6 +400,7 @@ class TelegramController extends Controller
         $authDateTime = new DateTime("@$authDate");
         $authDateTime->setTimezone(new DateTimeZone('Europe/Moscow')); // Assuming the auth_date is in UTC
         $currentDateTime = new DateTime('now', new DateTimeZone('Europe/Moscow'));
+        \Log::info($authDateTime->format('Y-m-d H:i:s'));
         $interval = $currentDateTime->diff($authDateTime);
 
         // Convert the interval to seconds

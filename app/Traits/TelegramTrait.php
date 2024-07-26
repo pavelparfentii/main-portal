@@ -35,7 +35,7 @@ trait TelegramTrait{
 
         if ($account) {
 
-            $this->checkDailyPoints($account);
+            //$this->checkDailyPoints($account);
 
 //            $userRank = DB::table('accounts')
 //                    ->where('total_points', '>', $account->total_points)

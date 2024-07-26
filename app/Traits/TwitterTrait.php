@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
 
 trait TwitterTrait
 {
-    private string $apiKey = 'AAAAAAAAAAAAAAAAAAAAAPLJrwEAAAAAsRCBQCV7mGPbX%2BMOBABwNYkVR68%3DlSEEjoj6v2V9SsLXXIylvVw1RUXygxAxRwSQGhxe3ldZ0CrYEG';
+    private string $apiKey = 'AAAAAAAAAAAAAAAAAAAAAPm6VwEAAAAAPtJazJxkDVcgvEGelXFaSoNGzms%3D1CLa79WikRBMb1ugbOJTFOhinkNjdgloNl4AsxgQfytCSaltSd';
 
     //Projects mention
 
@@ -246,6 +246,7 @@ trait TwitterTrait
     {
         $results = self::getProjectsTweets($this->apiKey);
 
+
         $tweet_ids = [];
 
         $likesCountPerAccount = [];
@@ -408,13 +409,14 @@ trait TwitterTrait
     private function getProjectsTweets(string $apiKey, ?string $paginationToken = null)
     {
         $url = 'https://api.twitter.com/2/tweets/search/recent?query=(from:igor_3000A -is:retweet -is:reply) OR (from:SafeSoulETH -is:retweet -is:reply) OR (from:SoulsClubETH -is:retweet -is:reply)&tweet.fields=id,text,author_id,created_at&max_results=100';
-        Log::info($url);
+
         if ($paginationToken) {
             $url .= ('&pagination_token=' . $paginationToken);
         }
 
         try {
             $result = Http::withToken($apiKey)->get($url);
+
 
             if ($result->ok()) {
                 Log::info($result->json());

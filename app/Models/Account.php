@@ -534,5 +534,10 @@ class Account extends Model
             ->withTimestamps();
     }
 
+    public function dailyReward()
+    {
+        return $this->hasOne(DailyReward::class);
+    }
+
 
 }

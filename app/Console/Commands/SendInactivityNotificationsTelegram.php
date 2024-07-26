@@ -42,25 +42,13 @@ class SendInactivityNotificationsTelegram extends Command
         Telegram::on('pgsql_telegrams')
 
             ->where('next_update_at', '<=', $now->subHours($days1)->toDateTimeString())
-            ->groupBy('telegram_id')
+            ->where('notification_stage', '<', 4)
+            ->groupBy('telegram_id', 'telegrams.id')
             ->chunkById($batchSize, function ($telegrams) use ($now, $days1, $days2, $days3, $days4) {
                 foreach ($telegrams as $telegram) {
 
 
-                    $lastNotificationSentAt = $telegram->last_notification_at ? Carbon::parse($telegram->last_notification_at) : null;
                     $nextUpdateAt = $telegram->next_update_at ? Carbon::parse($telegram->next_update_at) : null;
-
-                    $createdAt = $telegram->created_at ? Carbon::parse($telegram->created_at) : null;
-
-
-                    if((!$nextUpdateAt && $now->diffInHours($createdAt) > $days1) || ($lastNotificationSentAt && $nextUpdateAt->gt($lastNotificationSentAt))){
-
-                        $telegram->update([
-                            'notification_stage' => 0,
-                            'last_notification_at' => null
-                        ]);
-                        continue;
-                    }
 
                     //юзер новий next_update_at дата создания  > 1 дня то notification_stage проходит так само
 
