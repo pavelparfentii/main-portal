@@ -83,6 +83,8 @@ Route::prefix('telegram')->middleware('api')->group(function(){
     Route::get('/points/account', [\App\Http\Controllers\TelegramController::class, 'getPointsDataEndpoint']);
     Route::get('/points/friends', [\App\Http\Controllers\TelegramController::class, 'getFriendsForAccountEndpoint']);
 
+    Route::get('/points/info', [\App\Http\Controllers\TelegramController::class, 'getTotalPointsEndpoint']);
+
     Route::post('/points/store', [\App\Http\Controllers\TelegramController::class, 'updatePoints2']);
 
     // TEAM endopoints
@@ -106,6 +108,6 @@ Route::prefix('telegram')->middleware('api')->group(function(){
 
     Route::post('/tasks/check', [\App\Http\Controllers\TaskController::class, 'checkTelegramChannelConnection']);
 
-    Route::post('/reward', [\App\Http\Controllers\TelegramDailyRewardController::class, 'getDailyReward']);
+    Route::post('/rewards', [\App\Http\Controllers\TelegramDailyRewardController::class, 'getDailyReward']);
 //    Route::get('/points/friends', )
 });

@@ -7,6 +7,7 @@ use App\Events\TelegramPointsUpdated;
 use App\Helpers\AuthHelper;
 use App\Helpers\AuthHelperTelegram;
 use App\Http\Resources\AccountResource;
+use App\Jobs\TelegramPointsUpdatedJob;
 use App\Models\Account;
 use App\Models\DigitalAnimal;
 use App\Models\Invite;
@@ -265,6 +266,7 @@ class TelegramController extends Controller
         }else{
 
             if ($telegram && $telegram->next_update_at < now()) {
+//            if ($telegram && $telegram->next_update_with_reward_at < now()) {
                 $account = Account::on('pgsql_telegrams')
                     ->where('id', $telegram->account_id)
                     ->first();
@@ -301,7 +303,7 @@ class TelegramController extends Controller
                     ]);
                 }else{
                     $telegram->update([
-                        'next_update_at' => now()->addHour(),
+                        'next_update_at' => now()->addHours(24),
                         'notification_stage' => 0,
                         'last_notification_at' => null
                     ]);
@@ -400,7 +402,7 @@ class TelegramController extends Controller
         $authDateTime = new DateTime("@$authDate");
         $authDateTime->setTimezone(new DateTimeZone('Europe/Moscow')); // Assuming the auth_date is in UTC
         $currentDateTime = new DateTime('now', new DateTimeZone('Europe/Moscow'));
-        \Log::info($authDateTime->format('Y-m-d H:i:s'));
+
         $interval = $currentDateTime->diff($authDateTime);
 
         // Convert the interval to seconds
@@ -446,7 +448,8 @@ class TelegramController extends Controller
                     ]
                 );
 
-                event(new TelegramPointsUpdated($account));
+//                event(new TelegramPointsUpdated($account));
+                TelegramPointsUpdatedJob::dispatch($account)->onQueue('referral');
 
                 $sub = $telegram->account->auth_id;
 
@@ -479,7 +482,8 @@ class TelegramController extends Controller
                     ]);
                 }
 
-                event(new TelegramPointsUpdated($telegram->account));
+//                event(new TelegramPointsUpdated($telegram->account));
+                TelegramPointsUpdatedJob::dispatch($telegram->account)->onQueue('referral');
 
                 $sub = $telegram->account->auth_id;
 
@@ -564,6 +568,11 @@ class TelegramController extends Controller
     public function claimIncomeEndpoint(Request $request)
     {
         return $this->claimIncome($request);
+    }
+
+    public function getTotalPointsEndpoint(Request $request)
+    {
+        return $this->getTotalPoints($request);
     }
 
 

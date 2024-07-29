@@ -61,20 +61,25 @@ class TelegramDailyRewardController extends Controller
         $currentDateTime = new DateTime('now', new DateTimeZone('Europe/Moscow'));
 
 
-        $loginTime = Carbon::instance($authDateTime);
+        //для прода
+        // $loginTime = Carbon::instance($authDateTime);
+        $loginTime = Carbon::now();
+
+        $dateNow = Carbon::now();
         $currentCarbon = Carbon::instance($currentDateTime);
 
-        if (!$loginTime->isSameDay($currentCarbon)) {
-            return response()->json(['status' => 'error', 'message' => 'Timestamp is too old'], 400);
-        }
+        //ПРОД
+        // if (!$loginTime->isSameDay($currentCarbon)) {
+        //     return response()->json(['status' => 'error', 'message' => 'Timestamp is too old'], 400);
+        // }
 
         //----------------------------------------------------
 
         $account = AuthHelperTelegram::auth($request);
 
-        $dailyReward = DailyReward::firstOrCreate(
+        $dailyReward = DailyReward::on('pgsql_telegrams')->firstOrCreate(
             ['account_id' => $account->id],
-            ['previous_login' => $loginTime, 'days_chain' => 0]
+            ['previous_login' => $loginTime, 'days_chain' => 0, 'update_reward_at'=>$dateNow->subHours(25)]
         );
 
 
@@ -82,7 +87,7 @@ class TelegramDailyRewardController extends Controller
 
         $daysChain = $dailyReward->days_chain;
 
-        $rewardUpdatedAt = Carbon::parse($dailyReward->reward_updated_at);
+        $rewardUpdatedAt = Carbon::parse($dailyReward->update_reward_at);
 
         $hoursDifference = $previousLogin->diffInHours($loginTime);
         //$sameDay = $previousLogin->isSameDay($loginTime);
@@ -92,14 +97,17 @@ class TelegramDailyRewardController extends Controller
             $daysChain = 1;
 
             $result =$this->updateReward($daysChain, $account, $dailyReward);
+
         }
 
         if($hoursDifference < 24){
+
 
             if ( $loginTime->diffInHours($rewardUpdatedAt) > 24) {
                 $daysChain += 1;
 
                 $result = $this->updateReward($daysChain, $account, $dailyReward);
+
             }
 
         }
@@ -107,7 +115,11 @@ class TelegramDailyRewardController extends Controller
         $dailyReward->previous_login = $loginTime;
         $dailyReward->save();
 
-        return response()->json($result);
+        if($result){
+            return response()->json($result, 200);
+        }
+
+        return response('', 200);
 
     }
 
@@ -227,5 +239,6 @@ class TelegramDailyRewardController extends Controller
 
         return ($prefix[$start] >= $random) ? $start : -1;
     }
+
 
 }

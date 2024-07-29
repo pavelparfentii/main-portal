@@ -75,7 +75,16 @@ trait TelegramTrait{
             $accountResourceArray['isAmbassador']=$account->ambassador;
 
             if ($account->telegram()->exists()) {
-                $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_at)->setTimezone('UTC')->toISOString();
+
+                if (env('APP_ENV') === 'production') {
+                    $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_at)->setTimezone('UTC')->toISOString();
+                }else{
+                    $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_with_reward_at)->setTimezone('UTC')->toISOString();
+                }
+//                $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_at)->setTimezone('UTC')->toISOString();
+                // $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_at)->setTimezone('UTC')->toISOString();
+
+
             } else {
                 $accountResourceArray['telegram_next_update'] = null;
             }
@@ -104,6 +113,26 @@ trait TelegramTrait{
                     'friends'=>null
                 ]
             ]);
+        }
+    }
+
+    public function getTotalPoints(Request $request)
+    {
+        $account = AuthHelperTelegram::auth($request);
+
+        $token = $request->bearerToken();
+
+        if ($account) {
+
+            return response()->json([
+                'total_points' => $account->total_points,
+
+            ]);
+
+        }else{
+
+            return response()->json(['error' => 'token expired or wrong'], 401);
+
         }
     }
 
@@ -829,7 +858,7 @@ trait TelegramTrait{
             return response()->json(['message'=>'non authorized'], 401);
         }
 
-        event(new TelegramPointsUpdated($account));
+//        event(new TelegramPointsUpdated($account));
         $invitedCount = $account->invitesSent()->count();
 
         $referralsList = $account->invitesSent()->get();
@@ -953,9 +982,6 @@ trait TelegramTrait{
         }
 
 
-//        $totalIncome = Invite::on('pgsql_telegrams')
-//            ->where('invited_by', $account->id)
-//            ->sum('accumulated_income');
         $totalIncome = DB::connection('pgsql_telegrams')
             ->table('account_referrals')
             ->where('account_id', $account->id)
@@ -966,11 +992,6 @@ trait TelegramTrait{
         //for current total
         $account->total_points += $totalIncome;
         $account->save();
-
-
-//        Invite::on('pgsql_telegrams')
-//            ->where('invited_by', $account->id)
-//            ->update(['accumulated_income' => 0.000]);
 
 
         DB::connection('pgsql_telegrams')
@@ -1007,7 +1028,7 @@ trait TelegramTrait{
 
     private function getCacheKey($period, $account)
     {
-        $accountId = $account ? $account->id : 'guest';
+        $accountId = $account ? 'tg_' . $account->id : 'guest';
         return "points_data_{$period}_{$accountId}";
     }
 
