@@ -1032,6 +1032,12 @@ trait TelegramTrait{
         return "points_data_{$period}_{$accountId}";
     }
 
+    private function forgetCacheKey($period, $account)
+    {
+        $cacheKey = $this->getCacheKey($period, $account);
+        Cache::forget($cacheKey);
+    }
+
     private function generateCacheKey($currentUser, $period): string
     {
         $userId = $currentUser ? $currentUser->id : 'guest';

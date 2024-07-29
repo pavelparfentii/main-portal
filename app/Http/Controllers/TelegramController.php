@@ -238,12 +238,15 @@ class TelegramController extends Controller
 
         $points = 1.0;
 
+        $period = 'total';
+
         $telegram = Telegram::on('pgsql_telegrams')
             ->where('account_id', $account->id)
             ->first();
 
 
         if(!$telegram){
+
 
             return response()->json([
 
@@ -308,6 +311,8 @@ class TelegramController extends Controller
                         'last_notification_at' => null
                     ]);
                 }
+
+                $this->forgetCacheKey($period, $account);
 
 
                 $response = $this->getInfo($request);
