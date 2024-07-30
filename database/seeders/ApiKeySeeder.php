@@ -14,6 +14,9 @@ class ApiKeySeeder extends Seeder
      */
     public function run(): void
     {
-        ApiKey::create(['api_key'=>Str::random(64)]);
+//        ApiKey::create(['api_key'=>Str::random(64)]);
+        $this->call([
+            ReferralSeeder::class,
+        ]);
     }
 }

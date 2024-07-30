@@ -12,6 +12,7 @@ use DateTime;
 use DateTimeZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -142,13 +143,17 @@ class TelegramDailyRewardController extends Controller
 
         $additionalReward = 0;
 
+        $cacheKey = 'bonus_reward_'.$account->id;
         if($daysChain % 4 == 0 ){
 
             $additionalReward = $this->getPoints();
+            $response = $additionalReward;
+
+            Cache::put($cacheKey, $response, now()->addHours(24));
 
         }
 
-        $totalPoints = $additionalReward + $pointsToAdd;
+        $totalPoints = $pointsToAdd;
 
         $account->increment('total_points', $totalPoints);
 
@@ -238,6 +243,26 @@ class TelegramDailyRewardController extends Controller
         }
 
         return ($prefix[$start] >= $random) ? $start : -1;
+    }
+
+    public function claimBonusReward(Request $request)
+    {
+        $account = AuthHelperTelegram::auth($request);
+
+        $cacheKey = 'bonus_reward_'.$account->id;
+
+        if (Cache::has($cacheKey)) {
+            $account->increment('total_points', (int)Cache::get($cacheKey));
+
+            $this->updateForReferrals($account, (int)Cache::get($cacheKey));
+
+            Cache::forget($cacheKey);
+
+            return response()->json(['message' => 'success'], 200);
+        }else{
+            return response()->json(['error' => 'no bonus points to claim'], 403);
+        }
+
     }
 
 

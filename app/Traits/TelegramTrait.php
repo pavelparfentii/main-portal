@@ -9,6 +9,7 @@ use App\Http\Controllers\InviteController;
 use App\Http\Resources\AccountResource;
 use App\Http\Resources\FriendResource;
 use App\Http\Resources\TeamResource;
+use App\Jobs\TelegramPointsUpdatedJob;
 use App\Models\Account;
 use App\Models\AccountFarm;
 use App\Models\Code;
@@ -853,6 +854,8 @@ trait TelegramTrait{
 
         $account = AuthHelperTelegram::auth($request);
 
+        $perPage = $request->input('perPage', 25); // Кількість рефералів на сторінку
+        $page = $request->input('page', 1);
 
         if(!$account){
             return response()->json(['message'=>'non authorized'], 401);
@@ -861,11 +864,17 @@ trait TelegramTrait{
 //        event(new TelegramPointsUpdated($account));
         $invitedCount = $account->invitesSent()->count();
 
-        $referralsList = $account->invitesSent()->get();
+        $referralsQuery = $account->invitesSent()->orderBy('created_at', 'desc');
+        $totalReferrals = $referralsQuery->count();
+        $referralsList = $referralsQuery->skip(($page - 1) * $perPage)->take($perPage)->get();
+      //  $referralsList = $account->invitesSent()->get();
 
 
         $totalFirstLevelIncome = 0;
         $totalSecondLevelIncome = 0;
+
+
+        TelegramPointsUpdatedJob::dispatch($account)->onQueue('referral');
 
         $collectReferral = $referralsList->map(function ($referral) use (&$account, &$totalSecondLevelIncome) {
 
@@ -885,17 +894,18 @@ trait TelegramTrait{
                 ->where('ref_subref_id', $referral->whom_invited)
                 ->value('net_income');
 
-            $firstLevelReferralClaimedIncome = DB::connection('pgsql_telegrams')
-                ->table('account_referrals')
-                ->where('account_id', $account->id)
-                ->where('ref_subref_id', $referral->whom_invited)
-                ->sum('claimed_balance');
-
-            $secondLevelReferralsClaimedTotal = DB::connection('pgsql_telegrams')
-                ->table('account_referrals')
-                ->where('account_id', $account->id)
-                ->whereIn('ref_subref_id', $secondLevelReferrals)
-                ->sum('claimed_balance');
+            //пока не надо
+//            $firstLevelReferralClaimedIncome = DB::connection('pgsql_telegrams')
+//                ->table('account_referrals')
+//                ->where('account_id', $account->id)
+//                ->where('ref_subref_id', $referral->whom_invited)
+//                ->sum('claimed_balance');
+//
+//            $secondLevelReferralsClaimedTotal = DB::connection('pgsql_telegrams')
+//                ->table('account_referrals')
+//                ->where('account_id', $account->id)
+//                ->whereIn('ref_subref_id', $secondLevelReferrals)
+//                ->sum('claimed_balance');
 
             $totalFirstLevelIncome = round($firstLevelNetIncome+$secondLevelNetIncome, 2);
             $totalSecondLevelIncome +=$totalFirstLevelIncome;
@@ -912,8 +922,8 @@ trait TelegramTrait{
                     'total_points' => $firstLevelAccount->total_points,
                     'invited'=>$firstLevelAccount->invitesSent()->count(),
                     'referral_income'=>$totalFirstLevelIncome,
-                    'referral_claimed_total'=>$firstLevelReferralClaimedIncome ?? 0,
-                    '2nd_level_claimed_total'=>$secondLevelReferralsClaimedTotal ?? 0,
+//                    'referral_claimed_total'=>$firstLevelReferralClaimedIncome ?? 0,
+//                    '2nd_level_claimed_total'=>$secondLevelReferralsClaimedTotal ?? 0,
                     'telegram_first_name'=>$telegram->first_name,
                     'telegram_last_name'=>$telegram->last_name,
                     'telegram_avatar'=>$telegram->avatar
