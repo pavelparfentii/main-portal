@@ -246,13 +246,7 @@ class TaskController extends Controller
 
         }
 
-        if(env('APP_ENV')==='production'){
-
-            $botToken = env('TELEGRAM_BOT');
-        }else{
-
-            $botToken = env('TELEGRAM_BOT');
-        }
+        $botToken = env('TELEGRAM_BOT');
 
         if(!$chat_id){
 
@@ -269,6 +263,14 @@ class TaskController extends Controller
         $response = Http::post("https://api.telegram.org/bot$botToken/getChatMember?chat_id=@$chat_id&user_id=$telegram_id");
 
         $data = json_decode($response, true);
+
+        if (!$data['ok']) {
+
+            return [
+                'message' => ['status' => false, 'error' => $data['description']],
+                'code' => 200
+            ];
+        }
 
         if (is_array($data) && isset($data['result']) && is_array($data['result']) && isset($data['result']['status'])) {
 
@@ -295,6 +297,12 @@ class TaskController extends Controller
 
                 return $response;
             }
+        }else{
+            $response = [
+                'message' => ['status' => false],
+                'code' => 200
+            ];
+            return $response;
         }
     }
 

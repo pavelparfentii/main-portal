@@ -92,7 +92,12 @@ class TelegramDailyRewardController extends Controller
 
         $hoursDifference = $previousLogin->diffInHours($loginTime);
         //$sameDay = $previousLogin->isSameDay($loginTime);
-        $result = null;
+        $result = [
+            'days_chain'=>$daysChain,
+            'crystal'=> 0.1,
+            'timer'=> 2,
+            'is_new_reward'=> false
+        ];
 
         if($hoursDifference >= 24){
             $daysChain = 1;
@@ -116,11 +121,9 @@ class TelegramDailyRewardController extends Controller
         $dailyReward->previous_login = $loginTime;
         $dailyReward->save();
 
-        if($result){
-            return response()->json($result, 200);
-        }
 
-        return response('', 200);
+        return response()->json($result, 200);
+
 
     }
 
@@ -164,6 +167,7 @@ class TelegramDailyRewardController extends Controller
             'bonus_reward'=>$additionalReward,
             'crystal'=> 0.1,
             'timer'=> 2,
+            'is_new_reward'=> true
         ];
 
     }

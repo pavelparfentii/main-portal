@@ -865,13 +865,18 @@ trait TelegramTrait{
         $invitedCount = $account->invitesSent()->count();
 
         $referralsQuery = $account->invitesSent()->orderBy('created_at', 'desc');
-        $totalReferrals = $referralsQuery->count();
+        //$totalReferrals = $referralsQuery->count();
         $referralsList = $referralsQuery->skip(($page - 1) * $perPage)->take($perPage)->get();
-      //  $referralsList = $account->invitesSent()->get();
+        //  $referralsList = $account->invitesSent()->get();
 
 
         $totalFirstLevelIncome = 0;
         $totalSecondLevelIncome = 0;
+
+        $totalFirstLevelNetIncome = DB::connection('pgsql_telegrams')
+            ->table('account_referrals')
+            ->where('account_id', $account->id)
+            ->sum('net_income');
 
 
         TelegramPointsUpdatedJob::dispatch($account)->onQueue('referral');
@@ -894,19 +899,6 @@ trait TelegramTrait{
                 ->where('ref_subref_id', $referral->whom_invited)
                 ->value('net_income');
 
-            //пока не надо
-//            $firstLevelReferralClaimedIncome = DB::connection('pgsql_telegrams')
-//                ->table('account_referrals')
-//                ->where('account_id', $account->id)
-//                ->where('ref_subref_id', $referral->whom_invited)
-//                ->sum('claimed_balance');
-//
-//            $secondLevelReferralsClaimedTotal = DB::connection('pgsql_telegrams')
-//                ->table('account_referrals')
-//                ->where('account_id', $account->id)
-//                ->whereIn('ref_subref_id', $secondLevelReferrals)
-//                ->sum('claimed_balance');
-
             $totalFirstLevelIncome = round($firstLevelNetIncome+$secondLevelNetIncome, 2);
             $totalSecondLevelIncome +=$totalFirstLevelIncome;
 
@@ -922,8 +914,6 @@ trait TelegramTrait{
                     'total_points' => $firstLevelAccount->total_points,
                     'invited'=>$firstLevelAccount->invitesSent()->count(),
                     'referral_income'=>$totalFirstLevelIncome,
-//                    'referral_claimed_total'=>$firstLevelReferralClaimedIncome ?? 0,
-//                    '2nd_level_claimed_total'=>$secondLevelReferralsClaimedTotal ?? 0,
                     'telegram_first_name'=>$telegram->first_name,
                     'telegram_last_name'=>$telegram->last_name,
                     'telegram_avatar'=>$telegram->avatar
@@ -971,7 +961,7 @@ trait TelegramTrait{
             'invited'=>$invitedCount,
             'referrals_claimed'=> $account->referrals_claimed,
             'next_referrals_claim'=> $account->next_referrals_claim,
-            'total_referrals_income'=>$totalSecondLevelIncome,
+            'total_referrals_income'=>$totalFirstLevelNetIncome,
 
         ]);
 

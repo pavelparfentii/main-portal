@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\ConstantValues;
 use App\Helpers\AuthHelper;
 use App\Http\Resources\AccountResource;
 use App\Http\Resources\TeamResource;
 use App\Models\Account;
+use App\Models\AccountFarm;
 use App\Models\Week;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -400,8 +402,21 @@ class PointsController extends Controller
             ->where('account_id', $account->id)
             ->select('daily_farm', 'daily_farm_last_update')
             ->first();
-        $dailyFarmRate = $accountDailyFarm->daily_farm;
-        $lastUpdated = $accountDailyFarm->daily_farm_last_update;
+
+        if ($accountDailyFarm) {
+            $dailyFarmRate = $accountDailyFarm->daily_farm;
+            $lastUpdated = $accountDailyFarm->daily_farm_last_update;
+        } else {
+
+            $newAccountFarm = AccountFarm::create([
+                'account_id' => $account->id,
+                'daily_farm' => 0.00,
+                'daily_farm_last_update' => now(),
+                'total_points' => ConstantValues::souls_connect,
+            ]);
+            $dailyFarmRate = $newAccountFarm->daily_farm;
+            $lastUpdated = $newAccountFarm->daily_farm_last_update;
+        }
 
 
         $now = Carbon::now();

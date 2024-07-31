@@ -345,7 +345,7 @@ trait TwitterTrait
                         }
                     }
                     if (isset($quotesResult['meta']['next_token'])) {
-                        $quotesResult = self::get3ProjectsLikingUsers($this->apiKey, $id, $quotesResult['meta']['next_token']);
+                        $quotesResult = self::get3ProjectsQuotesUsers($this->apiKey, $id, $quotesResult['meta']['next_token']);
                     }else{
                         break;
                     }
@@ -474,24 +474,54 @@ trait TwitterTrait
 
     private function get3ProjectsQuotesUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
     {
-        $url = "https://api.twitter.com/2/tweets/$tweet_id/quote_tweets?max_results=100&exclude=retweets,replies&expansions=author_id";
+        $isLoop = true;
+        $maxAttempts = 5;
+        $attempts = 0;
 
-        Log::info($url);
-        if ($paginationToken) {
-            $url .= ('&pagination_token=' . $paginationToken);
-        }
+        while ($isLoop && $attempts < $maxAttempts) {
+            $url = "https://api.twitter.com/2/tweets/$tweet_id/quote_tweets?max_results=100&exclude=retweets,replies&expansions=author_id";
 
-        try {
-            $result = Http::withToken($apiKey)->get($url);
-
-            if ($result->ok()) {
-                Log::info($result->json());
-                return $result->json();
+            Log::info($url);
+            if ($paginationToken) {
+                $url .= ('&pagination_token=' . $paginationToken);
             }
-        } catch (\Exception $e) {
 
-            Log::error('Twitter API request failed: ' . $e->getMessage());
+            var_dump($url);
+
+            try {
+                $response = Http::withToken($apiKey)->get($url);
+                Log::info(json_encode($response));
+
+                if ($response->ok()) {
+                    $isLoop = false;
+                    Log::info(json_encode($response));
+                    return $response->json();
+                } else {
+                    if ($response->status() == 429) {
+                        $rateLimitReset = $response->header('x-rate-limit-reset');
+                        if ($rateLimitReset) {
+                            $resetTime = Carbon::createFromTimestamp($rateLimitReset);
+                            $waitTime = $resetTime->diffInSeconds(Carbon::now());
+                            Log::info("Rate limit hit. Will reset at: " . $resetTime->toDateTimeString() . ". Waiting for $waitTime seconds.");
+                            sleep($waitTime);
+                        } else {
+                            Log::error("Rate limit hit but no reset time found.");
+                            $isLoop = false; // Break the loop if we cannot find the reset time
+                        }
+                    } else {
+                        Log::error("Unexpected error: " . $response->status());
+                        $isLoop = false; // Break the loop on other errors
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Twitter API request failed: ' . $e->getMessage());
+                $isLoop = false; // Break the loop on exceptions
+            }
+
+            $attempts++;
         }
+
+        return null; // Return null if all attempts fail
     }
 
     private function get3ProjectsCommentsUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
