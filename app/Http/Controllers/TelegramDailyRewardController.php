@@ -61,22 +61,16 @@ class TelegramDailyRewardController extends Controller
         $authDateTime->setTimezone(new DateTimeZone('Europe/Moscow')); // Assuming the auth_date is in UTC
         $currentDateTime = new DateTime('now', new DateTimeZone('Europe/Moscow'));
 
-
+        $account = AuthHelperTelegram::auth($request);
+//        Carbon::setTestNow(Carbon::create(2024, 8, 4, 00, 0, 0));
         //для прода
         // $loginTime = Carbon::instance($authDateTime);
         $loginTime = Carbon::now();
 
         $dateNow = Carbon::now();
-        $currentCarbon = Carbon::instance($currentDateTime);
 
-        //ПРОД
-        // if (!$loginTime->isSameDay($currentCarbon)) {
-        //     return response()->json(['status' => 'error', 'message' => 'Timestamp is too old'], 400);
-        // }
 
-        //----------------------------------------------------
 
-        $account = AuthHelperTelegram::auth($request);
 
         $dailyReward = DailyReward::on('pgsql_telegrams')->firstOrCreate(
             ['account_id' => $account->id],
@@ -99,17 +93,17 @@ class TelegramDailyRewardController extends Controller
             'is_new_reward'=> false
         ];
 
-        if($hoursDifference >= 24){
+        if($hoursDifference > 24){
             $daysChain = 1;
 
             $result =$this->updateReward($daysChain, $account, $dailyReward);
 
         }
 
-        if($hoursDifference < 24){
+        if($hoursDifference <= 24){
 
 
-            if ( $loginTime->diffInHours($rewardUpdatedAt) > 24) {
+            if ( $loginTime->diffInHours($rewardUpdatedAt) >= 24) {
                 $daysChain += 1;
 
                 $result = $this->updateReward($daysChain, $account, $dailyReward);
@@ -142,7 +136,7 @@ class TelegramDailyRewardController extends Controller
         $coef = ($daysChain >= 30) ? 30 : $daysChain;
         $pointsToAdd = $coef * 0.1;
 
-        $this->updateTapTime($account, $daysChain);
+        //$this->updateTapTime($account, $daysChain);
 
         $additionalReward = 0;
 
