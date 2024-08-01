@@ -430,67 +430,62 @@ trait TwitterTrait
         return [];
     }
 
-    private function get3ProjectsLikingUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
+    public function get3ProjectsLikingUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
     {
         $url = "https://api.twitter.com/2/tweets/$tweet_id/liking_users?max_results=100";
-        Log::info($url);
+
         if ($paginationToken) {
-            $url .= ('&pagination_token=' . $paginationToken);
+            $url .= '&pagination_token=' . $paginationToken;
         }
 
-        try {
-            $result = Http::withToken($apiKey)->get($url);
-
-            if ($result->ok()) {
-                Log::info($result->json());
-                return $result->json();
-            }
-        } catch (\Exception $e) {
-
-            Log::error('Twitter API request failed: ' . $e->getMessage());
-        }
+        return $this->fetchTwitterData($apiKey, $url);
     }
 
-    private function get3ProjectsRetweetingUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
+    public function get3ProjectsRetweetingUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
     {
         $url = "https://api.twitter.com/2/tweets/$tweet_id/retweeted_by?max_results=100";
-        Log::info($url);
+
         if ($paginationToken) {
-            $url .= ('&pagination_token=' . $paginationToken);
+            $url .= '&pagination_token=' . $paginationToken;
         }
 
-        try {
-            $result = Http::withToken($apiKey)->get($url);
-
-            if ($result->ok()) {
-                Log::info($result->json());
-                return $result->json();
-            }
-        } catch (\Exception $e) {
-
-            Log::error('Twitter API request failed: ' . $e->getMessage());
-        }
+        return $this->fetchTwitterData($apiKey, $url);
     }
 
-    private function get3ProjectsQuotesUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
+    public function get3ProjectsQuotesUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
+    {
+        $url = "https://api.twitter.com/2/tweets/$tweet_id/quote_tweets?max_results=100&exclude=retweets,replies&expansions=author_id";
+
+        if ($paginationToken) {
+            $url .= '&pagination_token=' . $paginationToken;
+        }
+
+        return $this->fetchTwitterData($apiKey, $url);
+    }
+
+
+    public function get3ProjectsCommentsUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
+    {
+        $url = "https://api.twitter.com/2/tweets/search/recent?query=conversation_id:$tweet_id&tweet.fields=id,text,author_id,created_at&max_results=100";
+
+        if ($paginationToken) {
+            $url .= '&pagination_token=' . $paginationToken;
+        }
+
+        return $this->fetchTwitterData($apiKey, $url);
+    }
+
+    private function fetchTwitterData(string $apiKey, string $url)
     {
         $isLoop = true;
         $maxAttempts = 5;
         $attempts = 0;
 
         while ($isLoop && $attempts < $maxAttempts) {
-            $url = "https://api.twitter.com/2/tweets/$tweet_id/quote_tweets?max_results=100&exclude=retweets,replies&expansions=author_id";
-
             Log::info($url);
-            if ($paginationToken) {
-                $url .= ('&pagination_token=' . $paginationToken);
-            }
-
-            var_dump($url);
 
             try {
                 $response = Http::withToken($apiKey)->get($url);
-                Log::info(json_encode($response));
 
                 if ($response->ok()) {
                     $isLoop = false;
@@ -522,28 +517,6 @@ trait TwitterTrait
         }
 
         return null; // Return null if all attempts fail
-    }
-
-    private function get3ProjectsCommentsUsers(string $apiKey, string $tweet_id, ?string $paginationToken = null)
-    {
-        $url = "https://api.twitter.com/2/tweets/search/recent?query=conversation_id:$tweet_id&tweet.fields=id,text,author_id,created_at&max_results=100";
-
-        Log::info($url);
-        if ($paginationToken) {
-            $url .= ('&pagination_token=' . $paginationToken);
-        }
-
-        try {
-            $result = Http::withToken($apiKey)->get($url);
-
-            if ($result->ok()) {
-                Log::info($result->json());
-                return $result->json();
-            }
-        } catch (\Exception $e) {
-
-            Log::error('Twitter API request failed: ' . $e->getMessage());
-        }
     }
 
 

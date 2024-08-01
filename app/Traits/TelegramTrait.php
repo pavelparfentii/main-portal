@@ -1010,17 +1010,6 @@ trait TelegramTrait{
                 'income'=>0
             ]);
 
-//        DB::connection('pgsql_telegrams')
-//            ->table('account_farms')
-//            ->where('account_id', $account->id)
-//            ->increment('total_points', $totalIncome);
-//
-//        DB::connection('pgsql_telegrams')
-//            ->table('account_farms')
-//            ->where('account_id', $account->id)
-//            ->increment('daily_farm', $totalIncome);
-//
-//        $this->skipAllReferralsIncome($account);
 
         return response()->json(['message' => 'Income claimed successfully']);
     }

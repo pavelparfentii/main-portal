@@ -150,7 +150,15 @@ class TelegramDailyRewardController extends Controller
         if($daysChain % 4 == 0 ){
 
             $additionalReward = $this->getPoints();
-            $response = $additionalReward;
+            $response = [
+
+                    "days_chain"=> $daysChain,
+                    "crystal"=> 0.1,
+                    "timer"=> 2,
+                    "bonus_reward"=> $additionalReward,
+                    "is_new_reward"=> false
+
+            ];
 
             Cache::put($cacheKey, $response, now()->addHours(24));
 
@@ -256,9 +264,12 @@ class TelegramDailyRewardController extends Controller
         $cacheKey = 'bonus_reward_'.$account->id;
 
         if (Cache::has($cacheKey)) {
-            $account->increment('total_points', (int)Cache::get($cacheKey));
 
-            $this->updateForReferrals($account, (int)Cache::get($cacheKey));
+            $cachedResponse = Cache::get($cacheKey);
+            $bonusReward = $cachedResponse['bonus_reward'];
+            $account->increment('total_points', (int)$bonusReward);
+
+            $this->updateForReferrals($account, (int)$bonusReward);
 
             Cache::forget($cacheKey);
 

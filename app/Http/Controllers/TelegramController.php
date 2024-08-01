@@ -268,8 +268,8 @@ class TelegramController extends Controller
 
         }else{
 
-            if ($telegram && $telegram->next_update_at < now()) {
-//            if ($telegram && $telegram->next_update_with_reward_at < now()) {
+//            if ($telegram && $telegram->next_update_at < now()) {
+            if ($telegram && $telegram->next_update_with_reward_at < now()) {
                 $account = Account::on('pgsql_telegrams')
                     ->where('id', $telegram->account_id)
                     ->first();
@@ -290,12 +290,6 @@ class TelegramController extends Controller
                         ->where('ref_subref_id', $telegram->account_id)
                         ->increment('income', $points);
                 }
-
-//                DB::connection('pgsql_telegrams')
-//                    ->table('account_farms')
-//                    ->where('account_id', $telegram->account_id)
-//                    ->increment('daily_farm', $points);
-
 
                 $telegram->increment('points', $points);
                 if (env('APP_ENV') === 'production') {

@@ -539,5 +539,12 @@ class Account extends Model
         return $this->hasOne(DailyReward::class);
     }
 
+    public function setConnection($name)
+    {
+        $this->connection = $name;
+
+        return $this;
+    }
+
 
 }
