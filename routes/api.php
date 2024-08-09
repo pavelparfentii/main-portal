@@ -110,5 +110,8 @@ Route::prefix('telegram')->middleware('api')->group(function(){
 
     Route::post('/rewards', [\App\Http\Controllers\TelegramDailyRewardController::class, 'getDailyReward']);
     Route::get('/rewards/claim', [\App\Http\Controllers\TelegramDailyRewardController::class, 'claimBonusReward']);
+
+    Route::get('/game/wheel', [\App\Http\Controllers\WheelGameController::class, 'getGame']);
+    Route::post('/game/wheel/bet', [\App\Http\Controllers\WheelGameController::class, 'placeBet']);
 //    Route::get('/points/friends', )
 });

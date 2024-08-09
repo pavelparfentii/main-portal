@@ -30,7 +30,17 @@ class TemporaryUpdateDailyFarmCoefficientCommand extends Command
     {
         $accounts = Account::cursor();
 
-        DB::table('account_farms')->truncate();
+//        $accounts = Account::whereNotNull('wallet')->
+
+        $accounts = DB::table('accounts')
+            ->join('account_farms', 'accounts.id', '=', 'account_farms.account_id')
+            ->whereNotNull('accounts.wallet')
+            ->where('account_farms.daily_farm', '=', 0)
+            ->get();
+//        dd($accounts);
+
+
+//        DB::table('account_farms')->truncate();
 
         foreach ($accounts as $account) {
 
@@ -76,14 +86,23 @@ class TemporaryUpdateDailyFarmCoefficientCommand extends Command
 
             }
 
+            DB::table('account_farms')
+                ->where('account_id', $account->id,)
+                ->update([
+                    'daily_farm' => $farmPoints,
+                    'daily_farm_last_update' => now(),
+                    'total_points' => $account->total_points,
+                    'lord_points_applied'=> (bool)$lordPoints
+                ]);
 
-            DB::table('account_farms')->insert([
-                'account_id' => $account->id,
-                'daily_farm' => $farmPoints,
-                'daily_farm_last_update' => now(),
-                'total_points' => $account->total_points,
-                'lord_points_applied'=> (bool)$lordPoints
-            ]);
+
+//            DB::table('account_farms')->insert([
+//                'account_id' => $account->id,
+//                'daily_farm' => $farmPoints,
+//                'daily_farm_last_update' => now(),
+//                'total_points' => $account->total_points,
+//                'lord_points_applied'=> (bool)$lordPoints
+//            ]);
 
         }
         $this->info('success');

@@ -35,7 +35,7 @@ class AccountResource extends Resource
      * @var array
      */
     public static $search = [
-        'id', 'telegram.telegram_id'
+        'id', 'telegram.telegram_id', 'telegram.telegram_username'
     ];
 
     public static function label() {
@@ -63,7 +63,7 @@ class AccountResource extends Resource
 
 
             HasOne::make('Telegram', 'telegram', \App\Nova\TelegramSecondary::class),
-            Text::make('total_points'),
+            Text::make('total_points')->readonly(),
             Boolean::make('ambassador')
         ];
     }
@@ -71,7 +71,7 @@ class AccountResource extends Resource
 
     public static function indexQuery(NovaRequest $request, $query)
     {
-        $query->select('accounts.*', 'telegrams.telegram_id')
+        $query->select('accounts.*', 'telegrams.telegram_id', 'telegrams.telegram_username')
             ->join('telegrams', 'accounts.id', '=', 'telegrams.account_id');
 
 

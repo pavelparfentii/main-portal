@@ -70,8 +70,6 @@ class TelegramDailyRewardController extends Controller
         $dateNow = Carbon::now();
 
 
-
-
         $dailyReward = DailyReward::on('pgsql_telegrams')->firstOrCreate(
             ['account_id' => $account->id],
             ['previous_login' => $loginTime, 'days_chain' => 0, 'update_reward_at'=>$dateNow->subHours(25)]
@@ -81,6 +79,8 @@ class TelegramDailyRewardController extends Controller
         $previousLogin = Carbon::parse($dailyReward->previous_login);
 
         $daysChain = $dailyReward->days_chain;
+
+        $isNewReward = $dailyReward->wasRecentlyCreated;
 
         $rewardUpdatedAt = Carbon::parse($dailyReward->update_reward_at);
 
@@ -93,23 +93,19 @@ class TelegramDailyRewardController extends Controller
             'is_new_reward'=> false
         ];
 
-        if($hoursDifference > 24){
+
+        if ($isNewReward) {
+
             $daysChain = 1;
-
-            $result =$this->updateReward($daysChain, $account, $dailyReward);
-
+            $result = $this->updateReward($daysChain, $account, $dailyReward);
         }
 
-        if($hoursDifference <= 24){
-
-
-            if ( $loginTime->diffInHours($rewardUpdatedAt) >= 24) {
-                $daysChain += 1;
-
-                $result = $this->updateReward($daysChain, $account, $dailyReward);
-
-            }
-
+        if ($previousLogin->isYesterday()) {
+            $daysChain += 1;
+            $result = $this->updateReward($daysChain, $account, $dailyReward);
+        } elseif ($previousLogin->diffInHours($loginTime) > 24) {
+            $daysChain = 1;
+            $result = $this->updateReward($daysChain, $account, $dailyReward);
         }
 
         $dailyReward->previous_login = $loginTime;

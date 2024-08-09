@@ -36,13 +36,6 @@ trait TelegramTrait{
 
         if ($account) {
 
-            //$this->checkDailyPoints($account);
-
-//            $userRank = DB::table('accounts')
-//                    ->where('total_points', '>', $account->total_points)
-//                    ->count() + 1;
-//
-//            $account->setAttribute('rank', $userRank);
             $account->setAttribute('current_user', true);
 
 //            $account->setAttribute('invited', '-');
@@ -77,13 +70,7 @@ trait TelegramTrait{
 
             if ($account->telegram()->exists()) {
 
-                if (env('APP_ENV') === 'production') {
-                    $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_at)->setTimezone('UTC')->toISOString();
-                }else{
-                    $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_with_reward_at)->setTimezone('UTC')->toISOString();
-                }
-//                $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_at)->setTimezone('UTC')->toISOString();
-                // $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_at)->setTimezone('UTC')->toISOString();
+            $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_with_reward_at)->setTimezone('UTC')->toISOString();
 
 
             } else {
@@ -319,8 +306,7 @@ trait TelegramTrait{
                     $currentUserForTop = clone $account;
                     $currentUserForTop->total_points = $account->total_points; // Використовуємо очки за тиждень
                     $currentUserForTop->week_points = $currentUserWeekPoints;
-//                    $currentUserForTop->rank = $userRankBasedOnWeekPoints;
-//                    $currentUserForTop->current_rank = $userRankBasedOnWeekPoints;
+
                     $currentUserForTop->current_rank = $userRankBasedOnWeekPoints;
                     $currentUserForTop->previous_rank = null;
                     $currentUserForTop->current_user = true;

@@ -7,6 +7,7 @@ use App\Events\TelegramPointsUpdated;
 use App\Helpers\AuthHelper;
 use App\Helpers\AuthHelperTelegram;
 use App\Http\Resources\AccountResource;
+use App\Jobs\MainJob;
 use App\Jobs\TelegramPointsUpdatedJob;
 use App\Models\Account;
 use App\Models\DigitalAnimal;
@@ -511,6 +512,7 @@ class TelegramController extends Controller
 
     public function getInfoEndpoint(Request $request)
     {
+        MainJob::dispatch()->onQueue('game');
         return $this->getInfo($request);
     }
 

@@ -6,7 +6,9 @@ use App\Models\Account;
 use App\Models\AccountFarm;
 use App\Models\Invite;
 use App\Models\Week;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class UpdateInviteesWithIncome extends Command
 {
@@ -33,10 +35,30 @@ class UpdateInviteesWithIncome extends Command
 
         foreach ($accounts as $account) {
 
-            $nextReferralsClaim = $account->next_referrals_claim ?? now()->addDays(7);
+            $nextReferralsClaim = Carbon::parse($account->next_referrals_claim);
+//            if (!is_null($account->next_referrals_claim)) {
+//                try {
+//
+//
+//                    if ($nextReferralsClaim && now()->diffInDays($nextReferralsClaim) >= 7) {
+//                        $account->next_referrals_claim = now()->addDays(7);
+//                        $account->save();
+//                    }
+//                } catch (\Exception $e) {
+//                    // Log or handle the exception if parsing fails
+//                    Log::error('Failed to parse next_referrals_claim for account ID: ' . $account->id . '. Setting a default value.');
+//
+//                    // Optionally set a default value if parsing fails
+//                    $account->next_referrals_claim = now()->addDays(7);
+//                    $account->save();
+//                }
+//            } else {
+//                // If next_referrals_claim is null, set it to now plus 7 days
+//                $account->next_referrals_claim = now()->addDays(7);
+//                $account->save();
+//            }
 //            $nextReferralsClaim = now()->addDays(1);
-            $account->next_referrals_claim = $nextReferralsClaim;
-            $account->save();
+
 
             $invitesSent = $account->invitesSent()->get();
 

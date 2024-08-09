@@ -2,13 +2,29 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Keyboar
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from dotenv import load_dotenv
+import logging
 import uuid
 import os
+
 
 # Replace 'YOUR_BOT_TOKEN' with your actual bot token
 # BOT_TOKEN = '7475491207:AAGA37IImPNWoZd_jsuAvmY7cgOiBhe_jGc'
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("prod_bot.log"),
+        logging.StreamHandler()
+    ]
+)
+
+# set higher logging level for httpx to avoid all GET and POST requests being logged
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.getenv('TELEGRAM_BOT')
 APP_ENV = os.getenv('APP_ENV', 'local')
@@ -31,13 +47,22 @@ else:
 
 # prod
 # BOT_TOKEN = '7133712001:AAF_-jyDA81HO9yPY9yErEPGq1g0-_gHky0'
+started_users = set()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Get the user's first name and last name
+
+    user_id = update.message.from_user.id
+    started_users.add(user_id)
+
+    logger.info(f"User {user_id} has started the bot. Total started users: {len(started_users)}")
+
     user_first_name = update.message.from_user.first_name
     user_last_name = update.message.from_user.last_name
 
-    unique_id = str(uuid.uuid4())
+    #remove button get diamond
+    #await context.bot.set_chat_menu_button(chat_id=update.message.chat_id, menu_button=MenuButtonCommands())
+
     # Create inline keyboard buttons
     inline_keyboard = [
         [InlineKeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=app_url))],
@@ -61,10 +86,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Create custom keyboard buttons
     custom_keyboard = [
-#         [KeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=f"https://t.me/breinburg_bot/test_soul?{unique_id}"))],  # Add the "Get Diamond" button here
-#         [KeyboardButton("get 💎", web_app=WebAppInfo(url="https://tg-bot-staging.netlify.app/"))],
-        [KeyboardButton("💬 Chat"), KeyboardButton("💎 souls.club channel")],
-        [KeyboardButton("🌐 About souls.club")]
+            #
+#         [KeyboardButton("💬 Chat"), KeyboardButton("💎 souls.club channel")],
+#         [KeyboardButton("🌐 About souls.club")]
     ]
 #
 #     # Create the custom keyboard markup
@@ -76,10 +100,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         reply_markup=custom_reply_markup
     )
 
-#     web_app_info = WebAppInfo(url=f"https://tg-bot-staging.netlify.app/")  # Replace with your URL
-    web_app_info = WebAppInfo(url=app_url)
-    menu_but = MenuButtonWebApp(text="get 💎", web_app=web_app_info)
-    await context.bot.set_chat_menu_button(chat_id=update.message.chat_id, menu_button=menu_but)
+        #get diamond button
+#     web_app_info = WebAppInfo(url=app_url)
+#     menu_but = MenuButtonWebApp(text="get 💎", web_app=web_app_info)
+#     await context.bot.set_chat_menu_button(chat_id=update.message.chat_id, menu_button=menu_but)
 
 
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -119,7 +143,18 @@ async def handle_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     await update.message.reply_text(text=message, parse_mode=ParseMode.HTML)
 
+async def handle_default(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info(f"Received default message from {update.message.from_user.id} ({update.message.from_user.username}): {update.message.text}")
 
+    inline_keyboard = [
+        [InlineKeyboardButton("🎮 Launch app", web_app=WebAppInfo(url=app_url))]
+    ]
+    inline_reply_markup = InlineKeyboardMarkup(inline_keyboard)
+
+    await update.message.reply_text(
+        text="Use the button below to launch the app:",
+        reply_markup=inline_reply_markup
+    )
 
 def main() -> None:
 
@@ -131,6 +166,7 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("💎 souls.club channel"), handle_channel))
     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("🌐 About souls.club"), handle_about))
 #     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("💎 Get Diamond"), handle_get_diamond))
+    application.add_handler(MessageHandler(filters.TEXT, handle_default))
 
     # Start the bot
     application.run_polling()

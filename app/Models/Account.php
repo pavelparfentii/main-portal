@@ -534,9 +534,14 @@ class Account extends Model
             ->withTimestamps();
     }
 
-    public function dailyReward()
+    public function dailyReward(): HasOne
     {
         return $this->hasOne(DailyReward::class);
+    }
+
+    public function bets(): HasMany
+    {
+        return $this->hasMany(Bet::class);
     }
 
     public function setConnection($name)
