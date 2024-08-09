@@ -23,7 +23,7 @@ class WinnerResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->telegram->id,
+            'id' => $this->id,
             'telegram_id' => $this->telegram->telegram_id,
             'telegram_username' => $this->telegram->telegram_username,
             'first_name' => $this->telegram->first_name,

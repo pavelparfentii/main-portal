@@ -38,7 +38,7 @@ class MainJob implements ShouldQueue
         if (!$currentRound) {
             $currentRound = $game->rounds()->create([]);
 
-            JobOne::dispatch($currentRound)->onQueue('game')->delay(60);
+            JobOne::dispatch($currentRound)->onQueue('game')->delay(120);
         }
 
 

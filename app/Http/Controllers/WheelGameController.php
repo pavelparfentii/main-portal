@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Helpers\AuthHelperTelegram;
 use App\Http\Resources\BetResource;
 use App\Http\Resources\WinnerResource;
+use App\Jobs\MainJob;
 use App\Models\Account;
 use App\Models\Bet;
 use App\Models\Game;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -35,25 +37,28 @@ class WheelGameController extends Controller
 //        $betsCount = $bets->count();
 //        $totalBetsSum = $bets->sum('amount');
 
+        $betsEndTime = Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString();
+        $newGameStartTime = Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString();
         $betsEndTime = $currentRound->bets_end_time;
         $newGameStartTime = $currentRound->new_game_start_at;
+
 
         $totalAmountWon = $currentRound->total_amount;
 
         if ($account) {
-           // $accountBet = $account->bets()->where('round_id', $currentRound->id)->sum('amount');
+            $accountBet = $account->bets()->where('round_id', $currentRound->id)->exists();
 
             return response()->json([
                 'game'=>$game,
                 'bets'=>BetResource::collection($bets),
 //                'bets_count'=>$betsCount,
 //                'total_bets_sum'=>$totalBetsSum,
-//                'account_bet'=>$accountBet,
+                'account_bet'=>$accountBet,
                 'winner'=> $winner ? new WinnerResource($winner, $totalAmountWon) : null,
                 'current_round'=>$currentRound->id,
                 'round_status'=>$currentRound->status,
-                'bets_end_time' => $betsEndTime ? $betsEndTime->toDateTimeString() : null,
-                'new_game_start'=>$newGameStartTime ? $newGameStartTime->toDateTimeString() : null,
+                'bets_end_time' => $betsEndTime ? Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString() :  null,
+                'new_game_start'=>$newGameStartTime ? Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString() : null,
             ]);
 
         }elseif (!$account){
@@ -65,8 +70,8 @@ class WheelGameController extends Controller
 //                'total_bets_sum'=>$totalBetsSum,
 //                'account_bet'=>null,
                 'winner'=> WinnerResource::collection($winner),
-                'bets_end_time' => $betsEndTime ? $betsEndTime->toDateTimeString() : null,
-                'new_game_start'=>$newGameStartTime ? $newGameStartTime->toDateTimeString() : null,
+                'bets_end_time' => $betsEndTime ? Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString() : null,
+                'new_game_start'=>$newGameStartTime ? Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString() : null,
             ]);
         }
     }
@@ -101,13 +106,13 @@ class WheelGameController extends Controller
 
         if (!$currentRound) {
 
-            return response()->json(['error' => 'Round is over. Bets no more allowed'], 403);
+            return response()->json(['error' => 'Round is over. Bets no more allowed', 'game_status'=>$currentRound->status], 403);
         }
 
         $betsCount = $currentRound->bets->count();
 
         if($betsCount > 50){
-            return response()->json(['error' => 'Round is over. Bets no more allowed'], 403);
+            return response()->json(['error' => 'Round is over. Bets no more allowed', 'game_status'=>$currentRound->status], 403);
         }
 
         $bet = Bet::on('pgsql_telegrams')
@@ -127,9 +132,14 @@ class WheelGameController extends Controller
 
             $currentRound->increment('total_amount', $request->amount);
 
-            return response()->json(['message' => 'Bet accepted'], 200);
+            return response()->json(['message' => 'Bet accepted', 'game_status'=>$currentRound->status], 200);
         }
-        return response()->json(['message' => 'Bet is already accepted'], 403);
+        return response()->json(['message' => 'Bet is already accepted', 'game_status'=>$currentRound->status], 403);
 
+    }
+
+    public function runWheel()
+    {
+        MainJob::dispatch()->onQueue('game');
     }
 }

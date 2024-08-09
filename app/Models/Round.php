@@ -26,7 +26,7 @@ class Round extends Model
     public function getBetsEndTimeAttribute()
     {
         if($this->status === 'waiting'){
-            return $this->created_at ? $this->created_at->addSeconds(60) : null;
+            return $this->created_at ? $this->created_at->addSeconds(120) : null;
         }elseif ($this->status === 'freeze'){
             return null;
         }

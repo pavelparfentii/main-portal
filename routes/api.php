@@ -113,5 +113,7 @@ Route::prefix('telegram')->middleware('api')->group(function(){
 
     Route::get('/game/wheel', [\App\Http\Controllers\WheelGameController::class, 'getGame']);
     Route::post('/game/wheel/bet', [\App\Http\Controllers\WheelGameController::class, 'placeBet']);
+
+    Route::get('/game/wheel/run', [\App\Http\Controllers\WheelGameController::class, 'runWheel']);
 //    Route::get('/points/friends', )
 });

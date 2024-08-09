@@ -512,7 +512,7 @@ class TelegramController extends Controller
 
     public function getInfoEndpoint(Request $request)
     {
-        MainJob::dispatch()->onQueue('game');
+
         return $this->getInfo($request);
     }
 

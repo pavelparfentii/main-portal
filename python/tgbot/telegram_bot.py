@@ -87,8 +87,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Create custom keyboard buttons
     custom_keyboard = [
             #
-#         [KeyboardButton("💬 Chat"), KeyboardButton("💎 souls.club channel")],
-#         [KeyboardButton("🌐 About souls.club")]
+        [KeyboardButton("💬 Chat"), KeyboardButton("💎 souls.club channel")],
+        [KeyboardButton("🌐 About souls.club")]
     ]
 #
 #     # Create the custom keyboard markup
@@ -101,9 +101,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
         #get diamond button
-#     web_app_info = WebAppInfo(url=app_url)
-#     menu_but = MenuButtonWebApp(text="get 💎", web_app=web_app_info)
-#     await context.bot.set_chat_menu_button(chat_id=update.message.chat_id, menu_button=menu_but)
+    web_app_info = WebAppInfo(url=app_url)
+    menu_but = MenuButtonWebApp(text="get 💎", web_app=web_app_info)
+    await context.bot.set_chat_menu_button(chat_id=update.message.chat_id, menu_button=menu_but)
 
 
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
