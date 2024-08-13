@@ -39,6 +39,6 @@ class JobOne implements ShouldQueue
 //
 //        \Log::info('JobOne executed successfully.');
         $this->round->update(['status' => 'freeze']);
-        JobTwo::dispatch($this->round)->onQueue('game')->delay(now()->addSeconds(10));
+        JobTwo::dispatch($this->round)->onQueue('game')->delay(now()->addSeconds(6));
     }
 }

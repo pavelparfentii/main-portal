@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Bet;
 use App\Models\Game;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -36,9 +37,10 @@ class MainJob implements ShouldQueue
         $currentRound = $game->rounds()->where('status', 'waiting')->latest()->first();
 
         if (!$currentRound) {
+            Bet::on('pgsql_telegrams')->truncate();
             $currentRound = $game->rounds()->create([]);
 
-            JobOne::dispatch($currentRound)->onQueue('game')->delay(120);
+            JobOne::dispatch($currentRound)->onQueue('game')->delay(90);
         }
 
 

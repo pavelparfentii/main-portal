@@ -18,7 +18,7 @@ class BetResource extends JsonResource
             'id' => $this->id,
             'amount' => $this->amount,
             'telegram' => [
-                'id' => $this->account->telegram->id,
+                'id' => $this->account->id,
                 'telegram_id' => $this->account->telegram->telegram_id,
                 'telegram_username' => $this->account->telegram->telegram_username,
                 'first_name' => $this->account->telegram->first_name,

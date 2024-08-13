@@ -45,9 +45,8 @@ class JobTwo implements ShouldQueue
             $this->round->update(['status' => 'no_winner']);
         }
 
-        Bet::on('pgsql_telegrams')->truncate();
 
-        MainJob::dispatch()->onQueue('game')->delay(now()->addSeconds(15));
+        MainJob::dispatch()->onQueue('game')->delay(now()->addSeconds(25));
 //        JobThree::dispatch()->onQueue('game')->delay(now()->addSeconds(10));
     }
 
@@ -56,16 +55,21 @@ class JobTwo implements ShouldQueue
         // Вычислить общую сумму всех ставок
         $totalAmount = $bets->sum('amount');
 
-        // Создать массив префиксов с накопленными суммами ставок
-        $prefix = [];
-        $prefix[0] = $bets[0]->amount;
+        $frequencies = [];
 
-        for ($i = 1; $i < count($bets); ++$i) {
-            $prefix[$i] = $prefix[$i - 1] + $bets[$i]->amount;
+        foreach ($bets as $bet){
+            $frequencies[] = $bet->amount / $totalAmount * 100;
         }
 
+
+        $prefix = [];
+        $prefix[0] = $frequencies[0];
+        for ($i = 1; $i < count($frequencies); ++$i) {
+            $prefix[$i] = $prefix[$i - 1] + $frequencies[$i];
+        }
+        $size = count($bets);
         // Генерация случайного числа от 0 до общей суммы ставок
-        $random = mt_rand(0, $totalAmount * 1000) / 1000;
+        $random = (mt_rand(1, 323567) % $prefix[$size - 1]) + 1;
 
         // Поиск индекса случайного числа в префиксном массиве
         $index = $this->findRandomInPrefixArray($prefix, $random, 0, count($prefix) - 1);

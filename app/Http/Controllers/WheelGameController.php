@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Validator;
 class WheelGameController extends Controller
 {
 
+    protected $max_bets_count= 100;
+
     public function getGame(Request $request)
     {
         $account = AuthHelperTelegram::auth($request);
@@ -32,13 +34,15 @@ class WheelGameController extends Controller
 
         $bets = $currentRound->bets()->with(['account.telegram'])->get();
 
-        $winner = $currentRound->winner_id ? Account::on('pgsql_telegrams')->with('telegram')->where('id', $currentRound->winner_id)->first() : null;
+        //$winner = $currentRound->winner_id ? Account::on('pgsql_telegrams')->with('telegram')->where('id', $currentRound->winner_id)->first() : null;
+        $winnerBet = $currentRound->winner_id ? $bets->where('account_id', $currentRound->winner_id)->first() : null;
+        $winnerBetId = $winnerBet ? $winnerBet->id : null;
 
 //        $betsCount = $bets->count();
 //        $totalBetsSum = $bets->sum('amount');
 
-        $betsEndTime = Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString();
-        $newGameStartTime = Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString();
+//        $betsEndTime = Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString();
+//        $newGameStartTime = Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString();
         $betsEndTime = $currentRound->bets_end_time;
         $newGameStartTime = $currentRound->new_game_start_at;
 
@@ -54,11 +58,13 @@ class WheelGameController extends Controller
 //                'bets_count'=>$betsCount,
 //                'total_bets_sum'=>$totalBetsSum,
                 'account_bet'=>$accountBet,
-                'winner'=> $winner ? new WinnerResource($winner, $totalAmountWon) : null,
+//                'winner'=> $winner ? new WinnerResource($winner, $totalAmountWon) : null,
+                'winner'=> $winnerBetId,
                 'current_round'=>$currentRound->id,
                 'round_status'=>$currentRound->status,
                 'bets_end_time' => $betsEndTime ? Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString() :  null,
                 'new_game_start'=>$newGameStartTime ? Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString() : null,
+                'max_bets_count'=>$this->max_bets_count,
             ]);
 
         }elseif (!$account){
@@ -69,7 +75,7 @@ class WheelGameController extends Controller
 //                'bets_count'=>$betsCount,
 //                'total_bets_sum'=>$totalBetsSum,
 //                'account_bet'=>null,
-                'winner'=> WinnerResource::collection($winner),
+                'winner'=> $winnerBetId,
                 'bets_end_time' => $betsEndTime ? Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString() : null,
                 'new_game_start'=>$newGameStartTime ? Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString() : null,
             ]);
@@ -96,6 +102,25 @@ class WheelGameController extends Controller
             ->where('game_label', $gameLabel)
             ->first();
 
+        $currentRound = $game->rounds()->latest()->first();
+
+        $bets = $currentRound->bets()->with(['account.telegram'])->get();
+
+        $winner = $currentRound->winner_id ? Account::on('pgsql_telegrams')->with('telegram')->where('id', $currentRound->winner_id)->first() : null;
+
+//        $betsCount = $bets->count();
+//        $totalBetsSum = $bets->sum('amount');
+
+//        $betsEndTime = Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString();
+//        $newGameStartTime = Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString();
+        $betsEndTime = $currentRound->bets_end_time;
+        $newGameStartTime = $currentRound->new_game_start_at;
+
+        $totalAmountWon = $currentRound->total_amount;
+
+        $accountBet = $account->bets()->where('round_id', $currentRound->id)->exists();
+
+
         if ($account->total_points < $request->amount) {
 
             return response()->json(['error' => 'Insufficient funds'], 403);
@@ -111,7 +136,7 @@ class WheelGameController extends Controller
 
         $betsCount = $currentRound->bets->count();
 
-        if($betsCount > 50){
+        if($betsCount > $this->max_bets_count){
             return response()->json(['error' => 'Round is over. Bets no more allowed', 'game_status'=>$currentRound->status], 403);
         }
 
@@ -132,7 +157,18 @@ class WheelGameController extends Controller
 
             $currentRound->increment('total_amount', $request->amount);
 
-            return response()->json(['message' => 'Bet accepted', 'game_status'=>$currentRound->status], 200);
+            return response()->json([
+                'game'=>$game,
+                'bets'=>BetResource::collection($bets),
+//                'bets_count'=>$betsCount,
+//                'total_bets_sum'=>$totalBetsSum,
+                'account_bet'=>$accountBet,
+                'winner'=> $winner ? new WinnerResource($winner, $totalAmountWon) : null,
+                'current_round'=>$currentRound->id,
+                'round_status'=>$currentRound->status,
+                'bets_end_time' => $betsEndTime ? Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString() :  null,
+                'new_game_start'=>$newGameStartTime ? Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString() : null,
+            ]);
         }
         return response()->json(['message' => 'Bet is already accepted', 'game_status'=>$currentRound->status], 403);
 

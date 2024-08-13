@@ -106,8 +106,6 @@ class Week extends Model
                     'claim_points' => 0,
                     'claimed'=>false
                 ]);
-            }elseif(!$currentWeek->active){
-                $currentWeek->update(['active'=>true]);
             }
 
             return $currentWeek;

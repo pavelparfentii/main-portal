@@ -26,7 +26,7 @@ class Round extends Model
     public function getBetsEndTimeAttribute()
     {
         if($this->status === 'waiting'){
-            return $this->created_at ? $this->created_at->addSeconds(120) : null;
+            return $this->created_at ? $this->created_at->addSeconds(90) : null;
         }elseif ($this->status === 'freeze'){
             return null;
         }
@@ -36,7 +36,7 @@ class Round extends Model
     public function getNewGameStartAtAttribute()
     {
         if($this->status === 'no_winner' || $this->status === 'winner_generated'){
-            return $this->updated_at ? $this->updated_at->addSeconds(15) : null;
+            return $this->updated_at ? $this->updated_at->addSeconds(25) : null;
         }else{
             return null;
         }
