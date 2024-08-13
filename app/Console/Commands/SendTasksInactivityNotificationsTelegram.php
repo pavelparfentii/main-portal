@@ -32,6 +32,7 @@ class SendTasksInactivityNotificationsTelegram extends Command
         Account::on('pgsql_telegrams')
             ->join('telegrams', 'accounts.id', '=', 'telegrams.account_id')
             ->with('telegram')
+            ->whereNotNull('telegrams.telegram_id')
             ->whereDoesntHave('tasks', function ($query) {
                 $query->where('is_done', true);
             })
@@ -39,11 +40,11 @@ class SendTasksInactivityNotificationsTelegram extends Command
             ->chunk($batchSize, function ($accountsWithoutDoneTasks) {
 
                 foreach ($accountsWithoutDoneTasks as $account) {
-                    if($account->telegram_id === '188893613'){
+
 
                         $message = "GM💎 You’ve got some tasks waiting in the miniapp. Finish them up and scoop those Diamonds!";
                         $this->sendMessage($account->telegram_id, $message);
-                    }
+
 
                 }
             });
