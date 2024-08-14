@@ -63,7 +63,7 @@ class AccountResource extends Resource
 
 
             HasOne::make('Telegram', 'telegram', \App\Nova\TelegramSecondary::class),
-            Text::make('total_points')->readonly(),
+            Text::make('total_points'),
             Boolean::make('ambassador')
         ];
     }

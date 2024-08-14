@@ -54,7 +54,7 @@ class TaskController extends Controller
                 'title' => $task->title,
                 'description' => $task->description,
                 'link' => $task->link,
-                'points' => $task->points,
+                'points' => $this->formatPoints($task->points),
                 'isDone' => in_array($task->id, $completedTasks),
                 'tags' => $task->tags->pluck('code')->toArray(),
                 'action' => $task->action,
@@ -229,6 +229,13 @@ class TaskController extends Controller
 
         }
 
+        if (str_contains($task->action, 'friends')) {
+
+            return $this->checkReferralCount($task, $account);
+
+        }
+
+
         $response = [
             'message' => ['error' => 'Task not found'],
             'code' => 200
@@ -307,6 +314,59 @@ class TaskController extends Controller
             ];
             return $response;
         }
+    }
+
+    private function checkReferralCount($task, $account)
+    {
+        $invitedCount = $account->invitesSent()->count();
+
+        // Check task title to see which threshold is being evaluated
+        if (str_contains($task->title, '5') && $invitedCount >= 5 && $invitedCount < 30) {
+
+            $response = [
+                'message' => ['status' => true],
+                'code' => 200
+            ];
+
+        } elseif (str_contains($task->title, '30') && $invitedCount >= 30 && $invitedCount < 100) {
+
+            $response = [
+                'message' => ['status' => true],
+                'code' => 200
+            ];
+
+        } elseif (str_contains($task->title, '100') && $invitedCount >= 100 && $invitedCount < 500) {
+
+            $response = [
+                'message' => ['status' => true],
+                'code' => 200
+            ];
+
+        } elseif (str_contains($task->title, '500') && $invitedCount >= 500) {
+
+            $response = [
+                'message' => ['status' => true],
+                'code' => 200
+            ];
+
+        } else {
+
+            $response = [
+                'message' => ['status' => false],
+                'code' => 200
+            ];
+
+            // return response()->json(['error' => 'Not enough friends to claim'], 400);
+        }
+
+        return $response;
+    }
+
+    public function formatPoints($points) {
+        if ($points >= 1000) {
+            return round($points / 1000, 1) . 'k';
+        }
+        return $points;
     }
 
 
