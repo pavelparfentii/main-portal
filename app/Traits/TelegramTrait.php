@@ -10,6 +10,7 @@ use App\Http\Resources\AccountResource;
 use App\Http\Resources\FriendResource;
 use App\Http\Resources\TeamResource;
 use App\Jobs\TelegramPointsUpdatedJob;
+use App\Jobs\TelegramReferralKickNotification;
 use App\Models\Account;
 use App\Models\AccountFarm;
 use App\Models\Code;
@@ -865,7 +866,7 @@ trait TelegramTrait{
             ->sum('net_income');
 
 
-        TelegramPointsUpdatedJob::dispatch($account)->onQueue('referral');
+//        TelegramPointsUpdatedJob::dispatch($account)->onQueue('referral');
 
         $collectReferral = $referralsList->map(function ($referral) use (&$account, &$totalSecondLevelIncome) {
 
@@ -893,7 +894,8 @@ trait TelegramTrait{
 
             if(!empty($telegram)){
                 return [
-                    'id'=>$referral->id,
+//                    'id'=>$referral->id,
+                    'id'=>$referral->whom_invited,
                     'twitter_name' => $referral->twitter_name,
                     'twitter_avatar'=>$referral->twitter_avatar,
                     'twitter_username'=>$referral->twitter_username,
@@ -902,7 +904,8 @@ trait TelegramTrait{
                     'referral_income'=>$totalFirstLevelIncome,
                     'telegram_first_name'=>$telegram->first_name,
                     'telegram_last_name'=>$telegram->last_name,
-                    'telegram_avatar'=>$telegram->avatar
+                    'telegram_avatar'=>$telegram->avatar,
+                    'is_need_notification'=>$this->checkIfReferralNotificationNeeded($referral)
 
                 ];
             }else{
@@ -910,7 +913,8 @@ trait TelegramTrait{
                     'id'=>$referral->id,
                     'total_points' => $referral->total_points,
                     'invited'=>$firstLevelAccount->count(),
-                    'referral_income'=>$totalFirstLevelIncome
+                    'referral_income'=>$totalFirstLevelIncome,
+                    'is_need_notification'=>false
                 ];
             }
 
@@ -1019,82 +1023,69 @@ trait TelegramTrait{
         return "teams_list_{$period}_{$userId}";
     }
 
-    private function checkDailyPoints($account)
+    private function checkIfReferralNotificationNeeded($referral): bool
     {
-        $accountDailyFarm = DB::connection('pgsql_telegrams')
-            ->table('account_farms')
-            ->where('account_id', $account->id)
+
+        $account = Account::on('pgsql_telegrams')
+            ->where('id', $referral->id)
             ->first();
 
-        if (!$accountDailyFarm) {
-            DB::connection('pgsql_telegrams')
-                ->table('account_farms')
-                ->insert([
-                'account_id' => $account->id,
-                'daily_farm' => 5.00, // Set default value for daily_farm
-                'daily_farm_last_update' => now(), // Set default value for daily_farm_last_update
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        if(!$account){
+            return false;
         }
+
+        $lastLogin = $account->dailyReward
+            ? Carbon::parse($account->dailyReward->kick_notification)
+            : Carbon::now();
+
+        $kickNotification = $account->dailyReward
+            ? Carbon::parse($account->dailyReward->kick_notification)
+            : Carbon::now()->subYears(10);
+
+
+        if ($lastLogin->diffInDays(now()) > 3 && $kickNotification->diffInDays(now()) > 2) {
+            $account->kick_notification = now();
+            $account->save();
+
+            return true;
+        }
+        return false;
     }
 
-    private function skipAllReferralsIncome($account)
+    public function sendKickNotification(Request $request)
     {
-        $invitesSent = $account->invitesSent()->get();
+        $account = AuthHelperTelegram::auth($request);
 
-        foreach ($invitesSent as $referral) {
-            $firstLevelAccount = Account::on('pgsql_telegrams')
-                ->where('id', $referral->whom_invited)
-                ->first();
-            if($firstLevelAccount){
-                DB::connection('pgsql_telegrams')->transaction(function () use ($firstLevelAccount) {
-                    $dailyFarm = DB::connection('pgsql_telegrams')
-                        ->table('account_farms')
-                        ->where('account_id', $firstLevelAccount->id)
-                        ->value('daily_farm');
-
-                    // Додати daily_farm до total_points
-                    DB::connection('pgsql_telegrams')
-                        ->table('account_farms')
-                        ->where('account_id', $firstLevelAccount->id)
-                        ->increment('total_points', floatval($dailyFarm));
-
-
-                    DB::connection('pgsql_telegrams')
-                        ->table('account_farms')
-                        ->where('account_id', $firstLevelAccount->id)
-                        ->update(['daily_farm' => 0.0]);
-                });
-
-
-                $secondLevelInvites = Invite::on('pgsql_telegrams')->where('invited_by', $firstLevelAccount->id)->get();
-                foreach ($secondLevelInvites as $secondLevelInvite) {
-                    $secondLevelAccount = Account::on('pgsql_telegrams')->where('id', $secondLevelInvite->whom_invited)->first();
-
-                    if($secondLevelAccount){
-                        DB::connection('pgsql_telegrams')->transaction(function () use ($secondLevelAccount) {
-
-                            $earnedPoints = DB::connection('pgsql_telegrams')
-                                ->table('account_farms')
-                                ->where('account_id', $secondLevelAccount->id)
-                                ->value('daily_farm');
-
-                            DB::connection('pgsql_telegrams')
-                                ->table('account_farms')
-                                ->where('account_id', $secondLevelAccount->id)
-                                ->increment('total_points', floatval($earnedPoints));
-
-                            DB::connection('pgsql_telegrams')
-                                ->table('account_farms')
-                                ->where('account_id', $secondLevelAccount->id)
-                                ->update(['daily_farm' => 0.0]);
-                        });
-                    }
-                }
-            }
+        if(!$account){
+            return response()->json(['message'=>'non authorized'], 401);
         }
+
+        $validator = Validator::make($request->all(), [
+            'referral_id' => 'required|string',
+
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $referral = Account::on('pgsql_telegrams')
+            ->where('id', $request->referral_id)
+            ->first();
+
+        if(!$referral->telegram()->exists()){
+            return response()->json(['message'=>'no referral found'], 404);
+        }
+        $telegram_id = $referral->telegram->telegram_id;
+        $username = $referral->telegram->first_name;
+
+        $message = "Yo! $username just gave you a nudge. Time to hit the miniapp and start earning those Diamonds!";
+
+        TelegramReferralKickNotification::dispatch($telegram_id, $message)->onQueue('telegram');
+
     }
+
+
 
 
 }

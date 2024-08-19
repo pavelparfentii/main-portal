@@ -320,22 +320,22 @@ class TaskController extends Controller
     {
         $invitedCount = $account->invitesSent()->count();
 
-        // Check task title to see which threshold is being evaluated
-        if (str_contains($task->title, '5') && $invitedCount >= 5 && $invitedCount < 30) {
+
+        if (str_contains($task->title, '5') && $invitedCount >= 5 ) {
 
             $response = [
                 'message' => ['status' => true],
                 'code' => 200
             ];
 
-        } elseif (str_contains($task->title, '30') && $invitedCount >= 30 && $invitedCount < 100) {
+        } elseif (str_contains($task->title, '30') && $invitedCount >= 30 ) {
 
             $response = [
                 'message' => ['status' => true],
                 'code' => 200
             ];
 
-        } elseif (str_contains($task->title, '100') && $invitedCount >= 100 && $invitedCount < 500) {
+        } elseif (str_contains($task->title, '100') && $invitedCount >= 100 ) {
 
             $response = [
                 'message' => ['status' => true],

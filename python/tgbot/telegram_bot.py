@@ -156,6 +156,47 @@ async def handle_default(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         reply_markup=inline_reply_markup
     )
 
+#Get message from channel and group
+async def handle_comments(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.message:
+        user = update.message.from_user
+        comment = update.message.text
+        chat_id = update.message.chat_id
+
+
+        # Log the comment or store it in a database
+        print(f"User {user.username} ({user.id}) commented: {comment} in chat {chat_id}")
+
+        # Reply to the comment
+        # await update.message.reply_text(f"Thanks for your comment, {user.first_name}!")
+
+        # Отправка POST-запроса на внешний эндпоинт
+
+        data = {
+                'user_id': user.id,
+            }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(EXTERNAL_ENDPOINT, json=data)
+
+            # Проверка успешности запроса
+        if response.status_code == 200:
+                print("Successfully sent comment to external endpoint.")
+        else:
+                print(f"Failed to send comment. Status code: {response.status_code}")
+
+    elif update.channel_post:
+        channel_post = update.channel_post
+        user = channel_post.sender_chat  # Channel posts often come from the channel itself
+
+        # Log the channel post or store it in a database
+        print(f"Channel {user.title} posted: {channel_post}")
+    else:
+        # Log that we received an update without a message (could be a different type of update)
+        print("Received an update without a message.")
+
+
+
 def main() -> None:
 
     application = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -166,7 +207,9 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("💎 souls.club channel"), handle_channel))
     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("🌐 About souls.club"), handle_about))
 #     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("💎 Get Diamond"), handle_get_diamond))
+
     application.add_handler(MessageHandler(filters.TEXT, handle_default))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_comments))
 
     # Start the bot
     application.run_polling()

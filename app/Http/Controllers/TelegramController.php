@@ -576,6 +576,10 @@ class TelegramController extends Controller
         return $this->getTotalPoints($request);
     }
 
+    public function notifyReferralEndpoint(Request $request)
+    {
+        return $this->sendKickNotification($request);
+    }
 
 
 }
