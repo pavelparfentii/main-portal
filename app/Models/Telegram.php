@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\DownloadTelegramAvatar;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -50,7 +51,7 @@ class Telegram extends Model
                 // Перевіряємо умови, які повинні бути виконані для оновлення
                 if (!$telegram->getOriginal('avatar')) {
                     // Виконуємо оновлення лише якщо avatar ще не було встановлено
-                    $telegram->update(['avatar' => $telegram->getAvatar()]);
+                    DownloadTelegramAvatar::dispatch($telegram)->onQueue('telegram');
                 }
             }
         });
@@ -62,7 +63,7 @@ class Telegram extends Model
 
                 if ($telegram->points > 0 && $telegram->wasChanged('points')) {
                     // Виконуємо оновлення лише якщо змінено поле 'points'
-                    $telegram->update(['avatar' => $telegram->getAvatar()]);
+                    DownloadTelegramAvatar::dispatch($telegram)->onQueue('telegram');
                 }
             }
         });
@@ -122,12 +123,12 @@ class Telegram extends Model
 
     }
 
-    public function getAvatar()
+    public function getAvatar($telegram_id)
     {
         try {
             $telegram = new Api(env('TELEGRAM_BOT'));
 
-            $response = $telegram->getUserProfilePhotos(['user_id' => '188893613']);
+            $response = $telegram->getUserProfilePhotos(['user_id' => $telegram_id]);
 
             $photos_count = $response->getTotalCount();
 
