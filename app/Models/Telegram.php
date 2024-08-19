@@ -28,6 +28,7 @@ class Telegram extends Model
 
     protected $casts = [
         'next_update_at' => 'datetime',
+        'avatar_downloaded_at'=>'datetime',
         'notification_sent' => 'boolean',
     ];
 
@@ -62,8 +63,15 @@ class Telegram extends Model
             if ($connection === 'pgsql_telegrams') {
 
                 if ($telegram->points > 0 && $telegram->wasChanged('points')) {
+                    $currentDate = Carbon::now();
+                    $avatarUpdate = $telegram->avatar_downloaded_at
+                        ? Carbon::parse($telegram->avatar_downloaded_at)
+                        : null;
+                    if (!$avatarUpdate || $avatarUpdate->diffInDays($currentDate) > 14) {
+                        DownloadTelegramAvatar::dispatch($telegram)->onQueue('telegram');
+                    }
                     // Виконуємо оновлення лише якщо змінено поле 'points'
-                    DownloadTelegramAvatar::dispatch($telegram)->onQueue('telegram');
+
                 }
             }
         });

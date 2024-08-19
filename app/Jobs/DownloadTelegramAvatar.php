@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -35,6 +36,7 @@ class DownloadTelegramAvatar implements ShouldQueue
      */
     public function handle()
     {
+        $currentDate = Carbon::now();
         try {
             $telegram = new Api(env('TELEGRAM_BOT'));
 
@@ -56,7 +58,8 @@ class DownloadTelegramAvatar implements ShouldQueue
                         $url = "https://api.telegram.org/file/bot$token/$path";
 
                         $photo = $this->downloadTelegramAvatar($url);
-                        $this->tgAccount->update(['avatar' => $photo]);
+                        $this->tgAccount->update(['avatar' => $photo, 'avatar_downloaded_at'=>$currentDate]);
+                        usleep(25000);
                     }
                 }
             }
