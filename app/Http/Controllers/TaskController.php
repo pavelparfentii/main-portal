@@ -16,25 +16,25 @@ class TaskController extends Controller
     {
         $account = AuthHelperTelegram::auth($request);
 
-//        $cacheKeyTasks = 'tasks_for_account_' . $account->id;
-//        $cacheKeyCompletedTasks = 'completed_tasks_for_account_' . $account->id;
+        $cacheKeyTasks = 'tasks_for_account_' . $account->id;
+        $cacheKeyCompletedTasks = 'completed_tasks_for_account_' . $account->id;
 
-        // Отримуємо задачі з кешу, якщо вони є, або завантажуємо і кешуємо їх
-//        $tasks = Cache::remember($cacheKeyTasks, now()->addHours(30), function () {
-//            return Task::on('pgsql_telegrams')
-//                ->with(['tags', 'parent.tags'])
-//                ->get();
-//        });
+//         Отримуємо задачі з кешу, якщо вони є, або завантажуємо і кешуємо їх
+        $tasks = Cache::remember($cacheKeyTasks, now()->addHours(30), function () {
+            return Task::on('pgsql_telegrams')
+                ->with(['tags', 'parent.tags'])
+                ->get();
+        });
 
-        $tasks = Task::on('pgsql_telegrams')
-            ->with(['tags', 'parent.tags'])
-            ->get();
+//        $tasks = Task::on('pgsql_telegrams')
+//            ->with(['tags', 'parent.tags'])
+//            ->get();
 
-//        $completedTasks = Cache::remember($cacheKeyCompletedTasks, now()->addHours(30), function () use ($account) {
-//            return $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();
-//        });
+        $completedTasks = Cache::remember($cacheKeyCompletedTasks, now()->addHours(30), function () use ($account) {
+            return $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();
+        });
 
-        $completedTasks = $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();
+//        $completedTasks = $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();
 
         return response()->json($tasks->map(function ($task) use ($completedTasks) {
             $parents = [];
@@ -127,13 +127,13 @@ class TaskController extends Controller
         }
 
         //enable_claim false
-        //cache
+//        cache
 
-//        $cacheKeyTasks = 'tasks_for_account_' . $account->id;
-//        $cacheKeyCompletedTasks = 'completed_tasks_for_account_' . $account->id;
-//
-//        Cache::forget($cacheKeyTasks);
-//        Cache::forget($cacheKeyCompletedTasks);
+        $cacheKeyTasks = 'tasks_for_account_' . $account->id;
+        $cacheKeyCompletedTasks = 'completed_tasks_for_account_' . $account->id;
+
+        Cache::forget($cacheKeyTasks);
+        Cache::forget($cacheKeyCompletedTasks);
 
         $tasks = Task::on('pgsql_telegrams')->with(['tags', 'parent.tags'])->get();
 
