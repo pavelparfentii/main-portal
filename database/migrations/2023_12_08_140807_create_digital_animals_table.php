@@ -1,0 +1,34 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('digital_animals', function (Blueprint $table) {
+            $table->id();
+            $table->string('event')->nullable();
+            $table->foreignId('account_id')->nullable()->constrained('accounts')->onDelete('cascade');
+            $table->string('period')->nullable();
+            $table->boolean('re_count')->default(false);
+            $table->decimal('points', 10, 3)->default(0);
+            $table->text('comment')->nullable();
+            $table->string('query_param')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('digital_animals');
+    }
+};

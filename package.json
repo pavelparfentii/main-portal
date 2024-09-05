@@ -1,0 +1,22 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "axios": "^1.6.1",
+        "dotenv": "^16.4.5",
+        "laravel-vite-plugin": "^0.8.0",
+        "vite": "^4.0.0",
+        "web3": "^4.5.0"
+    },
+    "dependencies": {
+        "@sentry/browser": "^7.40.0",
+        "discord.js": "^14.15.3",
+        "node-fetch": "^3.3.2",
+        "pg": "^8.11.5",
+        "pulsar-client": "^1.10.0"
+    }
+}
