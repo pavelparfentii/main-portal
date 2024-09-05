@@ -14,7 +14,7 @@ class Kernel extends ConsoleKernel
     {
 
         //Recout points weekly
-        $schedule->command('app:recount-points')->weeklyOn(1, '00:01');
+        $schedule->command('app:recount-points')->weeklyOn(1, '00:05');
 
         //recount positions
         $schedule->command('app:update-week-sum')->weeklyOn(1, '00:30');

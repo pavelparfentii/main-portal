@@ -24,7 +24,7 @@ class Telegram extends Model
 
     protected $hidden = ['updated_at', 'created_at'];
 
-    protected $dates = ['last_notification_at'];
+    protected $dates = ['last_notification_at', 'avatar_downloaded_at'];
 
     protected $casts = [
         'next_update_at' => 'datetime',
