@@ -29,7 +29,9 @@ WORKDIR /var/www/main-portal
 COPY . .
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+# Перевірка наявності composer.json
+RUN ls -la && cat composer.json
+RUN composer self-update && composer install --no-dev --optimize-autoloader --no-scripts
 
 # Копіювання конфігураційних файлів
 COPY .env.example .env
