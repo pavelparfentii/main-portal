@@ -22,4 +22,4 @@ deploy:
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
   script:
-    - ssh root@$SERVER_IP "cd /var/www/global-admin-portal && docker pull registry.gitlab.com/your-namespace/your-project:latest && docker-compose down && docker-compose up -d"
+    - ssh root@$SERVER_IP "cd /var/www/global-admin-portal && docker pull registry.gitlab.com/safesoul/global-admin-portal:latest && docker-compose down && docker-compose up -d"
