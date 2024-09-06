@@ -1,0 +1,23 @@
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t registry.gitlab.com/safesoul/global-admin-portal .
+    - docker push registry.gitlab.com/safesoul/global-admin-portal
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - apk add --update openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
+    - ssh root@$SERVER_IP "docker pull registry.gitlab.com/safesoul/global-admin-portal:latest && docker-compose down && docker-compose up -d"

@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: laravel_app
+        volumes:
+            - .:/var/www/main-portal
+        environment:
+            - DB_CONNECTION=pgsql
+            - DB_HOST=127.0.0.1
+            - DB_PORT=5432
+            - DB_DATABASE=portal_db
+            - DB_USERNAME=sammy
+            - DB_PASSWORD=password
+            - SECOND_DB_CONNECTION=pgsql_telegrams
+            - DB_HOST_TELEGRAMS=127.0.0.1
+            - DB_PORT_TELEGRAMS=5432
+            - DB_DATABASE_TELEGRAMS=telegrams_db
+            - DB_USERNAME_TELEGRAMS=sammy
+            - DB_PASSWORD_TELEGRAMS=password
+            - REDIS_HOST=redis
+        networks:
+            - laravel
+    nginx:
+        image: nginx:latest
+        container_name: nginx_server
+        ports:
+            - "8000:80"
+        volumes:
+            - ./nginx.conf:/etc/nginx/nginx.conf
+            - ./public:/var/www/main-portal/public
+        depends_on:
+            - app
+        networks:
+            - laravel
+    redis:
+        image: redis:latest
+        container_name: redis_server
+        networks:
+            - laravel
+networks:
+    laravel:
+        driver: bridge

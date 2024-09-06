@@ -23,7 +23,7 @@ RUN docker-php-ext-install gd pdo pdo_mysql pdo_pgsql sockets zip
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Створення робочого каталогу
-WORKDIR /var/www
+WORKDIR /var/www/main-portal
 
 # Копіювання всього проекту в контейнер
 COPY . .
@@ -35,11 +35,12 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 COPY .env.example .env
 
 # Створення папки для кешу та прав доступу
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage
+RUN chown -R www-data:www-data /var/www/main-portal \
+    && chmod -R 755 /var/www/main-portal/storage \
+    && chmod -R 755 /var/www/main-portal/bootstrap/cache
 
 # Експонування порту 9000
-EXPOSE 9000
+#EXPOSE 9000
 
 # Запуск PHP-FPM
-CMD ["php-fpm"]
+#CMD ["php-fpm"]
