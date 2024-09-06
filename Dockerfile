@@ -31,7 +31,9 @@ COPY . .
 COPY composer.json composer.lock ./
 # Перевірка наявності composer.json
 RUN ls -la && cat composer.json
-RUN composer self-update && composer install --no-dev --optimize-autoloader --no-scripts
+RUN composer self-update && \
+    composer config http-basic.nova.laravel.com glapacha@gmail.com UxDAKzcXTH1fb2pQIbzVcnpcLzq2RvJD8BCOK5dPspVhFJZ3Rp && \
+    composer install --no-dev --optimize-autoloader --no-scripts
 
 # Копіювання конфігураційних файлів
 COPY .env.example .env
