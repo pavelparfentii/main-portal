@@ -9,7 +9,7 @@
         "guzzlehttp/guzzle": "^7.2",
         "irazasyed/telegram-bot-sdk": "^3.14",
         "laravel/framework": "^10.10",
-        "laravel/nova": "4.24.4",
+
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "predis/predis": "^2.2",
