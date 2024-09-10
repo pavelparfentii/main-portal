@@ -319,47 +319,37 @@ class TaskController extends Controller
     private function checkReferralCount($task, $account)
     {
         $invitedCount = $account->invitesSent()->count();
+        $requiredInvites = $this->extractInviteCount($task->title);
 
+        if ($requiredInvites && $invitedCount >= $requiredInvites) {
 
-        if (str_contains($task->title, '5') && $invitedCount >= 5 ) {
-
-            $response = [
-                'message' => ['status' => true],
-                'code' => 200
-            ];
-
-        } elseif (str_contains($task->title, '30') && $invitedCount >= 30 ) {
+            $this->checkExistingTask($account, $task->id, true);
 
             $response = [
                 'message' => ['status' => true],
                 'code' => 200
             ];
-
-        } elseif (str_contains($task->title, '100') && $invitedCount >= 100 ) {
-
-            $response = [
-                'message' => ['status' => true],
-                'code' => 200
-            ];
-
-        } elseif (str_contains($task->title, '500') && $invitedCount >= 500) {
-
-            $response = [
-                'message' => ['status' => true],
-                'code' => 200
-            ];
-
         } else {
+
+            $this->checkExistingTask($account, $task->id, false);
 
             $response = [
                 'message' => ['status' => false],
                 'code' => 200
             ];
-
-            // return response()->json(['error' => 'Not enough friends to claim'], 400);
         }
 
         return $response;
+    }
+
+    private function extractInviteCount($title)
+    {
+
+        if (preg_match('/Invite (\d+) friends/', $title, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return null;
     }
 
     public function formatPoints($points) {

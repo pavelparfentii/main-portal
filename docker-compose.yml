@@ -15,11 +15,11 @@ services:
             - DB_USERNAME=sammy
             - DB_PASSWORD=password
             - SECOND_DB_CONNECTION=pgsql_telegrams
-            - DB_HOST_TELEGRAMS=127.0.0.1
-            - DB_PORT_TELEGRAMS=5432
-            - DB_DATABASE_TELEGRAMS=telegrams_db
-            - DB_USERNAME_TELEGRAMS=sammy
-            - DB_PASSWORD_TELEGRAMS=password
+            - DB_HOST_TELEGRAMS=telegram-portal-do-user-9638754-0.j.db.ondigitalocean.com
+            - DB_PORT_TELEGRAMS=25060
+            - DB_DATABASE_TELEGRAMS=defaultdb
+            - DB_USERNAME_TELEGRAMS=doadmin
+            - DB_PASSWORD_TELEGRAMS=AVNS_wPlLUU1K2mQdGUp-yvy
             - REDIS_HOST=redis
         networks:
             - laravel
