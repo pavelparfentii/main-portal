@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BOT_TOKEN = 'MTAxODg2MDI0OTAxNDM0MTcyNQ.G5I5Xo.1JiPW5XvsrIJBKgItcOJEvPLzhLw-LJsBywS_4';
+const BOT_TOKEN = '';
 
 const GUILD_ID = '856828604217425941';
 const USER_ID = process.argv[2];

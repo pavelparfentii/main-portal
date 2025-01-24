@@ -19,7 +19,7 @@ services:
             - DB_PORT_TELEGRAMS=25060
             - DB_DATABASE_TELEGRAMS=defaultdb
             - DB_USERNAME_TELEGRAMS=doadmin
-            - DB_PASSWORD_TELEGRAMS=AVNS_wPlLUU1K2mQdGUp-yvy
+            - DB_PASSWORD_TELEGRAMS=
             - REDIS_HOST=redis
         networks:
             - laravel
