@@ -41,18 +41,6 @@ class ReferralsController extends Controller
 
                 $totalFirstLevelIncome = $referral->accumulated_income;
                 $totalSecondLevelIncome +=$referral->accumulated_income;
-//                $dailyIncome = AccountFarm::where('account_id', $account->id)->value('daily_farm');
-//                $totalFirstLevelIncome += $dailyIncome * 0.10;
-//
-//                // Calculate second level income (2%)
-//                $secondLevelInvites = Invite::where('invited_by', $account->id)->get();
-//                foreach ($secondLevelInvites as $secondLevelInvite) {
-//                    $secondLevelAccount = Account::where('id', $secondLevelInvite->whom_invited)->first();
-//                    if ($secondLevelAccount) {
-//                        $secondLevelDailyIncome = AccountFarm::where('account_id', $secondLevelAccount->id)->sum('daily_farm');
-//                        $totalSecondLevelIncome += $secondLevelDailyIncome * 0.02;
-//                    }
-//                }
 
 
                 if(!empty($account->twitter_id)){

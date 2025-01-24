@@ -183,7 +183,7 @@ class PointsController extends Controller
                         ->where('active', false) // Враховуємо активні тижні, якщо потрібно
                         ->first()
                         ->total_points ?? 0;
-//                dd($currentUserWeekPoints);
+
                 // Розраховуємо ранг користувача на основі його очок за тиждень
                 $userRankBasedOnWeekPoints = DB::table('accounts')
                         ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
@@ -220,9 +220,6 @@ class PointsController extends Controller
 
             return response()->json($response);
 
-//            return response()->json([
-//                'list' => AccountResource::collection($topAccounts),
-//            ]);
 
         } else {
             return response()->json([
@@ -242,11 +239,7 @@ class PointsController extends Controller
             $this->updateFarmPoints($account);
 
             Week::getCurrentWeekForAccount($account);
-//            $userRank = DB::table('accounts')
-//                    ->where('total_points', '>', $account->total_points)
-//                    ->count() + 1;
-//
-//            $account->setAttribute('rank', $userRank);
+
             $account->setAttribute('current_user', true);
 
 

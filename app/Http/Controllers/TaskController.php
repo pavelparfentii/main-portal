@@ -26,9 +26,6 @@ class TaskController extends Controller
                 ->get();
         });
 
-//        $tasks = Task::on('pgsql_telegrams')
-//            ->with(['tags', 'parent.tags'])
-//            ->get();
 
         $completedTasks = Cache::remember($cacheKeyCompletedTasks, now()->addHours(30), function () use ($account) {
             return $account->tasks()->wherePivot('is_done', true)->pluck('task_id')->toArray();

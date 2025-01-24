@@ -32,74 +32,72 @@ trait TelegramTrait{
     {
         $account = AuthHelperTelegram::auth($request);
 
-
         $token = $request->bearerToken();
+
 
         if ($account) {
 
-            $account->setAttribute('current_user', true);
+            $cacheKey = 'account_info_' . $account->id;
 
-//            $account->setAttribute('invited', '-');
+            $accountResourceArray = Cache::remember($cacheKey, 480, function () use ($account, $request) {
+                $account->setAttribute('current_user', true);
 
-            if(!empty($account->discord_id)){
-                $account->load('discordRoles');
-            }
+                if (!empty($account->discord_id)) {
+                    $account->load('discordRoles');
+                }
 
-            $accountResourceArray = (new AccountResource($account))->resolve();
+                $accountResourceArray = (new AccountResource($account))->resolve();
 
-            $inviteCheck = DB::connection('pgsql_telegrams')
-                ->table('invites')
-                ->where('whom_invited', $account->id)
-                ->pluck('id')
-                ->toArray();
+                $inviteCheck = DB::connection('pgsql_telegrams')
+                    ->table('invites')
+                    ->where('whom_invited', $account->id)
+                    ->pluck('id')
+                    ->toArray();
 
-            $inviteController = new InviteController();
-            $inviteCode = $inviteController->activateCodeTelegram($account);
+                $inviteController = new InviteController();
+                $inviteCode = $inviteController->activateCodeTelegram($account);
 
-            $isBlocked = $account->blocked_until;
+                $isBlocked = $account->blocked_until;
 
-            $accountResourceArray['claimed_points']=  null;
+                $accountResourceArray['claimed_points'] = null;
+                $accountResourceArray['invites_count'] = $account->invitesSent()->count() ?? 0;
+                $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
+                $accountResourceArray['invite_code'] = $inviteCode;
+                $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
+                $accountResourceArray['total_points'] = $account->total_points;
+                $accountResourceArray['daily_farm'] = 0;
+                $accountResourceArray['isAmbassador'] = $account->ambassador;
 
-            $accountResourceArray['invites_count'] = $account->invitesSent()->count() ?? 0;
-            $accountResourceArray['invited'] = !empty($inviteCheck) ? true : false;
-            $accountResourceArray['invite_code']=$inviteCode;
-            $accountResourceArray['isBlocked'] = !is_null($isBlocked) ? true : false;
-//            $accountResourceArray['total_points']=$total_points;
-            $accountResourceArray['total_points']=$account->total_points;
-            $accountResourceArray['daily_farm']=0;
-            $accountResourceArray['isAmbassador']=$account->ambassador;
+                if ($account->telegram()->exists()) {
+                    $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_with_reward_at)
+                        ->setTimezone('UTC')
+                        ->toISOString();
+                } else {
+                    $accountResourceArray['telegram_next_update'] = null;
+                }
 
-            if ($account->telegram()->exists()) {
-
-            $accountResourceArray['telegram_next_update'] = Carbon::parse($account->telegram->next_update_with_reward_at)->setTimezone('UTC')->toISOString();
-
-
-            } else {
-                $accountResourceArray['telegram_next_update'] = null;
-            }
-
-
+                return $accountResourceArray;
+            });
 
             return response()->json([
                 'user' => $accountResourceArray,
-                'global'=>[
-                    'total_users'=> DB::connection('pgsql_telegrams')->table('accounts')->count(),
-                    'total_teams'=>DB::connection('pgsql_telegrams')->table('teams')->count(),
-                    'friends'=>!empty($account->twitter_username) ? $account->friends->count() : null,
+                'global' => [
+                    'total_users' => DB::connection('pgsql_telegrams')->table('accounts')->count(),
+                    'total_teams' => DB::connection('pgsql_telegrams')->table('teams')->count(),
+                    'friends' => !empty($account->twitter_username) ? $account->friends->count() : null,
                 ]
             ]);
 
-        }elseif ($token && !$account){
-
+        } elseif ($token && !$account) {
             return response()->json(['error' => 'token expired or wrong'], 401);
 
-        } else{
+        } else {
             return response()->json([
                 'user' => null,
-                'global'=>[
-                    'total_users'=> DB::connection('pgsql_telegrams')->table('accounts')->count(),
-                    'total_teams'=>DB::connection('pgsql_telegrams')->table('teams')->count(),
-                    'friends'=>null
+                'global' => [
+                    'total_users' => DB::connection('pgsql_telegrams')->table('accounts')->count(),
+                    'total_teams' => DB::connection('pgsql_telegrams')->table('teams')->count(),
+                    'friends' => null
                 ]
             ]);
         }

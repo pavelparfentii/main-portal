@@ -17,8 +17,6 @@ class ClaimController extends Controller
             return response()->json(['message' => 'Non authorized'], 401);
         }
 
-//        $currentWeekNumber = Carbon::now()->format('W-Y');
-        //$currentWeek = Week::getCurrentWeekForAccount($account);
         $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
 
 

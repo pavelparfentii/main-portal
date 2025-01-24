@@ -202,18 +202,14 @@ class TelegramDailyRewardController extends Controller
         $values = [1, 11, 69, 111];
         $frequencies = [89, 9.5, 1, 0.5];
 
-        // Создание и заполнение префиксного массива
         $prefix = [];
         $prefix[0] = $frequencies[0];
         for ($i = 1; $i < count($frequencies); ++$i) {
             $prefix[$i] = $prefix[$i - 1] + $frequencies[$i];
         }
 
-        // Префиксный массив: [89, 98.5, 99.5, 100]
-        // Генерация случайного числа от 1 до суммы всех вероятностей
         $random = mt_rand(1, 100 * 1000) / 1000;
 
-        // Поиск индекса случайного числа в префиксном массиве
         $index = $this->findRandomInPrefixArray($prefix, $random, 0, count($prefix) - 1);
         return $values[$index];
     }

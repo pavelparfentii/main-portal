@@ -38,11 +38,6 @@ class WheelGameController extends Controller
         $winnerBet = $currentRound->winner_id ? $bets->where('account_id', $currentRound->winner_id)->first() : null;
         $winnerBetId = $winnerBet ? $winnerBet->id : null;
 
-//        $betsCount = $bets->count();
-//        $totalBetsSum = $bets->sum('amount');
-
-//        $betsEndTime = Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString();
-//        $newGameStartTime = Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString();
         $betsEndTime = $currentRound->bets_end_time;
         $newGameStartTime = $currentRound->new_game_start_at;
 
@@ -108,11 +103,6 @@ class WheelGameController extends Controller
 
         $winner = $currentRound->winner_id ? Account::on('pgsql_telegrams')->with('telegram')->where('id', $currentRound->winner_id)->first() : null;
 
-//        $betsCount = $bets->count();
-//        $totalBetsSum = $bets->sum('amount');
-
-//        $betsEndTime = Carbon::parse($currentRound->bets_end_time)->setTimezone('UTC')->toISOString();
-//        $newGameStartTime = Carbon::parse($currentRound->new_game_start_at)->setTimezone('UTC')->toISOString();
         $betsEndTime = $currentRound->bets_end_time;
         $newGameStartTime = $currentRound->new_game_start_at;
 

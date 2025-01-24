@@ -490,7 +490,7 @@ class TelegramController extends Controller
                 $customClaims = [
                     'sub' => $sub,
                     'telegram_id' => $id,
-                    'exp' => now()->addYear()->timestamp, // Expiration time (1 hour in the future)
+                    'exp' => now()->addHour()->timestamp, // Expiration time (1 hour in the future)
                 ];
 
                 //Working with the newest release
@@ -502,7 +502,7 @@ class TelegramController extends Controller
                     'message' => 'Session initiated',
                     'token'=>(string)$token,
                     'is_new'=>false,
-                    'exp'=>now()->addYear()->timestamp]);
+                    'exp'=>now()->addHour()->timestamp]);
             }
 
         }

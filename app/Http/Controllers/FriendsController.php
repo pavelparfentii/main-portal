@@ -54,10 +54,8 @@ class FriendsController extends Controller
 
             $bottomCursor = $responseBody['cursor']['bottom'];
 
-            // Extract the first part of the bottom cursor to check if it's "0"
             list($firstPart, ) = explode('|', $bottomCursor, 2);
 
-            // Process the response, extract rest_id, etc.
 
         } while ($firstPart !== "0");
 
@@ -75,136 +73,6 @@ class FriendsController extends Controller
         return $fgs;
     }
 
-
-//    public function getFriendsForAccount(Request $request)
-//    {
-//        $account = AuthHelper::auth($request);
-//
-//        if (!$account) {
-//            return response()->json(['message' => 'Non authorized'], 401);
-//        }
-//
-//        $period = $request->input('period');
-//
-//        $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
-//        $currentUserWeekPoints = $account->weeks()
-//                ->where('week_number', '=', $previousWeekNumber)
-//                ->where('active', false)
-//                ->first()
-//                ->total_points ?? 0;
-//
-//        if($period == 'total'){
-//            // Calculate rank for the current user
-//            $userRank = DB::table('accounts')
-//                    ->where('total_points', '>', $account->total_points)
-//                    ->count() + 1;
-//            $account->rank = $userRank;
-//            $account->week_points = $currentUserWeekPoints;
-//            $account->load(['discordRoles', 'team.accounts']);
-//
-//            // Always include the current user at the top with current_user set to true
-//            $currentUserData = clone $account;
-//            $currentUserData->current_user = true;
-//            $currentUserData->load(['discordRoles', 'team.accounts']);
-//            $currentUserData->rank = $userRank;
-//            $allAccounts = collect([$currentUserData]);
-//
-//            $friends = $account->friends()->with('discordRoles', 'team.accounts')->get();
-//
-//            // Check if the user has friends
-//            if ($friends->isNotEmpty()) {
-//                // Assign rank to each friend
-//                foreach ($friends as $friend) {
-//                    $friendRank = DB::table('accounts')
-//                            ->where('total_points', '>', $friend->total_points)
-//                            ->count() + 1;
-//                    $friend->rank = $friendRank;
-//                    $friend->team = $friend->team ? new TeamResource($friend->team) : null;
-//                    $friend->current_user = false;
-//                }
-//
-//                // Sort friends by rank
-//                $sortedFriends = $friends->sortBy('rank');
-//
-//                // Merge the sorted friends with the current user at the top
-//                $allAccounts = $allAccounts->merge($sortedFriends);
-//
-//                // Add the current user again in their natural position if they have friends
-//                if ($userRank <= $sortedFriends->count()) {
-//                    $currentUserRankData = clone $account;
-//                    $currentUserRankData->current_user = true;
-//                    $currentUserRankData->team = $account->team ? new TeamResource($account->team) : null;
-//                    $allAccounts->push($currentUserRankData);
-//                }
-//            }
-//
-//            return response()->json([
-//                'list' => FriendResource::collection($allAccounts),
-//            ]);
-//        }elseif ($period == 'week'){
-//
-////            $currentWeekNumber = Carbon::now()->format('W-Y');
-//
-//            $previousWeekNumber = Carbon::now()->subWeek()->format('W-Y');
-//
-//            $currentUserWeekPoints = $account->weeks()
-//                    ->where('week_number', '=', $previousWeekNumber)
-//                    ->where('active', false)
-//                    ->first()
-//                    ->total_points ?? 0;
-//
-//            // Розрахунок рангу для поточного користувача на основі points з таблиці weeks
-//            $userRank = DB::table('accounts')
-//                    ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
-//                    ->where('weeks.week_number', '=', $previousWeekNumber)
-////                    ->where('weeks.points', '>', $currentUserWeekPoints)
-//                    ->where('weeks.active', false)
-//                    ->count() + 1;
-//
-//            $account->total_points = $currentUserWeekPoints; // Використання week.points як total_points
-//            $account->rank = $userRank;
-//            $account->load(['discordRoles', 'team.accounts']);
-//
-//            // Клонування та позначення поточного користувача
-//            $currentUserData = clone $account;
-//            $currentUserData->current_user = true;
-//            $currentUserData->rank = $userRank;
-//            $allAccounts = collect([$currentUserData]);
-//
-//            // Обробка друзів аналогічно з використанням week.points
-//            $friends = $account->friends()->with(['discordRoles', 'team.accounts'])->get()->each(function ($friend) use ($previousWeekNumber) {
-//                $friendWeekPoints = $friend->weeks()
-//                        ->where('week_number', '=', $previousWeekNumber)
-//                        ->where('active', false)
-//                        ->first()
-//                        ->total_points ?? 0;
-//
-//                $friendRank = DB::table('accounts')
-//                        ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
-//                        ->where('weeks.week_number', '=', $previousWeekNumber)
-//                        ->where('weeks.total_points', '>', $friendWeekPoints)
-//                        ->where('weeks.active', false)
-//                        ->count() + 1;
-//
-//                $friend->total_points = $friendWeekPoints; // Використання week.points як total_points
-//                $friend->rank = $friendRank;
-//                $friend->current_user = false;
-//            });
-//
-//            // Сортування друзів за рангом та злиття з поточним користувачем
-//            $sortedFriends = $friends->sortBy('rank');
-//            $allAccounts = $allAccounts->merge($sortedFriends);
-//
-//            // Повернення відповіді
-//            return response()->json([
-//                'list' => FriendResource::collection($allAccounts),
-//            ]);
-//        } else{
-//            return response()->json(['list' => []]);
-//        }
-//
-//
-//    }
 
     public function getFriendsForAccount(Request $request)
     {
@@ -226,22 +94,12 @@ class FriendsController extends Controller
                 ->first()
                 ->total_points ?? 0;
 
-        // Calculate rank based on the selected period
+
         if ($period == 'total') {
-//            $userRank = DB::table('accounts')
-//                    ->where('total_points', '>', $account->total_points)
-//                    ->count() + 1;
-//            $account->current_rank = $userRank;
+
             $account->week_points = $currentUserWeekPoints;
         } else {
-//            $userRank = DB::table('accounts')
-//                    ->join('weeks', 'accounts.id', '=', 'weeks.account_id')
-//                    ->where('weeks.week_number', '=', $previousWeekNumber)
-//                    ->where('weeks.total_points', '>', $currentUserWeekPoints)
-//                    ->where('weeks.active', false)
-//                    ->count()+1;
-//
-//            $account->current_rank = $userRank;
+
             $account->week_points = $currentUserWeekPoints;
         }
 
@@ -250,7 +108,7 @@ class FriendsController extends Controller
         // Clone the current user data for inclusion in the response
         $currentUserData = clone $account;
         $currentUserData->current_user = true;
-//        $currentUserData->current_rank =$userRank;
+
 
         $allAccounts = collect([$currentUserData]);
 
@@ -280,10 +138,9 @@ class FriendsController extends Controller
             $friend->current_user = false;
         });
 
-        // Merge the sorted friends with the current user at the top
         $allAccounts = $allAccounts->merge($friends);
 
-        // Sort all accounts based on the selected period
+
         if ($period == 'total') {
             $allAccounts = $allAccounts->sortByDesc('total_points')->values();
         } else {
